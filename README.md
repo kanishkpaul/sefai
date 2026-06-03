@@ -13,7 +13,9 @@ Windows-native companion app with a WPF desktop shell and a Python local-LLM bac
 
 - Backend tests pass on this machine with Python `3.12.10`.
 - The local GGUF model path from the spec is the default runtime model path.
-- The WPF project is implemented in source, but it has not been compiled here because `.NET` is not currently available on `PATH`.
+- The app now supports two local runtime paths:
+  - `llama-cpp-python` if the native loader works on the machine.
+  - official `llama.cpp` Windows CLI binaries as the fallback real-model runtime.
 
 ## Quick start
 
@@ -23,9 +25,15 @@ Windows-native companion app with a WPF desktop shell and a Python local-LLM bac
 python -m pip install -r requirements.txt
 ```
 
-If you want actual GGUF inference instead of the fallback responder, install a working `llama-cpp-python` build for your environment. CUDA-capable builds are recommended for the RTX 3050 path in the spec.
+### 2. Install the tested `llama.cpp` Windows runtime
 
-### 2. Install .NET 8 desktop SDK
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\install-llama-cpp-runtime.ps1
+```
+
+This downloads the official `ggml-org/llama.cpp` Windows CPU binary bundle tested with this repo into `runtime_tools/llama_cpp/b9490/`.
+
+### 3. Install .NET 8 desktop SDK
 
 You need the Windows desktop SDK so the WPF app can build:
 
@@ -58,7 +66,8 @@ dotnet run --project .\frontend\CompanionApp\CompanionApp.csproj
 - The desktop app starts the backend process and talks to it through a Windows named pipe.
 - Refusal and ignore decisions are deterministic and grounded in the persona.
 - Autonomous messages are persisted in history and surfaced in the WPF timeline and tray notifications.
-- If `llama-cpp-python` is unavailable, the backend still runs using a fallback reply engine so the app remains testable.
+- If the `llama-cpp-python` native loader fails on a machine, the backend automatically falls back to the downloaded `llama.cpp` CLI runtime.
+- If neither local model runtime is available, the backend still runs using a fallback responder so the app remains testable and exposes the runtime error in the UI.
 
 ## Verification
 

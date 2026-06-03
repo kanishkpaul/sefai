@@ -4,6 +4,9 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
 
+Write-Host "Installing llama.cpp Windows CPU runtime..."
+& "$PSScriptRoot\install-llama-cpp-runtime.ps1"
+
 Write-Host "Installing Python dependencies..."
 python -m pip install -r requirements.txt
 

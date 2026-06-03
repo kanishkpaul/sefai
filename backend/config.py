@@ -13,6 +13,8 @@ class RuntimeSettings(BaseModel):
     persona_path: str = str(Path("persona.sample.json").resolve())
     database_path: str = str(Path("runtime") / "companion.db")
     pipe_name: str = "sefai_companion_pipe"
+    llama_cli_path: str = str(Path("runtime_tools") / "llama_cpp" / "b9490" / "llama-cli.exe")
+    prefer_llama_cli: bool = True
     n_ctx: int = 4096
     n_threads: int = 8
     n_gpu_layers: int = 20
@@ -34,6 +36,8 @@ class RuntimeSettings(BaseModel):
             "persona_path": os.getenv("SEFAI_PERSONA_PATH", str(Path("persona.sample.json").resolve())),
             "database_path": os.getenv("SEFAI_DATABASE_PATH", str(Path("runtime") / "companion.db")),
             "pipe_name": os.getenv("SEFAI_PIPE_NAME", "sefai_companion_pipe"),
+            "llama_cli_path": os.getenv("SEFAI_LLAMA_CLI_PATH", str(Path("runtime_tools") / "llama_cpp" / "b9490" / "llama-cli.exe")),
+            "prefer_llama_cli": os.getenv("SEFAI_PREFER_LLAMA_CLI", "true").lower() == "true",
             "n_ctx": int(os.getenv("SEFAI_N_CTX", "4096")),
             "n_threads": int(os.getenv("SEFAI_N_THREADS", "8")),
             "n_gpu_layers": int(os.getenv("SEFAI_N_GPU_LAYERS", "20")),
