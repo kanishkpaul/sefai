@@ -6,16 +6,19 @@ namespace CompanionApp.Services;
 
 public class BackendProcessService : IAsyncDisposable
 {
+    private const string LlamaVersion = "b9490";
     private readonly AppSettings _settings;
     private Process? _process;
     private readonly string _workingDirectory;
     private readonly string _backendEntryPoint;
+    private readonly LlamaRuntimeProvisioner _llamaRuntimeProvisioner;
 
     public BackendProcessService(AppSettings settings)
     {
         _settings = settings;
         _workingDirectory = ResolveRepositoryRoot();
         _backendEntryPoint = Path.Combine(_workingDirectory, "backend", "main.py");
+        _llamaRuntimeProvisioner = new LlamaRuntimeProvisioner(_workingDirectory);
     }
 
     public BackendClient CreateClient() => new(_settings.PipeName);
@@ -31,6 +34,8 @@ public class BackendProcessService : IAsyncDisposable
         {
             throw new FileNotFoundException($"Backend entry point was not found at {_backendEntryPoint}.");
         }
+
+        await _llamaRuntimeProvisioner.EnsureInstalledAsync();
 
         var startInfo = new ProcessStartInfo
         {
@@ -48,6 +53,8 @@ public class BackendProcessService : IAsyncDisposable
         startInfo.Environment["SEFAI_PERSONA_PATH"] = _settings.PersonaPath;
         startInfo.Environment["SEFAI_DATABASE_PATH"] = _settings.DatabasePath;
         startInfo.Environment["SEFAI_PIPE_NAME"] = _settings.PipeName;
+        startInfo.Environment["SEFAI_LLAMA_CLI_PATH"] = _llamaRuntimeProvisioner.LlamaCliPath;
+        startInfo.Environment["SEFAI_PREFER_LLAMA_CLI"] = "true";
         startInfo.Environment["SEFAI_N_CTX"] = _settings.ContextSize.ToString();
         startInfo.Environment["SEFAI_N_THREADS"] = _settings.ThreadCount.ToString();
         startInfo.Environment["SEFAI_N_GPU_LAYERS"] = _settings.GpuLayers.ToString();

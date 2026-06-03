@@ -25,15 +25,7 @@ Windows-native companion app with a WPF desktop shell and a Python local-LLM bac
 python -m pip install -r requirements.txt
 ```
 
-### 2. Install the tested `llama.cpp` Windows runtime
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\install-llama-cpp-runtime.ps1
-```
-
-This downloads the official `ggml-org/llama.cpp` Windows CPU binary bundle tested with this repo into `runtime_tools/llama_cpp/b9490/`.
-
-### 3. Install .NET 8 desktop SDK
+### 2. Install .NET 8 desktop SDK
 
 You need the Windows desktop SDK so the WPF app can build:
 
@@ -64,6 +56,7 @@ dotnet run --project .\frontend\CompanionApp\CompanionApp.csproj
 
 - All data stays local in `runtime/companion.db`.
 - The desktop app starts the backend process and talks to it through a Windows named pipe.
+- On first launch, the desktop app automatically downloads the tested official `llama.cpp` Windows CPU runtime into `runtime_tools/llama_cpp/b9490/` if it is missing.
 - Refusal and ignore decisions are deterministic and grounded in the persona.
 - Autonomous messages are persisted in history and surfaced in the WPF timeline and tray notifications.
 - If the `llama-cpp-python` native loader fails on a machine, the backend automatically falls back to the downloaded `llama.cpp` CLI runtime.
