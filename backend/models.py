@@ -122,7 +122,6 @@ class MessageEnvelope(BaseModel):
 @dataclass(slots=True)
 class MessageDecision:
     should_refuse: bool = False
-    should_ignore: bool = False
     reason: str = ""
     refusal_response: str | None = None
     engagement_score: float = 0.0

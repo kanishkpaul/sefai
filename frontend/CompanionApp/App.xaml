@@ -3,11 +3,29 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              ShutdownMode="OnMainWindowClose">
     <Application.Resources>
-        <SolidColorBrush x:Key="PanelBrush" Color="#FFF5EEE8" />
-        <SolidColorBrush x:Key="AccentBrush" Color="#FFD08770" />
-        <SolidColorBrush x:Key="BackgroundBrush" Color="#FFF9F3EE" />
+        <SolidColorBrush x:Key="PanelBrush" Color="#CC07111B" />
+        <SolidColorBrush x:Key="PanelBrushStrong" Color="#E6101B27" />
+        <SolidColorBrush x:Key="AccentBrush" Color="#FF4FE3FF" />
+        <SolidColorBrush x:Key="AccentBrushStrong" Color="#FF00A9D6" />
+        <SolidColorBrush x:Key="BackgroundBrush" Color="#FF02060B" />
+        <SolidColorBrush x:Key="TextBrush" Color="#FFE4F7FF" />
+        <SolidColorBrush x:Key="MutedTextBrush" Color="#FF8CA9B8" />
+        <SolidColorBrush x:Key="OutlineBrush" Color="#6630B8D8" />
         <Style TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#FF342C28" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Background" Value="#3314212C" />
+            <Setter Property="BorderBrush" Value="{StaticResource OutlineBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="12,8" />
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Background" Value="#B308111A" />
+            <Setter Property="BorderBrush" Value="{StaticResource OutlineBrush}" />
+            <Setter Property="CaretBrush" Value="{StaticResource AccentBrush}" />
         </Style>
     </Application.Resources>
 </Application>

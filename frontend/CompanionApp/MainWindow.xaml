@@ -9,14 +9,22 @@
         Height="760"
         MinWidth="980"
         MinHeight="640"
+        WindowStyle="SingleBorderWindow"
         Background="{StaticResource BackgroundBrush}">
     <Grid Margin="18">
+        <Grid.Background>
+            <RadialGradientBrush GradientOrigin="0.85,0.1" Center="0.85,0.1" RadiusX="1.1" RadiusY="1.1">
+                <GradientStop Color="#FF0A1722" Offset="0" />
+                <GradientStop Color="#FF02060B" Offset="0.45" />
+                <GradientStop Color="#FF010305" Offset="1" />
+            </RadialGradientBrush>
+        </Grid.Background>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2.4*" />
             <ColumnDefinition Width="1.15*" />
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0" Padding="22" CornerRadius="22" Background="{StaticResource PanelBrush}" Margin="0,0,16,0">
+        <Border Grid.Column="0" Padding="22" CornerRadius="22" Background="{StaticResource PanelBrushStrong}" BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1" Margin="0,0,16,0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -27,7 +35,8 @@
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Left">
                         <TextBlock x:Name="CompanionNameTextBlock" FontSize="30" FontWeight="SemiBold" Text="Aria" />
-                        <TextBlock x:Name="StatusTextBlock" Margin="0,4,0,0" Opacity="0.75" Text="Resident and listening" />
+                        <TextBlock Margin="0,2,0,0" Foreground="{StaticResource AccentBrush}" FontSize="11" Text="JARVIS MODE // SYSTEM ONLINE" />
+                        <TextBlock x:Name="StatusTextBlock" Margin="0,4,0,0" Foreground="{StaticResource MutedTextBrush}" Text="Resident and listening" />
                     </StackPanel>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Width="96" Height="34" Margin="0,0,10,0" Click="Settings_Click" Content="Settings" />
@@ -38,7 +47,7 @@
                 <ListBox x:Name="ChatListBox" Grid.Row="1" Margin="0,20,0,20" BorderThickness="0" Background="Transparent">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Border Padding="16" Margin="0,0,0,12" CornerRadius="16" Background="#FFFDF8F5">
+                            <Border Padding="16" Margin="0,0,0,12" CornerRadius="16" Background="#A308111A" BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1">
                                 <StackPanel>
                                     <DockPanel>
                                         <TextBlock FontWeight="SemiBold" Text="{Binding Speaker}" />
@@ -65,12 +74,13 @@
                              AcceptsReturn="True"
                              VerticalScrollBarVisibility="Auto"
                              FontSize="15"
+                             BorderThickness="1"
                              Padding="14" />
                     <DockPanel Grid.Row="1" Margin="0,12,0,0">
                         <TextBlock x:Name="ComposerHintTextBlock"
                                    VerticalAlignment="Center"
-                                   Opacity="0.65"
-                                   Text="Ask something substantive. The companion can refuse shallow prompts." />
+                                   Foreground="{StaticResource MutedTextBrush}"
+                                   Text="Ask something substantive. The companion will push back instead of ignoring you." />
                         <Button Width="96" Height="40" HorizontalAlignment="Right" DockPanel.Dock="Right" Click="Send_Click" Content="Send" />
                     </DockPanel>
                 </Grid>
@@ -78,7 +88,7 @@
         </Border>
 
         <StackPanel Grid.Column="1">
-            <Border Padding="20" CornerRadius="22" Background="{StaticResource PanelBrush}">
+            <Border Padding="20" CornerRadius="22" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1">
                 <StackPanel>
                     <TextBlock FontSize="24" FontWeight="SemiBold" Text="Presence" />
                     <TextBlock Margin="0,16,0,4" FontWeight="SemiBold" Text="Mood" />
@@ -90,18 +100,24 @@
                 </StackPanel>
             </Border>
 
-            <Border Margin="0,16,0,16" Padding="20" CornerRadius="22" Background="{StaticResource PanelBrush}">
+            <Border Margin="0,16,0,16" Padding="20" CornerRadius="22" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1">
                 <StackPanel>
                     <TextBlock FontSize="24" FontWeight="SemiBold" Text="Timeline" />
-                    <TextBlock Margin="0,12,0,8" Opacity="0.75" Text="Autonomous check-ins and notable moments appear here as they persist." />
+                    <TextBlock Margin="0,12,0,8" Foreground="{StaticResource MutedTextBrush}" Text="Autonomous check-ins and notable moments appear here as they persist." />
                     <ListBox x:Name="TimelineListBox" MinHeight="180" BorderThickness="0" Background="Transparent" />
                 </StackPanel>
             </Border>
 
-            <Border Padding="20" CornerRadius="22" Background="{StaticResource PanelBrush}">
+            <Border Padding="20" CornerRadius="22" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1">
                 <StackPanel>
                     <TextBlock FontSize="24" FontWeight="SemiBold" Text="Runtime" />
                     <TextBlock x:Name="RuntimeTextBlock" Margin="0,12,0,0" Text="Backend: starting..." />
+                    <Border Margin="0,12,0,0" Padding="12" CornerRadius="14" Background="#A308111A" BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1">
+                        <StackPanel>
+                            <TextBlock x:Name="GgufStatusTextBlock" FontSize="16" FontWeight="SemiBold" Text="GGUF STATUS: CHECKING" />
+                            <TextBlock x:Name="RuntimeDetailTextBlock" Margin="0,6,0,0" Foreground="{StaticResource MutedTextBrush}" Text="Runtime provider not resolved yet." TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
                     <TextBlock x:Name="ModelPathTextBlock" Margin="0,8,0,0" TextWrapping="Wrap" />
                     <TextBlock x:Name="QuietModeTextBlock" Margin="0,8,0,0" />
                 </StackPanel>

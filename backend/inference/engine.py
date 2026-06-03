@@ -57,6 +57,18 @@ class InferenceEngine:
                 self.runtime_mode = "fallback"
                 self.runtime_error = str(exc)
 
+    @property
+    def gguf_runtime_active(self) -> bool:
+        return self.runtime_mode in {"llama_cpp", "llama_cli"} and self.runtime_error is None
+
+    @property
+    def runtime_label(self) -> str:
+        if self.runtime_mode == "llama_cpp":
+            return "GGUF via llama-cpp-python"
+        if self.runtime_mode == "llama_cli":
+            return "GGUF via llama.cpp CLI"
+        return "Fallback responder"
+
     def generate(self, persona: Persona, context: str, user_message: str, temperature: float | None = None) -> CompletionResult:
         chosen_temperature = self.settings.temperature if temperature is None else temperature
         system_prompt = self._build_system_prompt(persona, context)

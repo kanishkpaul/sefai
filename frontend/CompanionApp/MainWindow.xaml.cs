@@ -118,12 +118,19 @@ public partial class MainWindow : Window
         var runtimeError = root.TryGetProperty("runtime_error", out var runtimeErrorElement)
             ? runtimeErrorElement.GetString()
             : null;
-        RuntimeTextBlock.Text = runtimeMode == "llama_cpp"
-            ? "Backend: llama.cpp model runtime active"
-            : $"Backend: fallback mode ({runtimeMode})";
+        var ggufActive = root.TryGetProperty("gguf_active", out var ggufActiveElement) && ggufActiveElement.GetBoolean();
+        var runtimeLabel = root.TryGetProperty("runtime_label", out var runtimeLabelElement)
+            ? runtimeLabelElement.GetString() ?? runtimeMode
+            : runtimeMode;
+        RuntimeTextBlock.Text = ggufActive
+            ? "Backend: live GGUF runtime detected"
+            : $"Backend: non-GGUF fallback path ({runtimeMode})";
+        GgufStatusTextBlock.Text = ggufActive ? "GGUF STATUS: ACTIVE" : "GGUF STATUS: NOT RUNNING";
+        RuntimeDetailTextBlock.Text = runtimeLabel;
         if (!string.IsNullOrWhiteSpace(runtimeError))
         {
             RuntimeTextBlock.Text += $" - {runtimeError}";
+            RuntimeDetailTextBlock.Text += $" | {runtimeError}";
         }
     }
 
@@ -196,17 +203,6 @@ public partial class MainWindow : Window
             var response = await client.SendAsync("send_user_message", new Dictionary<string, object?> { ["message"] = message });
             await RefreshFromBackendAsync(showNotifications: false);
 
-            if (response.Payload.TryGetValue("decision", out var decision) && decision?.ToString() == "ignored")
-            {
-                _chatMessages.Add(new ChatMessage
-                {
-                    Speaker = CompanionNameTextBlock.Text,
-                    Content = "[Ignored this message]",
-                    DeliveryTag = "Ignore",
-                    Timestamp = DateTime.Now,
-                    AccentBrush = System.Windows.Media.Brushes.Gray,
-                });
-            }
         }
         catch (Exception ex)
         {
@@ -214,7 +210,7 @@ public partial class MainWindow : Window
         }
         finally
         {
-            ComposerHintTextBlock.Text = "Ask something substantive. The companion can refuse shallow prompts.";
+            ComposerHintTextBlock.Text = "Ask something substantive. The companion will push back instead of ignoring you.";
         }
     }
 

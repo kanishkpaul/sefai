@@ -116,18 +116,6 @@ class CompanionApplication:
                 },
             )
 
-        if decision.should_ignore:
-            await self.db.log_refusal(message, decision.reason)
-            return MessageEnvelope(
-                type="message_response",
-                payload={
-                    "response": None,
-                    "decision": "ignored",
-                    "reason": decision.reason,
-                    "mood": self.current_mood,
-                },
-            )
-
         relationship_summary = await self.memory_manager.derive_relationship_summary(self.persona)
         context = await self.memory_manager.build_context(message, relationship_summary)
         completion = self.inference.generate(self.persona, context, message)
@@ -148,6 +136,8 @@ class CompanionApplication:
                 "decision": "responded",
                 "runtime_mode": completion.metadata["runtime_mode"],
                 "runtime_error": completion.metadata.get("runtime_error"),
+                "gguf_active": self.inference.gguf_runtime_active,
+                "runtime_label": self.inference.runtime_label,
                 "mood": self.current_mood,
                 "relationship_summary": updated_summary,
             },
@@ -173,17 +163,11 @@ class CompanionApplication:
                 refusal_response="No. I won't help you avoid your own standards. What's actually blocking the work?",
                 engagement_score=engagement_score,
             )
-        if engagement_score < 0.25 and self.current_mood == "withdrawn":
-            return MessageDecision(
-                should_ignore=True,
-                reason="surface_level_when_withdrawn",
-                engagement_score=engagement_score,
-            )
         if engagement_score < 0.25:
             return MessageDecision(
                 should_refuse=True,
                 reason="surface_level_when_withdrawn",
-                refusal_response="That's too thin for where my head is right now. Ask the sharper question underneath it.",
+                refusal_response="That's too thin for where my head is right now. I won't ignore you, but I am asking for a sharper question underneath it.",
                 engagement_score=engagement_score,
             )
         return MessageDecision(engagement_score=engagement_score)
@@ -238,6 +222,8 @@ class CompanionApplication:
                 "ipc_version": self.settings.ipc_version,
                 "runtime_mode": self.inference.runtime_mode,
                 "runtime_error": self.inference.runtime_error,
+                "gguf_active": self.inference.gguf_runtime_active,
+                "runtime_label": self.inference.runtime_label,
             },
         )
 
@@ -266,6 +252,8 @@ class CompanionApplication:
                 "name": self.persona.name,
                 "runtime_mode": self.inference.runtime_mode,
                 "runtime_error": self.inference.runtime_error,
+                "gguf_active": self.inference.gguf_runtime_active,
+                "runtime_label": self.inference.runtime_label,
             },
         )
 
