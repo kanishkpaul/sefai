@@ -8,7 +8,7 @@ from backend.models import Persona
 
 try:
     from llama_cpp import Llama  # type: ignore
-except ImportError:  # pragma: no cover
+except Exception:  # pragma: no cover
     Llama = None
 
 
@@ -23,26 +23,37 @@ class InferenceEngine:
         self.settings = settings
         self._llm: Any | None = None
         self.runtime_mode = "uninitialized"
+        self.runtime_error: str | None = None
 
     def initialize(self) -> None:
         if Llama is None:
             self.runtime_mode = "fallback"
+            self.runtime_error = "llama_cpp is unavailable or failed to import."
             return
-        self._llm = Llama(
-            model_path=self.settings.model_path,
-            n_ctx=self.settings.n_ctx,
-            n_threads=self.settings.n_threads,
-            n_gpu_layers=self.settings.n_gpu_layers,
-            verbose=False,
-        )
-        self.runtime_mode = "llama_cpp"
+        try:
+            self._llm = Llama(
+                model_path=self.settings.model_path,
+                n_ctx=self.settings.n_ctx,
+                n_threads=self.settings.n_threads,
+                n_gpu_layers=self.settings.n_gpu_layers,
+                verbose=False,
+            )
+            self.runtime_mode = "llama_cpp"
+            self.runtime_error = None
+        except Exception as exc:
+            self._llm = None
+            self.runtime_mode = "fallback"
+            self.runtime_error = str(exc)
 
     def generate(self, persona: Persona, context: str, user_message: str, temperature: float | None = None) -> CompletionResult:
         chosen_temperature = self.settings.temperature if temperature is None else temperature
         system_prompt = self._build_system_prompt(persona, context)
         if self._llm is None:
             text = self._fallback_generate(persona, user_message)
-            return CompletionResult(text=text, metadata={"runtime_mode": self.runtime_mode})
+            return CompletionResult(
+                text=text,
+                metadata={"runtime_mode": self.runtime_mode, "runtime_error": self.runtime_error},
+            )
 
         response = self._llm.create_chat_completion(
             messages=[
@@ -55,7 +66,10 @@ class InferenceEngine:
             stream=False,
         )
         text = response["choices"][0]["message"]["content"].strip()
-        return CompletionResult(text=text, metadata={"runtime_mode": self.runtime_mode})
+        return CompletionResult(
+            text=text,
+            metadata={"runtime_mode": self.runtime_mode, "runtime_error": self.runtime_error},
+        )
 
     def _build_system_prompt(self, persona: Persona, context: str) -> str:
         values = "\n".join(

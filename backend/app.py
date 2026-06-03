@@ -147,6 +147,7 @@ class CompanionApplication:
                 "response": completion.text,
                 "decision": "responded",
                 "runtime_mode": completion.metadata["runtime_mode"],
+                "runtime_error": completion.metadata.get("runtime_error"),
                 "mood": self.current_mood,
                 "relationship_summary": updated_summary,
             },
@@ -235,6 +236,8 @@ class CompanionApplication:
             payload={
                 "name": self.persona.name if self.persona else "Companion",
                 "ipc_version": self.settings.ipc_version,
+                "runtime_mode": self.inference.runtime_mode,
+                "runtime_error": self.inference.runtime_error,
             },
         )
 
@@ -258,7 +261,12 @@ class CompanionApplication:
         return MessageEnvelope(
             type="state_snapshot",
             request_id=envelope.request_id,
-            payload=state.model_dump(mode="json") | {"name": self.persona.name},
+            payload=state.model_dump(mode="json")
+            | {
+                "name": self.persona.name,
+                "runtime_mode": self.inference.runtime_mode,
+                "runtime_error": self.inference.runtime_error,
+            },
         )
 
     async def _handle_update_persona(self, envelope: MessageEnvelope) -> MessageEnvelope:

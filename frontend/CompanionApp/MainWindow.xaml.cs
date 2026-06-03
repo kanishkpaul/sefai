@@ -109,7 +109,21 @@ public partial class MainWindow : Window
 
         if (root.TryGetProperty("active_goals", out var goals))
         {
-            GoalsItemsControl.ItemsSource = goals.EnumerateArray().Select(item => $"• {item.GetString()}").ToArray();
+            GoalsItemsControl.ItemsSource = goals.EnumerateArray().Select(item => $"* {item.GetString()}").ToArray();
+        }
+
+        var runtimeMode = root.TryGetProperty("runtime_mode", out var runtimeModeElement)
+            ? runtimeModeElement.GetString() ?? "unknown"
+            : "unknown";
+        var runtimeError = root.TryGetProperty("runtime_error", out var runtimeErrorElement)
+            ? runtimeErrorElement.GetString()
+            : null;
+        RuntimeTextBlock.Text = runtimeMode == "llama_cpp"
+            ? "Backend: llama.cpp model runtime active"
+            : $"Backend: fallback mode ({runtimeMode})";
+        if (!string.IsNullOrWhiteSpace(runtimeError))
+        {
+            RuntimeTextBlock.Text += $" - {runtimeError}";
         }
     }
 
