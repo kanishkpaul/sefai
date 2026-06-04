@@ -23,12 +23,19 @@ public partial class OnboardingWindow : Window
 
     private async void SaveAndContinue_Click(object sender, RoutedEventArgs e)
     {
-        _settings.ModelPath = ModelPathTextBox.Text.Trim();
-        _settings.PersonaPath = PersonaPathTextBox.Text.Trim();
-        _settings.AutonomyEnabled = AutonomyCheckBox.IsChecked == true;
-        _settings.StartAtLogin = StartupCheckBox.IsChecked == true;
-        await _settingsStore.SaveAsync(_settings);
-        DialogResult = true;
-        Close();
+        try
+        {
+            _settings.ModelPath = ModelPathTextBox.Text.Trim();
+            _settings.PersonaPath = PersonaPathTextBox.Text.Trim();
+            _settings.AutonomyEnabled = AutonomyCheckBox.IsChecked == true;
+            _settings.StartAtLogin = StartupCheckBox.IsChecked == true;
+            await _settingsStore.SaveAsync(_settings);
+            DialogResult = true;
+            Close();
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(this, ex.Message, "Failed to save onboarding", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 }

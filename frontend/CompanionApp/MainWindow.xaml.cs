@@ -141,6 +141,8 @@ public partial class MainWindow : Window
         StatusTextBlock.Text = root.TryGetProperty("autonomy_enabled", out var autonomy) && autonomy.GetBoolean()
             ? "Resident and listening"
             : "Autonomy paused";
+        _autonomyPaused = !(root.TryGetProperty("autonomy_enabled", out var autonomyEnabledElement) && autonomyEnabledElement.GetBoolean());
+        AutonomyButton.Content = _autonomyPaused ? "Resume Autonomy" : "Pause Autonomy";
 
         if (root.TryGetProperty("active_goals", out var goals))
         {
@@ -240,6 +242,7 @@ public partial class MainWindow : Window
             return;
         }
 
+        SendButton.IsEnabled = false;
         ChatInputTextBox.Clear();
         ComposerHintTextBlock.Text = "Thinking...";
         try
@@ -251,6 +254,8 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
+            ChatInputTextBox.Text = message;
+            ChatInputTextBox.CaretIndex = ChatInputTextBox.Text.Length;
             if (!await TryRecoverBackendAsync(ex, "Send failed"))
             {
                 ShowBackendFailure(ex, "Send failed");
@@ -258,13 +263,13 @@ public partial class MainWindow : Window
         }
         finally
         {
+            SendButton.IsEnabled = true;
             ComposerHintTextBlock.Text = "Ask something substantive. The companion will push back instead of ignoring you.";
         }
     }
 
     private async void PauseAutonomy_Click(object sender, RoutedEventArgs e)
     {
-        var button = (System.Windows.Controls.Button)sender;
         try
         {
             var client = _backendProcessService.CreateClient();
@@ -272,13 +277,13 @@ public partial class MainWindow : Window
             {
                 await client.SendAsync("resume_autonomy", new Dictionary<string, object?>());
                 _autonomyPaused = false;
-                button.Content = "Pause Autonomy";
+                AutonomyButton.Content = "Pause Autonomy";
             }
             else
             {
                 await client.SendAsync("pause_autonomy", new Dictionary<string, object?>());
                 _autonomyPaused = true;
-                button.Content = "Resume Autonomy";
+                AutonomyButton.Content = "Resume Autonomy";
             }
             await TryRefreshFromBackendAsync(showNotifications: false);
         }

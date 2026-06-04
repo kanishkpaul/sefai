@@ -40,7 +40,7 @@
                     </StackPanel>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Width="96" Height="34" Margin="0,0,10,0" Click="Settings_Click" Content="Settings" />
-                        <Button Width="128" Height="34" Click="PauseAutonomy_Click" Content="Pause Autonomy" />
+                        <Button x:Name="AutonomyButton" Width="128" Height="34" Click="PauseAutonomy_Click" Content="Pause Autonomy" />
                     </StackPanel>
                 </DockPanel>
 
@@ -81,7 +81,7 @@
                                    VerticalAlignment="Center"
                                    Foreground="{StaticResource MutedTextBrush}"
                                    Text="Ask something substantive. The companion will push back instead of ignoring you." />
-                        <Button Width="96" Height="40" HorizontalAlignment="Right" DockPanel.Dock="Right" Click="Send_Click" Content="Send" />
+                        <Button x:Name="SendButton" Width="96" Height="40" HorizontalAlignment="Right" DockPanel.Dock="Right" Click="Send_Click" Content="Send" />
                     </DockPanel>
                 </Grid>
             </Grid>

@@ -31,14 +31,39 @@ class NamedPipeServer:
     async def start(self) -> None:
         if win32pipe is None or win32file is None:
             raise RuntimeError("pywin32 is required to run the named pipe server on Windows.")
+        self._stop_event.clear()
         self._loop = asyncio.get_running_loop()
         self._thread = threading.Thread(target=self._serve_forever, name="NamedPipeServer", daemon=True)
         self._thread.start()
 
     async def stop(self) -> None:
         self._stop_event.set()
+        self._connect_dummy_client()
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=2)
+
+    def _connect_dummy_client(self) -> None:
+        if win32file is None:
+            return
+        pipe_path = rf"\\.\pipe\{self.pipe_name}"
+        try:
+            handle = win32file.CreateFile(
+                pipe_path,
+                win32file.GENERIC_READ | win32file.GENERIC_WRITE,
+                0,
+                None,
+                win32file.OPEN_EXISTING,
+                0,
+                None,
+            )
+        except Exception:
+            return
+        try:
+            win32file.WriteFile(handle, b"\n")
+        except Exception:
+            pass
+        finally:
+            win32file.CloseHandle(handle)
 
     def _serve_forever(self) -> None:  # pragma: no cover
         assert self._loop is not None

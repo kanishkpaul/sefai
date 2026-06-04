@@ -27,17 +27,24 @@ public partial class SettingsWindow : Window
 
     private async void Save_Click(object sender, RoutedEventArgs e)
     {
-        Settings.ModelPath = ModelPathTextBox.Text.Trim();
-        Settings.PersonaPath = PersonaPathTextBox.Text.Trim();
-        Settings.ContextSize = int.TryParse(ContextSizeTextBox.Text, out var context) ? context : Settings.ContextSize;
-        Settings.GpuLayers = int.TryParse(GpuLayersTextBox.Text, out var gpuLayers) ? gpuLayers : Settings.GpuLayers;
-        Settings.AutonomyEnabled = AutonomyCheckBox.IsChecked == true;
-        Settings.StartAtLogin = StartupCheckBox.IsChecked == true;
-        Settings.NotificationsEnabled = NotificationsCheckBox.IsChecked == true;
-        Settings.QuietMode = QuietModeCheckBox.IsChecked == true;
+        try
+        {
+            Settings.ModelPath = ModelPathTextBox.Text.Trim();
+            Settings.PersonaPath = PersonaPathTextBox.Text.Trim();
+            Settings.ContextSize = int.TryParse(ContextSizeTextBox.Text, out var context) ? context : Settings.ContextSize;
+            Settings.GpuLayers = int.TryParse(GpuLayersTextBox.Text, out var gpuLayers) ? gpuLayers : Settings.GpuLayers;
+            Settings.AutonomyEnabled = AutonomyCheckBox.IsChecked == true;
+            Settings.StartAtLogin = StartupCheckBox.IsChecked == true;
+            Settings.NotificationsEnabled = NotificationsCheckBox.IsChecked == true;
+            Settings.QuietMode = QuietModeCheckBox.IsChecked == true;
 
-        await _settingsStore.SaveAsync(Settings);
-        DialogResult = true;
-        Close();
+            await _settingsStore.SaveAsync(Settings);
+            DialogResult = true;
+            Close();
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(this, ex.Message, "Failed to save settings", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 }
