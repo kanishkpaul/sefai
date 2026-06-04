@@ -33,4 +33,21 @@ public class AppSettings
             NotificationsEnabled = NotificationsEnabled,
             QuietMode = QuietMode,
         };
+
+    public void ApplyFrom(AppSettings other)
+    {
+        ModelPath = other.ModelPath;
+        PersonaPath = other.PersonaPath;
+        DatabasePath = other.DatabasePath;
+        PipeName = other.PipeName;
+        ContextSize = other.ContextSize;
+        ThreadCount = other.ThreadCount;
+        GpuLayers = other.GpuLayers;
+        Temperature = other.Temperature;
+        TopP = other.TopP;
+        AutonomyEnabled = other.AutonomyEnabled;
+        StartAtLogin = other.StartAtLogin;
+        NotificationsEnabled = other.NotificationsEnabled;
+        QuietMode = other.QuietMode;
+    }
 }

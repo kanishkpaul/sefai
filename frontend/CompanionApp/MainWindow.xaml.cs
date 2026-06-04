@@ -304,13 +304,15 @@ public partial class MainWindow : Window
             return;
         }
 
-        _settings = dialog.Settings;
+        var proposedSettings = dialog.Settings.Clone();
 
         var requiresRestart =
-            !string.Equals(previousSettings.ModelPath, _settings.ModelPath, StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(previousSettings.PersonaPath, _settings.PersonaPath, StringComparison.OrdinalIgnoreCase) ||
-            previousSettings.ContextSize != _settings.ContextSize ||
-            previousSettings.GpuLayers != _settings.GpuLayers;
+            !string.Equals(previousSettings.ModelPath, proposedSettings.ModelPath, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(previousSettings.PersonaPath, proposedSettings.PersonaPath, StringComparison.OrdinalIgnoreCase) ||
+            previousSettings.ContextSize != proposedSettings.ContextSize ||
+            previousSettings.GpuLayers != proposedSettings.GpuLayers;
+
+        _settings.ApplyFrom(proposedSettings);
 
         try
         {
@@ -347,7 +349,17 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            _settings = previousSettings;
+            _settings.ApplyFrom(previousSettings);
+            if (requiresRestart)
+            {
+                try
+                {
+                    await _backendProcessService.RestartAsync();
+                }
+                catch
+                {
+                }
+            }
             await _settingsStore.SaveAsync(_settings);
             if (_settings.StartAtLogin)
             {

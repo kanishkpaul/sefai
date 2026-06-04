@@ -7,22 +7,24 @@ namespace CompanionApp.Views;
 public partial class SettingsWindow : Window
 {
     private readonly SettingsStore _settingsStore;
+    private readonly AppSettings _workingCopy;
     public AppSettings Settings { get; }
 
     public SettingsWindow(SettingsStore settingsStore, AppSettings settings)
     {
         InitializeComponent();
         _settingsStore = settingsStore;
-        Settings = settings;
+        _workingCopy = settings.Clone();
+        Settings = _workingCopy;
 
-        ModelPathTextBox.Text = settings.ModelPath;
-        PersonaPathTextBox.Text = settings.PersonaPath;
-        ContextSizeTextBox.Text = settings.ContextSize.ToString();
-        GpuLayersTextBox.Text = settings.GpuLayers.ToString();
-        AutonomyCheckBox.IsChecked = settings.AutonomyEnabled;
-        StartupCheckBox.IsChecked = settings.StartAtLogin;
-        NotificationsCheckBox.IsChecked = settings.NotificationsEnabled;
-        QuietModeCheckBox.IsChecked = settings.QuietMode;
+        ModelPathTextBox.Text = _workingCopy.ModelPath;
+        PersonaPathTextBox.Text = _workingCopy.PersonaPath;
+        ContextSizeTextBox.Text = _workingCopy.ContextSize.ToString();
+        GpuLayersTextBox.Text = _workingCopy.GpuLayers.ToString();
+        AutonomyCheckBox.IsChecked = _workingCopy.AutonomyEnabled;
+        StartupCheckBox.IsChecked = _workingCopy.StartAtLogin;
+        NotificationsCheckBox.IsChecked = _workingCopy.NotificationsEnabled;
+        QuietModeCheckBox.IsChecked = _workingCopy.QuietMode;
     }
 
     private async void Save_Click(object sender, RoutedEventArgs e)
