@@ -243,18 +243,17 @@ public partial class MainWindow : Window
         }
 
         SendButton.IsEnabled = false;
-        ChatInputTextBox.Clear();
         ComposerHintTextBlock.Text = "Thinking...";
         try
         {
             var client = _backendProcessService.CreateClient();
             await client.SendAsync("send_user_message", new Dictionary<string, object?> { ["message"] = message });
+            ChatInputTextBox.Clear();
             await TryRefreshFromBackendAsync(showNotifications: false);
 
         }
         catch (Exception ex)
         {
-            ChatInputTextBox.Text = message;
             ChatInputTextBox.CaretIndex = ChatInputTextBox.Text.Length;
             if (!await TryRecoverBackendAsync(ex, "Send failed"))
             {
@@ -298,10 +297,7 @@ public partial class MainWindow : Window
 
     private async void Settings_Click(object sender, RoutedEventArgs e)
     {
-        var previousModelPath = _settings.ModelPath;
-        var previousPersonaPath = _settings.PersonaPath;
-        var previousContextSize = _settings.ContextSize;
-        var previousGpuLayers = _settings.GpuLayers;
+        var previousSettings = _settings.Clone();
         var dialog = new SettingsWindow(_settingsStore, _settings) { Owner = this };
         if (dialog.ShowDialog() != true)
         {
@@ -309,22 +305,12 @@ public partial class MainWindow : Window
         }
 
         _settings = dialog.Settings;
-        await _settingsStore.SaveAsync(_settings);
-
-        if (_settings.StartAtLogin)
-        {
-            _startupRegistrationService.Enable();
-        }
-        else
-        {
-            _startupRegistrationService.Disable();
-        }
 
         var requiresRestart =
-            !string.Equals(previousModelPath, _settings.ModelPath, StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(previousPersonaPath, _settings.PersonaPath, StringComparison.OrdinalIgnoreCase) ||
-            previousContextSize != _settings.ContextSize ||
-            previousGpuLayers != _settings.GpuLayers;
+            !string.Equals(previousSettings.ModelPath, _settings.ModelPath, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(previousSettings.PersonaPath, _settings.PersonaPath, StringComparison.OrdinalIgnoreCase) ||
+            previousSettings.ContextSize != _settings.ContextSize ||
+            previousSettings.GpuLayers != _settings.GpuLayers;
 
         try
         {
@@ -346,12 +332,31 @@ public partial class MainWindow : Window
                     ["n_gpu_layers"] = _settings.GpuLayers,
                 });
 
+            await _settingsStore.SaveAsync(_settings);
+            if (_settings.StartAtLogin)
+            {
+                _startupRegistrationService.Enable();
+            }
+            else
+            {
+                _startupRegistrationService.Disable();
+            }
             QuietModeTextBlock.Text = _settings.QuietMode ? "Quiet mode: on" : "Quiet mode: off";
             ModelPathTextBlock.Text = $"Model: {_settings.ModelPath}";
             await TryRefreshFromBackendAsync(showNotifications: false);
         }
         catch (Exception ex)
         {
+            _settings = previousSettings;
+            await _settingsStore.SaveAsync(_settings);
+            if (_settings.StartAtLogin)
+            {
+                _startupRegistrationService.Enable();
+            }
+            else
+            {
+                _startupRegistrationService.Disable();
+            }
             if (!await TryRecoverBackendAsync(ex, "Settings update failed"))
             {
                 ShowBackendFailure(ex, "Settings update failed");
@@ -361,16 +366,19 @@ public partial class MainWindow : Window
 
     private async Task ToggleQuietModeAsync()
     {
+        var previousQuietMode = _settings.QuietMode;
         try
         {
             _settings.QuietMode = !_settings.QuietMode;
-            await _settingsStore.SaveAsync(_settings);
             var client = _backendProcessService.CreateClient();
             await client.SendAsync("update_settings", new Dictionary<string, object?> { ["quiet_mode"] = _settings.QuietMode });
+            await _settingsStore.SaveAsync(_settings);
             QuietModeTextBlock.Text = _settings.QuietMode ? "Quiet mode: on" : "Quiet mode: off";
         }
         catch (Exception ex)
         {
+            _settings.QuietMode = previousQuietMode;
+            await _settingsStore.SaveAsync(_settings);
             if (!await TryRecoverBackendAsync(ex, "Quiet mode update failed"))
             {
                 ShowBackendFailure(ex, "Quiet mode update failed");

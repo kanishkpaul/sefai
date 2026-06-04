@@ -15,4 +15,22 @@ public class AppSettings
     public bool StartAtLogin { get; set; } = true;
     public bool NotificationsEnabled { get; set; } = true;
     public bool QuietMode { get; set; } = false;
+
+    public AppSettings Clone() =>
+        new()
+        {
+            ModelPath = ModelPath,
+            PersonaPath = PersonaPath,
+            DatabasePath = DatabasePath,
+            PipeName = PipeName,
+            ContextSize = ContextSize,
+            ThreadCount = ThreadCount,
+            GpuLayers = GpuLayers,
+            Temperature = Temperature,
+            TopP = TopP,
+            AutonomyEnabled = AutonomyEnabled,
+            StartAtLogin = StartAtLogin,
+            NotificationsEnabled = NotificationsEnabled,
+            QuietMode = QuietMode,
+        };
 }
