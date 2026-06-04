@@ -42,7 +42,7 @@ public partial class App : System.Windows.Application
                 _startupRegistrationService.Disable();
             }
 
-            if (!File.Exists(settings.PersonaPath))
+            if (!HasValidStartupPaths(settings))
             {
                 var onboarding = new OnboardingWindow(settingsStore, settings);
                 if (onboarding.ShowDialog() != true)
@@ -52,7 +52,7 @@ public partial class App : System.Windows.Application
                     return;
                 }
                 settings = await settingsStore.LoadAsync();
-                if (!File.Exists(settings.PersonaPath) || !File.Exists(settings.ModelPath))
+                if (!HasValidStartupPaths(settings))
                 {
                     throw new InvalidOperationException("Onboarding did not produce valid local model/persona paths.");
                 }
@@ -95,5 +95,10 @@ public partial class App : System.Windows.Application
         }
         _singleInstanceMutex?.Dispose();
         base.OnExit(e);
+    }
+
+    private static bool HasValidStartupPaths(Models.AppSettings settings)
+    {
+        return File.Exists(settings.PersonaPath) && File.Exists(settings.ModelPath);
     }
 }
