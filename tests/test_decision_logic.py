@@ -58,3 +58,20 @@ async def test_surface_refusal_requires_withdrawn_state(tmp_path):
     assert second.should_refuse is True
     assert second.reason == "surface_level_when_withdrawn"
     await app.db.close()
+
+
+@pytest.mark.asyncio
+async def test_connection_prompt_variants_are_treated_as_connection(tmp_path):
+    settings = RuntimeSettings(
+        persona_path="persona.sample.json",
+        database_path=str(tmp_path / "companion.db"),
+        autonomy_enabled=False,
+    )
+    app = CompanionApplication(settings)
+    await app.db.connect()
+    app.persona = app.persona_service.load()
+
+    assert app._is_simple_connection_prompt("hiii") is True
+    assert app._is_simple_connection_prompt("can you talk to me") is True
+    assert app._generate_connection_reply("what's your name?").startswith("I'm Aria")
+    await app.db.close()

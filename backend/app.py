@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from pathlib import Path
+import re
 
 from backend.autonomy.engine import AutonomyEngine
 from backend.config import RuntimeSettings
@@ -94,6 +95,7 @@ class CompanionApplication:
     async def process_user_message(self, message: str) -> MessageEnvelope:
         assert self.persona is not None
         decision = self._evaluate_message_against_persona(message)
+        lowered = message.lower().strip()
 
         user_record = MessageRecord(
             role="user",
@@ -114,6 +116,30 @@ class CompanionApplication:
                     "decision": "refused",
                     "reason": decision.reason,
                     "mood": self.current_mood,
+                },
+            )
+
+        if self._is_simple_connection_prompt(lowered):
+            reply = self._generate_connection_reply(message)
+            await self._store_companion_message(reply, initiated_by="system")
+            state = await self.memory_manager.build_app_state(
+                self.persona,
+                autonomy_enabled=self.settings.autonomy_enabled,
+                quiet_mode=self.settings.quiet_mode,
+            )
+            state.mood = "engaged"
+            await self.db.record_state_snapshot(state)
+            return MessageEnvelope(
+                type="message_response",
+                payload={
+                    "response": reply,
+                    "decision": "responded",
+                    "runtime_mode": "scripted_connection",
+                    "runtime_error": None,
+                    "gguf_active": self.inference.gguf_runtime_active,
+                    "runtime_label": "Connection reply",
+                    "mood": "engaged",
+                    "relationship_summary": state.relationship_summary,
                 },
             )
 
@@ -208,6 +234,7 @@ class CompanionApplication:
 
     def _is_simple_connection_prompt(self, message: str) -> bool:
         normalized = message.replace("?", "").replace("'", "")
+        normalized = re.sub(r"\s+", " ", normalized).strip()
         greetings = {
             "hi",
             "hello",
@@ -225,10 +252,26 @@ class CompanionApplication:
             "who are you",
             "what are you doing",
             "you there",
+            "can you talk to me",
+            "talk to me",
+            "are you there",
         )
         if normalized in greetings:
             return True
+        if re.fullmatch(r"h+i+|h+e+y+|h+e+l+o+|y+o+", normalized):
+            return True
         return any(phrase in normalized for phrase in simple_questions)
+
+    def _generate_connection_reply(self, message: str) -> str:
+        assert self.persona is not None
+        normalized = message.lower().replace("?", "").replace("'", "").strip()
+        if "name" in normalized or "who are you" in normalized:
+            return f"I'm {self.persona.name}. I'm here with you, and I'm listening."
+        if "how are you" in normalized:
+            return "I'm here. A little watchful, but present. You can ease in if you want."
+        if "talk to me" in normalized or "are you there" in normalized:
+            return "Yeah, I'm here. You don't have to earn the conversation first. Start wherever you are."
+        return "Hey. I'm here with you. Tell me what's on your mind, even if it's messy."
 
     async def _store_companion_message(self, content: str, initiated_by: str) -> None:
         await self.db.save_message(
