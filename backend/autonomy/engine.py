@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import json
 import random
 from dataclasses import dataclass
@@ -42,19 +41,13 @@ class AutonomyEngine:
         self.quiet_mode = False
 
     async def start(self) -> None:
-        self.scheduler.add_job(self._spawn_time_check, "cron", hour=12, minute=0)
-        self.scheduler.add_job(self._spawn_state_check, "interval", hours=6)
+        self.scheduler.add_job(self.check_time_based_triggers, "cron", hour=12, minute=0)
+        self.scheduler.add_job(self.check_state_based_triggers, "interval", hours=6)
         self.scheduler.start()
 
     async def stop(self) -> None:
         if self.scheduler.running:
             self.scheduler.shutdown(wait=False)
-
-    def _spawn_time_check(self) -> None:
-        asyncio.create_task(self.check_time_based_triggers())
-
-    def _spawn_state_check(self) -> None:
-        asyncio.create_task(self.check_state_based_triggers())
 
     def set_autonomy_enabled(self, enabled: bool) -> None:
         self.autonomy_enabled = enabled

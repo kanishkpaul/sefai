@@ -1,4 +1,5 @@
 using System.IO;
+using System.Threading;
 using System.Windows;
 using CompanionApp.Services;
 using CompanionApp.Views;
@@ -7,12 +8,21 @@ namespace CompanionApp;
 
 public partial class App : System.Windows.Application
 {
+    private static Mutex? _singleInstanceMutex;
     private BackendProcessService? _backendProcessService;
     private StartupRegistrationService? _startupRegistrationService;
 
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        _singleInstanceMutex = new Mutex(initiallyOwned: true, name: "Local\\SefaiCompanionSingleton", createdNew: out var createdNew);
+        if (!createdNew)
+        {
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            Shutdown();
+            return;
+        }
 
         var settingsStore = new SettingsStore();
         var settings = await settingsStore.LoadAsync();
@@ -49,6 +59,8 @@ public partial class App : System.Windows.Application
         {
             await _backendProcessService.DisposeAsync();
         }
+        _singleInstanceMutex?.ReleaseMutex();
+        _singleInstanceMutex?.Dispose();
         base.OnExit(e);
     }
 }

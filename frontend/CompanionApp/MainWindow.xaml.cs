@@ -58,12 +58,19 @@ public partial class MainWindow : Window
         {
             Interval = TimeSpan.FromSeconds(15),
         };
-        _pollTimer.Tick += async (_, _) => await RefreshFromBackendAsync(showNotifications: true);
+        _pollTimer.Tick += async (_, _) => await TryRefreshFromBackendAsync(showNotifications: true);
 
         Loaded += async (_, _) =>
         {
-            await InitializeFromBackendAsync();
-            _pollTimer.Start();
+            try
+            {
+                await InitializeFromBackendAsync();
+                _pollTimer.Start();
+            }
+            catch (Exception ex)
+            {
+                ShowBackendFailure(ex, "Initialization failed");
+            }
         };
         Closing += MainWindow_Closing;
         StateChanged += MainWindow_StateChanged;
@@ -89,6 +96,18 @@ public partial class MainWindow : Window
 
         var historyResponse = await client.SendAsync("get_history", new Dictionary<string, object?> { ["limit"] = 50 });
         ApplyHistory(historyResponse.Payload, showNotifications);
+    }
+
+    private async Task TryRefreshFromBackendAsync(bool showNotifications)
+    {
+        try
+        {
+            await RefreshFromBackendAsync(showNotifications);
+        }
+        catch (Exception ex)
+        {
+            ShowBackendFailure(ex, "Backend refresh failed");
+        }
     }
 
     private void ApplyState(Dictionary<string, object?> payload)
@@ -210,13 +229,13 @@ public partial class MainWindow : Window
         try
         {
             var client = _backendProcessService.CreateClient();
-            var response = await client.SendAsync("send_user_message", new Dictionary<string, object?> { ["message"] = message });
-            await RefreshFromBackendAsync(showNotifications: false);
+            await client.SendAsync("send_user_message", new Dictionary<string, object?> { ["message"] = message });
+            await TryRefreshFromBackendAsync(showNotifications: false);
 
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show(this, ex.Message, "Send failed", MessageBoxButton.OK, MessageBoxImage.Error);
+            ShowBackendFailure(ex, "Send failed");
         }
         finally
         {
@@ -226,21 +245,28 @@ public partial class MainWindow : Window
 
     private async void PauseAutonomy_Click(object sender, RoutedEventArgs e)
     {
-        var client = _backendProcessService.CreateClient();
         var button = (System.Windows.Controls.Button)sender;
-        if (_autonomyPaused)
+        try
         {
-            await client.SendAsync("resume_autonomy", new Dictionary<string, object?>());
-            _autonomyPaused = false;
-            button.Content = "Pause Autonomy";
+            var client = _backendProcessService.CreateClient();
+            if (_autonomyPaused)
+            {
+                await client.SendAsync("resume_autonomy", new Dictionary<string, object?>());
+                _autonomyPaused = false;
+                button.Content = "Pause Autonomy";
+            }
+            else
+            {
+                await client.SendAsync("pause_autonomy", new Dictionary<string, object?>());
+                _autonomyPaused = true;
+                button.Content = "Resume Autonomy";
+            }
+            await TryRefreshFromBackendAsync(showNotifications: false);
         }
-        else
+        catch (Exception ex)
         {
-            await client.SendAsync("pause_autonomy", new Dictionary<string, object?>());
-            _autonomyPaused = true;
-            button.Content = "Resume Autonomy";
+            ShowBackendFailure(ex, "Autonomy update failed");
         }
-        await RefreshFromBackendAsync(showNotifications: false);
     }
 
     private async void Settings_Click(object sender, RoutedEventArgs e)
@@ -273,36 +299,50 @@ public partial class MainWindow : Window
             previousContextSize != _settings.ContextSize ||
             previousGpuLayers != _settings.GpuLayers;
 
-        if (requiresRestart)
+        try
         {
-            await _backendProcessService.RestartAsync();
-        }
-
-        var client = _backendProcessService.CreateClient();
-        await client.SendAsync(
-            "update_settings",
-            new Dictionary<string, object?>
+            if (requiresRestart)
             {
-                ["autonomy_enabled"] = _settings.AutonomyEnabled,
-                ["quiet_mode"] = _settings.QuietMode,
-                ["model_path"] = _settings.ModelPath,
-                ["persona_path"] = _settings.PersonaPath,
-                ["n_ctx"] = _settings.ContextSize,
-                ["n_gpu_layers"] = _settings.GpuLayers,
-            });
+                await _backendProcessService.RestartAsync();
+            }
 
-        QuietModeTextBlock.Text = _settings.QuietMode ? "Quiet mode: on" : "Quiet mode: off";
-        ModelPathTextBlock.Text = $"Model: {_settings.ModelPath}";
-        await RefreshFromBackendAsync(showNotifications: false);
+            var client = _backendProcessService.CreateClient();
+            await client.SendAsync(
+                "update_settings",
+                new Dictionary<string, object?>
+                {
+                    ["autonomy_enabled"] = _settings.AutonomyEnabled,
+                    ["quiet_mode"] = _settings.QuietMode,
+                    ["model_path"] = _settings.ModelPath,
+                    ["persona_path"] = _settings.PersonaPath,
+                    ["n_ctx"] = _settings.ContextSize,
+                    ["n_gpu_layers"] = _settings.GpuLayers,
+                });
+
+            QuietModeTextBlock.Text = _settings.QuietMode ? "Quiet mode: on" : "Quiet mode: off";
+            ModelPathTextBlock.Text = $"Model: {_settings.ModelPath}";
+            await TryRefreshFromBackendAsync(showNotifications: false);
+        }
+        catch (Exception ex)
+        {
+            ShowBackendFailure(ex, "Settings update failed");
+        }
     }
 
     private async Task ToggleQuietModeAsync()
     {
-        _settings.QuietMode = !_settings.QuietMode;
-        await _settingsStore.SaveAsync(_settings);
-        var client = _backendProcessService.CreateClient();
-        await client.SendAsync("update_settings", new Dictionary<string, object?> { ["quiet_mode"] = _settings.QuietMode });
-        QuietModeTextBlock.Text = _settings.QuietMode ? "Quiet mode: on" : "Quiet mode: off";
+        try
+        {
+            _settings.QuietMode = !_settings.QuietMode;
+            await _settingsStore.SaveAsync(_settings);
+            var client = _backendProcessService.CreateClient();
+            await client.SendAsync("update_settings", new Dictionary<string, object?> { ["quiet_mode"] = _settings.QuietMode });
+            QuietModeTextBlock.Text = _settings.QuietMode ? "Quiet mode: on" : "Quiet mode: off";
+        }
+        catch (Exception ex)
+        {
+            ShowBackendFailure(ex, "Quiet mode update failed");
+        }
     }
 
     private async Task ExitApplicationAsync()
@@ -352,6 +392,7 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             RuntimeProbeTextBlock.Text = $"Live check: failed to run probe | {ex.Message}";
+            ShowBackendFailure(ex, "Runtime probe failed", showDialog: false);
         }
     }
 
@@ -383,5 +424,17 @@ public partial class MainWindow : Window
         RuntimeProbeTextBlock.Text = checkedAt is not null
             ? $"Live check: {(ok ? "PASS" : "FAIL")} at {checkedAt} | {detail}"
             : $"Live check: {(ok ? "PASS" : "FAIL")} | {detail}";
+    }
+
+    private void ShowBackendFailure(Exception ex, string context, bool showDialog = true)
+    {
+        RuntimeTextBlock.Text = $"Backend issue: {context}";
+        RuntimeDetailTextBlock.Text = ex.Message;
+        StatusTextBlock.Text = "Backend disconnected";
+        ComposerHintTextBlock.Text = "Backend hiccup detected. Retry in a moment.";
+        if (showDialog)
+        {
+            System.Windows.MessageBox.Show(this, ex.Message, context, MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 }

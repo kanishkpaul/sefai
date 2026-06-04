@@ -56,18 +56,21 @@ class NamedPipeServer:
             )
             try:
                 win32pipe.ConnectNamedPipe(pipe, None)
-                while not self._stop_event.is_set():
-                    try:
-                        _, data = win32file.ReadFile(pipe, 65536)
-                    except pywintypes.error:
-                        break
-                    raw = data.decode("utf-8").strip()
-                    if not raw:
-                        continue
-                    request = MessageEnvelope.model_validate(json.loads(raw))
-                    future = asyncio.run_coroutine_threadsafe(self.handler(request), self._loop)
-                    response = future.result()
-                    payload = (response.model_dump_json() + "\n").encode("utf-8")
-                    win32file.WriteFile(pipe, payload)
+                try:
+                    _, data = win32file.ReadFile(pipe, 65536)
+                except pywintypes.error:
+                    continue
+                raw = data.decode("utf-8").strip()
+                if not raw:
+                    continue
+                request = MessageEnvelope.model_validate(json.loads(raw))
+                future = asyncio.run_coroutine_threadsafe(self.handler(request), self._loop)
+                response = future.result()
+                payload = (response.model_dump_json() + "\n").encode("utf-8")
+                win32file.WriteFile(pipe, payload)
             finally:
+                try:
+                    win32pipe.DisconnectNamedPipe(pipe)
+                except Exception:
+                    pass
                 win32file.CloseHandle(pipe)

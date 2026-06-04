@@ -19,9 +19,33 @@ public class BackendClient
     public async Task<BackendEnvelope> SendAsync(string type, Dictionary<string, object?> payload)
     {
         using var pipe = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
-        await pipe.ConnectAsync(5000);
-        using var writer = new StreamWriter(pipe, new UTF8Encoding(false), 4096, leaveOpen: true) { AutoFlush = true };
-        using var reader = new StreamReader(pipe, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, bufferSize: 4096, leaveOpen: true);
+        var started = DateTime.UtcNow;
+        Exception? lastError = null;
+        while (!pipe.IsConnected && DateTime.UtcNow - started < TimeSpan.FromSeconds(12))
+        {
+            try
+            {
+                await pipe.ConnectAsync(1200);
+            }
+            catch (TimeoutException ex)
+            {
+                lastError = ex;
+                await Task.Delay(150);
+            }
+            catch (IOException ex)
+            {
+                lastError = ex;
+                await Task.Delay(150);
+            }
+        }
+
+        if (!pipe.IsConnected)
+        {
+            throw new InvalidOperationException("Could not connect to the backend pipe.", lastError);
+        }
+
+        var writer = new StreamWriter(pipe, new UTF8Encoding(false), 4096, leaveOpen: true) { AutoFlush = true };
+        var reader = new StreamReader(pipe, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, bufferSize: 4096, leaveOpen: true);
 
         var envelope = new BackendEnvelope
         {

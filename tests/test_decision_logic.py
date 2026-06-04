@@ -19,3 +19,42 @@ async def test_refusal_logic_is_deterministic(tmp_path):
     assert decision_one.should_refuse is True
     assert decision_one.reason == decision_two.reason
     await app.db.close()
+
+
+@pytest.mark.asyncio
+async def test_greeting_is_not_refused(tmp_path):
+    settings = RuntimeSettings(
+        persona_path="persona.sample.json",
+        database_path=str(tmp_path / "companion.db"),
+        autonomy_enabled=False,
+    )
+    app = CompanionApplication(settings)
+    await app.db.connect()
+    app.persona = app.persona_service.load()
+
+    first = app._evaluate_message_against_persona("hi")
+    second = app._evaluate_message_against_persona("what's your name?")
+
+    assert first.should_refuse is False
+    assert second.should_refuse is False
+    await app.db.close()
+
+
+@pytest.mark.asyncio
+async def test_surface_refusal_requires_withdrawn_state(tmp_path):
+    settings = RuntimeSettings(
+        persona_path="persona.sample.json",
+        database_path=str(tmp_path / "companion.db"),
+        autonomy_enabled=False,
+    )
+    app = CompanionApplication(settings)
+    await app.db.connect()
+    app.persona = app.persona_service.load()
+
+    first = app._evaluate_message_against_persona("ok")
+    second = app._evaluate_message_against_persona("whatever")
+
+    assert first.should_refuse is False
+    assert second.should_refuse is True
+    assert second.reason == "surface_level_when_withdrawn"
+    await app.db.close()

@@ -148,6 +148,7 @@ class CompanionApplication:
         assert self.persona is not None
         lowered = message.lower().strip()
         engagement_score = self._rate_message_value_alignment(lowered)
+        simple_connection_prompt = self._is_simple_connection_prompt(lowered)
         self._update_mood(engagement_score)
 
         if "pretend to agree" in lowered or "just agree" in lowered:
@@ -164,11 +165,16 @@ class CompanionApplication:
                 refusal_response="No. I won't help you avoid your own standards. What's actually blocking the work?",
                 engagement_score=engagement_score,
             )
-        if engagement_score < 0.25:
+        if (
+            engagement_score < 0.25
+            and not simple_connection_prompt
+            and self.current_mood == "withdrawn"
+            and self.surface_message_streak >= self.persona.mood_rules.withdrawn_after_surface_messages
+        ):
             return MessageDecision(
                 should_refuse=True,
                 reason="surface_level_when_withdrawn",
-                refusal_response="That's too thin for where my head is right now. I won't ignore you, but I am asking for a sharper question underneath it.",
+                refusal_response="That's still skimming the surface. Stay with me for one more layer and tell me what you actually mean or want.",
                 engagement_score=engagement_score,
             )
         return MessageDecision(engagement_score=engagement_score)
@@ -200,6 +206,30 @@ class CompanionApplication:
         elif engagement_score > 0.3:
             self.current_mood = "curious"
 
+    def _is_simple_connection_prompt(self, message: str) -> bool:
+        normalized = message.replace("?", "").replace("'", "")
+        greetings = {
+            "hi",
+            "hello",
+            "hey",
+            "yo",
+            "sup",
+            "good morning",
+            "good afternoon",
+            "good evening",
+        }
+        simple_questions = (
+            "how are you",
+            "whats your name",
+            "what is your name",
+            "who are you",
+            "what are you doing",
+            "you there",
+        )
+        if normalized in greetings:
+            return True
+        return any(phrase in normalized for phrase in simple_questions)
+
     async def _store_companion_message(self, content: str, initiated_by: str) -> None:
         await self.db.save_message(
             MessageRecord(
@@ -215,6 +245,7 @@ class CompanionApplication:
         await self.db.log_event("autonomous_sent", {"message": message})
 
     async def _handle_initialize(self, envelope: MessageEnvelope) -> MessageEnvelope:
+        runtime_probe = await self._load_runtime_probe_state()
         return MessageEnvelope(
             type="initialized",
             request_id=envelope.request_id,
@@ -225,9 +256,7 @@ class CompanionApplication:
                 "runtime_error": self.inference.runtime_error,
                 "gguf_active": self.inference.gguf_runtime_active,
                 "runtime_label": self.inference.runtime_label,
-                "last_probe_ok": self.inference.last_probe_ok,
-                "last_probe_at": self.inference.last_probe_at,
-                "last_probe_detail": self.inference.last_probe_detail,
+                **runtime_probe,
             },
         )
 
@@ -248,6 +277,7 @@ class CompanionApplication:
             quiet_mode=self.settings.quiet_mode,
         )
         state.mood = self.current_mood
+        runtime_probe = await self._load_runtime_probe_state()
         return MessageEnvelope(
             type="state_snapshot",
             request_id=envelope.request_id,
@@ -258,14 +288,19 @@ class CompanionApplication:
                 "runtime_error": self.inference.runtime_error,
                 "gguf_active": self.inference.gguf_runtime_active,
                 "runtime_label": self.inference.runtime_label,
-                "last_probe_ok": self.inference.last_probe_ok,
-                "last_probe_at": self.inference.last_probe_at,
-                "last_probe_detail": self.inference.last_probe_detail,
+                **runtime_probe,
             },
         )
 
     async def _handle_probe_runtime(self, envelope: MessageEnvelope) -> MessageEnvelope:
         probe = self.inference.probe_runtime(self.persona)
+        runtime_probe = {
+            "last_probe_ok": probe["ok"],
+            "last_probe_at": probe["checked_at"],
+            "last_probe_detail": probe["detail"],
+        }
+        for key, value in runtime_probe.items():
+            await self.db.save_setting(key, value)
         return MessageEnvelope(
             type="runtime_probe_result",
             request_id=envelope.request_id,
@@ -275,6 +310,14 @@ class CompanionApplication:
                 "runtime_error": self.inference.runtime_error,
             },
         )
+
+    async def _load_runtime_probe_state(self) -> dict[str, object | None]:
+        settings = await self.db.fetch_settings()
+        return {
+            "last_probe_ok": settings.get("last_probe_ok", False),
+            "last_probe_at": settings.get("last_probe_at"),
+            "last_probe_detail": settings.get("last_probe_detail", "No runtime probe has been run yet."),
+        }
 
     async def _handle_update_persona(self, envelope: MessageEnvelope) -> MessageEnvelope:
         updated = Persona.model_validate(envelope.payload["persona"])
