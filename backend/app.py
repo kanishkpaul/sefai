@@ -386,12 +386,14 @@ class CompanionApplication:
 
     async def _handle_pause_autonomy(self, envelope: MessageEnvelope) -> MessageEnvelope:
         self.settings.autonomy_enabled = False
+        await self.db.save_setting("autonomy_enabled", False)
         if self.autonomy_engine:
             self.autonomy_engine.set_autonomy_enabled(False)
         return MessageEnvelope(type="autonomy_paused", request_id=envelope.request_id, payload={"autonomy_enabled": False})
 
     async def _handle_resume_autonomy(self, envelope: MessageEnvelope) -> MessageEnvelope:
         self.settings.autonomy_enabled = True
+        await self.db.save_setting("autonomy_enabled", True)
         if self.autonomy_engine:
             self.autonomy_engine.set_autonomy_enabled(True)
         return MessageEnvelope(type="autonomy_resumed", request_id=envelope.request_id, payload={"autonomy_enabled": True})

@@ -269,25 +269,31 @@ public partial class MainWindow : Window
 
     private async void PauseAutonomy_Click(object sender, RoutedEventArgs e)
     {
+        var previousAutonomyEnabled = _settings.AutonomyEnabled;
         try
         {
             var client = _backendProcessService.CreateClient();
             if (_autonomyPaused)
             {
                 await client.SendAsync("resume_autonomy", new Dictionary<string, object?>());
+                _settings.AutonomyEnabled = true;
                 _autonomyPaused = false;
                 AutonomyButton.Content = "Pause Autonomy";
             }
             else
             {
                 await client.SendAsync("pause_autonomy", new Dictionary<string, object?>());
+                _settings.AutonomyEnabled = false;
                 _autonomyPaused = true;
                 AutonomyButton.Content = "Resume Autonomy";
             }
+            await _settingsStore.SaveAsync(_settings);
             await TryRefreshFromBackendAsync(showNotifications: false);
         }
         catch (Exception ex)
         {
+            _settings.AutonomyEnabled = previousAutonomyEnabled;
+            await _settingsStore.SaveAsync(_settings);
             if (!await TryRecoverBackendAsync(ex, "Autonomy update failed"))
             {
                 ShowBackendFailure(ex, "Autonomy update failed");

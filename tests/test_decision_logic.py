@@ -2,6 +2,7 @@ import pytest
 
 from backend.app import CompanionApplication
 from backend.config import RuntimeSettings
+from backend.models import MessageEnvelope
 
 
 @pytest.mark.asyncio
@@ -74,4 +75,28 @@ async def test_connection_prompt_variants_are_treated_as_connection(tmp_path):
     assert app._is_simple_connection_prompt("hiii") is True
     assert app._is_simple_connection_prompt("can you talk to me") is True
     assert app._generate_connection_reply("what's your name?").startswith("I'm Aria")
+    await app.db.close()
+
+
+@pytest.mark.asyncio
+async def test_pause_and_resume_autonomy_persist_setting(tmp_path):
+    settings = RuntimeSettings(
+        persona_path="persona.sample.json",
+        database_path=str(tmp_path / "companion.db"),
+        autonomy_enabled=True,
+    )
+    app = CompanionApplication(settings)
+    await app.db.connect()
+    app.persona = app.persona_service.load()
+
+    pause_response = await app._handle_pause_autonomy(MessageEnvelope(type="pause_autonomy", request_id="pause"))
+    persisted_after_pause = await app.db.fetch_settings()
+
+    resume_response = await app._handle_resume_autonomy(MessageEnvelope(type="resume_autonomy", request_id="resume"))
+    persisted_after_resume = await app.db.fetch_settings()
+
+    assert pause_response.payload["autonomy_enabled"] is False
+    assert persisted_after_pause["autonomy_enabled"] is False
+    assert resume_response.payload["autonomy_enabled"] is True
+    assert persisted_after_resume["autonomy_enabled"] is True
     await app.db.close()
