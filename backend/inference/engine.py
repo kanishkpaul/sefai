@@ -28,6 +28,9 @@ class InferenceEngine:
         self._cli_path = Path(settings.llama_cli_path)
         self.runtime_mode = "uninitialized"
         self.runtime_error: str | None = None
+        self.last_probe_at: str | None = None
+        self.last_probe_ok = False
+        self.last_probe_detail = "No runtime probe has been run yet."
 
     def initialize(self) -> None:
         if self.settings.prefer_llama_cli and self._cli_path.exists():
@@ -68,6 +71,62 @@ class InferenceEngine:
         if self.runtime_mode == "llama_cli":
             return "GGUF via llama.cpp CLI"
         return "Fallback responder"
+
+    def probe_runtime(self, persona: Persona | None = None) -> dict[str, Any]:
+        from datetime import datetime
+
+        self.last_probe_at = datetime.now().isoformat(timespec="seconds")
+
+        if not Path(self.settings.model_path).exists():
+            self.last_probe_ok = False
+            self.last_probe_detail = f"Model file not found at {self.settings.model_path}"
+            return {
+                "ok": self.last_probe_ok,
+                "checked_at": self.last_probe_at,
+                "detail": self.last_probe_detail,
+                "runtime_mode": self.runtime_mode,
+            }
+
+        try:
+            if self.runtime_mode == "llama_cli" and self._cli_path.exists():
+                text = self._generate_via_cli(
+                    "You are a runtime health check. Reply with exactly: runtime ok.",
+                    "Reply with exactly: runtime ok",
+                    0.0,
+                    max_predict=12,
+                )
+                self.last_probe_ok = "runtime" in text.lower() and "ok" in text.lower()
+                self.last_probe_detail = f"llama.cpp CLI responded: {text.strip()[:120]}"
+            elif self.runtime_mode == "llama_cpp" and self._llm is not None:
+                response = self._llm.create_chat_completion(
+                    messages=[
+                        {"role": "system", "content": "You are a runtime health check. Reply with exactly: runtime ok."},
+                        {"role": "user", "content": "Reply with exactly: runtime ok"},
+                    ],
+                    temperature=0.0,
+                    top_p=0.1,
+                    max_tokens=12,
+                    stream=False,
+                )
+                text = response["choices"][0]["message"]["content"].strip()
+                self.last_probe_ok = "runtime" in text.lower() and "ok" in text.lower()
+                self.last_probe_detail = f"llama-cpp-python responded: {text[:120]}"
+            else:
+                self.last_probe_ok = False
+                self.last_probe_detail = "No active GGUF runtime is selected."
+        except Exception as exc:
+            self.last_probe_ok = False
+            self.last_probe_detail = f"Runtime probe failed: {exc}"
+
+        if not self.last_probe_ok and self.runtime_error:
+            self.last_probe_detail = f"{self.last_probe_detail} | {self.runtime_error}"
+
+        return {
+            "ok": self.last_probe_ok,
+            "checked_at": self.last_probe_at,
+            "detail": self.last_probe_detail,
+            "runtime_mode": self.runtime_mode,
+        }
 
     def generate(self, persona: Persona, context: str, user_message: str, temperature: float | None = None) -> CompletionResult:
         chosen_temperature = self.settings.temperature if temperature is None else temperature
@@ -140,7 +199,7 @@ class InferenceEngine:
             "What are you really trying to ask or test?"
         )
 
-    def _generate_via_cli(self, system_prompt: str, user_message: str, temperature: float) -> str:
+    def _generate_via_cli(self, system_prompt: str, user_message: str, temperature: float, max_predict: int = 300) -> str:
         with tempfile.TemporaryDirectory(prefix="sefai_llama_") as temp_dir:
             temp_path = Path(temp_dir)
             system_file = temp_path / "system.txt"
@@ -157,7 +216,7 @@ class InferenceEngine:
                 "--ctx-size",
                 str(min(self.settings.n_ctx, 4096)),
                 "--predict",
-                "300",
+                str(max_predict),
                 "--threads",
                 str(self.settings.n_threads),
                 "--temp",

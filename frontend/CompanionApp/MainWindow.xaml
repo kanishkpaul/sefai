@@ -116,8 +116,10 @@
                         <StackPanel>
                             <TextBlock x:Name="GgufStatusTextBlock" FontSize="16" FontWeight="SemiBold" Text="GGUF STATUS: CHECKING" />
                             <TextBlock x:Name="RuntimeDetailTextBlock" Margin="0,6,0,0" Foreground="{StaticResource MutedTextBrush}" Text="Runtime provider not resolved yet." TextWrapping="Wrap" />
+                            <TextBlock x:Name="RuntimeProbeTextBlock" Margin="0,6,0,0" Foreground="{StaticResource MutedTextBrush}" Text="Live probe not run yet." TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
+                    <Button Width="128" Height="34" Margin="0,12,0,0" HorizontalAlignment="Left" Click="ProbeRuntime_Click" Content="Check GGUF" />
                     <TextBlock x:Name="ModelPathTextBlock" Margin="0,8,0,0" TextWrapping="Wrap" />
                     <TextBlock x:Name="QuietModeTextBlock" Margin="0,8,0,0" />
                 </StackPanel>

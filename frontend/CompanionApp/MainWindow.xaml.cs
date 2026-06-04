@@ -122,11 +122,21 @@ public partial class MainWindow : Window
         var runtimeLabel = root.TryGetProperty("runtime_label", out var runtimeLabelElement)
             ? runtimeLabelElement.GetString() ?? runtimeMode
             : runtimeMode;
+        var lastProbeOk = root.TryGetProperty("last_probe_ok", out var lastProbeOkElement) && lastProbeOkElement.GetBoolean();
+        var lastProbeAt = root.TryGetProperty("last_probe_at", out var lastProbeAtElement)
+            ? lastProbeAtElement.GetString()
+            : null;
+        var lastProbeDetail = root.TryGetProperty("last_probe_detail", out var lastProbeDetailElement)
+            ? lastProbeDetailElement.GetString() ?? "Live probe not run yet."
+            : "Live probe not run yet.";
         RuntimeTextBlock.Text = ggufActive
             ? "Backend: live GGUF runtime detected"
             : $"Backend: non-GGUF fallback path ({runtimeMode})";
         GgufStatusTextBlock.Text = ggufActive ? "GGUF STATUS: ACTIVE" : "GGUF STATUS: NOT RUNNING";
         RuntimeDetailTextBlock.Text = runtimeLabel;
+        RuntimeProbeTextBlock.Text = lastProbeAt is not null
+            ? $"Live check: {(lastProbeOk ? "PASS" : "FAIL")} at {lastProbeAt} | {lastProbeDetail}"
+            : $"Live check: pending | {lastProbeDetail}";
         if (!string.IsNullOrWhiteSpace(runtimeError))
         {
             RuntimeTextBlock.Text += $" - {runtimeError}";
@@ -328,5 +338,50 @@ public partial class MainWindow : Window
         Show();
         WindowState = WindowState.Normal;
         Activate();
+    }
+
+    private async void ProbeRuntime_Click(object sender, RoutedEventArgs e)
+    {
+        RuntimeProbeTextBlock.Text = "Live check: running probe against GGUF runtime...";
+        try
+        {
+            var client = _backendProcessService.CreateClient();
+            var response = await client.SendAsync("probe_runtime", new Dictionary<string, object?>());
+            ApplyRuntimeProbe(response.Payload);
+        }
+        catch (Exception ex)
+        {
+            RuntimeProbeTextBlock.Text = $"Live check: failed to run probe | {ex.Message}";
+        }
+    }
+
+    private void ApplyRuntimeProbe(Dictionary<string, object?> payload)
+    {
+        var json = JsonSerializer.Serialize(payload);
+        using var document = JsonDocument.Parse(json);
+        var root = document.RootElement;
+
+        var ok = root.TryGetProperty("ok", out var okElement) && okElement.GetBoolean();
+        var checkedAt = root.TryGetProperty("checked_at", out var checkedAtElement)
+            ? checkedAtElement.GetString()
+            : null;
+        var detail = root.TryGetProperty("detail", out var detailElement)
+            ? detailElement.GetString() ?? "No detail returned."
+            : "No detail returned.";
+        var runtimeLabel = root.TryGetProperty("runtime_label", out var runtimeLabelElement)
+            ? runtimeLabelElement.GetString() ?? "Unknown runtime"
+            : "Unknown runtime";
+        var runtimeError = root.TryGetProperty("runtime_error", out var runtimeErrorElement)
+            ? runtimeErrorElement.GetString()
+            : null;
+
+        GgufStatusTextBlock.Text = ok ? "GGUF STATUS: ACTIVE" : "GGUF STATUS: NOT RUNNING";
+        RuntimeTextBlock.Text = ok ? "Backend: live GGUF runtime detected" : "Backend: runtime probe failed";
+        RuntimeDetailTextBlock.Text = string.IsNullOrWhiteSpace(runtimeError)
+            ? runtimeLabel
+            : $"{runtimeLabel} | {runtimeError}";
+        RuntimeProbeTextBlock.Text = checkedAt is not null
+            ? $"Live check: {(ok ? "PASS" : "FAIL")} at {checkedAt} | {detail}"
+            : $"Live check: {(ok ? "PASS" : "FAIL")} | {detail}";
     }
 }

@@ -74,6 +74,7 @@ class CompanionApplication:
             "send_user_message": self._handle_send_user_message,
             "get_history": self._handle_get_history,
             "get_state": self._handle_get_state,
+            "probe_runtime": self._handle_probe_runtime,
             "update_persona": self._handle_update_persona,
             "update_settings": self._handle_update_settings,
             "pause_autonomy": self._handle_pause_autonomy,
@@ -224,6 +225,9 @@ class CompanionApplication:
                 "runtime_error": self.inference.runtime_error,
                 "gguf_active": self.inference.gguf_runtime_active,
                 "runtime_label": self.inference.runtime_label,
+                "last_probe_ok": self.inference.last_probe_ok,
+                "last_probe_at": self.inference.last_probe_at,
+                "last_probe_detail": self.inference.last_probe_detail,
             },
         )
 
@@ -254,6 +258,21 @@ class CompanionApplication:
                 "runtime_error": self.inference.runtime_error,
                 "gguf_active": self.inference.gguf_runtime_active,
                 "runtime_label": self.inference.runtime_label,
+                "last_probe_ok": self.inference.last_probe_ok,
+                "last_probe_at": self.inference.last_probe_at,
+                "last_probe_detail": self.inference.last_probe_detail,
+            },
+        )
+
+    async def _handle_probe_runtime(self, envelope: MessageEnvelope) -> MessageEnvelope:
+        probe = self.inference.probe_runtime(self.persona)
+        return MessageEnvelope(
+            type="runtime_probe_result",
+            request_id=envelope.request_id,
+            payload=probe | {
+                "gguf_active": self.inference.gguf_runtime_active,
+                "runtime_label": self.inference.runtime_label,
+                "runtime_error": self.inference.runtime_error,
             },
         )
 
