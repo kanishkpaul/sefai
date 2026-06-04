@@ -50,4 +50,54 @@ public class AppSettings
         NotificationsEnabled = other.NotificationsEnabled;
         QuietMode = other.QuietMode;
     }
+
+    public void Normalize()
+    {
+        var defaults = new AppSettings();
+
+        if (string.IsNullOrWhiteSpace(ModelPath))
+        {
+            ModelPath = defaults.ModelPath;
+        }
+
+        if (string.IsNullOrWhiteSpace(PersonaPath))
+        {
+            PersonaPath = defaults.PersonaPath;
+        }
+
+        if (string.IsNullOrWhiteSpace(DatabasePath))
+        {
+            DatabasePath = defaults.DatabasePath;
+        }
+
+        if (string.IsNullOrWhiteSpace(PipeName))
+        {
+            PipeName = defaults.PipeName;
+        }
+
+        if (ContextSize <= 0)
+        {
+            ContextSize = defaults.ContextSize;
+        }
+
+        if (ThreadCount <= 0)
+        {
+            ThreadCount = defaults.ThreadCount;
+        }
+
+        if (GpuLayers < 0)
+        {
+            GpuLayers = defaults.GpuLayers;
+        }
+
+        if (Temperature < 0 || double.IsNaN(Temperature) || double.IsInfinity(Temperature))
+        {
+            Temperature = defaults.Temperature;
+        }
+
+        if (TopP <= 0 || TopP > 1 || double.IsNaN(TopP) || double.IsInfinity(TopP))
+        {
+            TopP = defaults.TopP;
+        }
+    }
 }

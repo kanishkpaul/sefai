@@ -19,17 +19,31 @@ public class SettingsStore
         if (!File.Exists(SettingsPath))
         {
             var defaults = new AppSettings();
+            defaults.Normalize();
             await SaveAsync(defaults);
             return defaults;
         }
 
-        await using var stream = File.OpenRead(SettingsPath);
-        var loaded = await JsonSerializer.DeserializeAsync<AppSettings>(stream, _jsonOptions);
-        return loaded ?? new AppSettings();
+        try
+        {
+            await using var stream = File.OpenRead(SettingsPath);
+            var loaded = await JsonSerializer.DeserializeAsync<AppSettings>(stream, _jsonOptions) ?? new AppSettings();
+            loaded.Normalize();
+            await SaveAsync(loaded);
+            return loaded;
+        }
+        catch (JsonException)
+        {
+            var defaults = new AppSettings();
+            defaults.Normalize();
+            await SaveAsync(defaults);
+            return defaults;
+        }
     }
 
     public async Task SaveAsync(AppSettings settings)
     {
+        settings.Normalize();
         Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
         await using var stream = File.Create(SettingsPath);
         await JsonSerializer.SerializeAsync(stream, settings, _jsonOptions);
