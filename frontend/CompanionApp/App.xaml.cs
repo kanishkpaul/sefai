@@ -9,6 +9,7 @@ namespace CompanionApp;
 public partial class App : System.Windows.Application
 {
     private static Mutex? _singleInstanceMutex;
+    private static bool _ownsSingleInstanceMutex;
     private BackendProcessService? _backendProcessService;
     private StartupRegistrationService? _startupRegistrationService;
 
@@ -19,6 +20,7 @@ public partial class App : System.Windows.Application
         try
         {
             _singleInstanceMutex = new Mutex(initiallyOwned: true, name: "Local\\SefaiCompanionSingleton", createdNew: out var createdNew);
+            _ownsSingleInstanceMutex = createdNew;
             if (!createdNew)
             {
                 ShutdownMode = ShutdownMode.OnExplicitShutdown;
@@ -78,7 +80,10 @@ public partial class App : System.Windows.Application
         catch
         {
         }
-        _singleInstanceMutex?.ReleaseMutex();
+        if (_ownsSingleInstanceMutex)
+        {
+            _singleInstanceMutex?.ReleaseMutex();
+        }
         _singleInstanceMutex?.Dispose();
         base.OnExit(e);
     }
