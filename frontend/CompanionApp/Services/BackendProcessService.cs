@@ -6,12 +6,13 @@ namespace CompanionApp.Services;
 
 public class BackendProcessService : IAsyncDisposable
 {
-    private const string LlamaVersion = "b9490";
     private readonly AppSettings _settings;
     private Process? _process;
     private readonly string _workingDirectory;
     private readonly string _backendEntryPoint;
     private readonly LlamaRuntimeProvisioner _llamaRuntimeProvisioner;
+
+    public event EventHandler? BackendExited;
 
     public BackendProcessService(AppSettings settings)
     {
@@ -22,6 +23,27 @@ public class BackendProcessService : IAsyncDisposable
     }
 
     public BackendClient CreateClient() => new(_settings.PipeName);
+
+    public bool IsBackendProcessRunning
+    {
+        get
+        {
+            if (_process is null)
+            {
+                return false;
+            }
+
+            try
+            {
+                _process.Refresh();
+                return !_process.HasExited;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
 
     public async Task StartAsync()
     {
@@ -65,6 +87,12 @@ public class BackendProcessService : IAsyncDisposable
         startInfo.Environment["SEFAI_NOTIFICATIONS_ENABLED"] = _settings.NotificationsEnabled.ToString().ToLowerInvariant();
         startInfo.Environment["SEFAI_QUIET_MODE"] = _settings.QuietMode.ToString().ToLowerInvariant();
         _process = Process.Start(startInfo) ?? throw new InvalidOperationException("Failed to start backend process.");
+        _process.EnableRaisingEvents = true;
+        _process.Exited += HandleBackendExited;
+        _process.OutputDataReceived += (_, _) => { };
+        _process.ErrorDataReceived += (_, _) => { };
+        _process.BeginOutputReadLine();
+        _process.BeginErrorReadLine();
 
         await WaitForHealthyAsync();
     }
@@ -117,6 +145,11 @@ public class BackendProcessService : IAsyncDisposable
             _process.Kill(entireProcessTree: true);
             await _process.WaitForExitAsync();
         }
+    }
+
+    private void HandleBackendExited(object? sender, EventArgs e)
+    {
+        BackendExited?.Invoke(this, EventArgs.Empty);
     }
 
     private static string ResolveRepositoryRoot()

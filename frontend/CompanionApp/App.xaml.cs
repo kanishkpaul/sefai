@@ -16,48 +16,67 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
 
-        _singleInstanceMutex = new Mutex(initiallyOwned: true, name: "Local\\SefaiCompanionSingleton", createdNew: out var createdNew);
-        if (!createdNew)
+        try
         {
+            _singleInstanceMutex = new Mutex(initiallyOwned: true, name: "Local\\SefaiCompanionSingleton", createdNew: out var createdNew);
+            if (!createdNew)
+            {
+                ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                Shutdown();
+                return;
+            }
+
+            var settingsStore = new SettingsStore();
+            var settings = await settingsStore.LoadAsync();
+            _backendProcessService = new BackendProcessService(settings);
+            _startupRegistrationService = new StartupRegistrationService();
+
+            if (settings.StartAtLogin)
+            {
+                _startupRegistrationService.Enable();
+            }
+            else
+            {
+                _startupRegistrationService.Disable();
+            }
+
+            if (!File.Exists(settings.PersonaPath))
+            {
+                var onboarding = new OnboardingWindow(settingsStore, settings);
+                onboarding.ShowDialog();
+                settings = await settingsStore.LoadAsync();
+                _backendProcessService = new BackendProcessService(settings);
+            }
+
+            await _backendProcessService.StartAsync();
+
+            var mainWindow = new MainWindow(settingsStore, settings, _backendProcessService, _startupRegistrationService);
+            MainWindow = mainWindow;
+            mainWindow.Show();
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(
+                ex.Message,
+                "Sefai Companion failed to start",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
             Shutdown();
-            return;
         }
-
-        var settingsStore = new SettingsStore();
-        var settings = await settingsStore.LoadAsync();
-        _backendProcessService = new BackendProcessService(settings);
-        _startupRegistrationService = new StartupRegistrationService();
-
-        if (settings.StartAtLogin)
-        {
-            _startupRegistrationService.Enable();
-        }
-        else
-        {
-            _startupRegistrationService.Disable();
-        }
-
-        if (!File.Exists(settings.PersonaPath))
-        {
-            var onboarding = new OnboardingWindow(settingsStore, settings);
-            onboarding.ShowDialog();
-            settings = await settingsStore.LoadAsync();
-            _backendProcessService = new BackendProcessService(settings);
-        }
-
-        await _backendProcessService.StartAsync();
-
-        var mainWindow = new MainWindow(settingsStore, settings, _backendProcessService, _startupRegistrationService);
-        MainWindow = mainWindow;
-        mainWindow.Show();
     }
 
     protected override async void OnExit(ExitEventArgs e)
     {
-        if (_backendProcessService is not null)
+        try
         {
-            await _backendProcessService.DisposeAsync();
+            if (_backendProcessService is not null)
+            {
+                await _backendProcessService.DisposeAsync();
+            }
+        }
+        catch
+        {
         }
         _singleInstanceMutex?.ReleaseMutex();
         _singleInstanceMutex?.Dispose();

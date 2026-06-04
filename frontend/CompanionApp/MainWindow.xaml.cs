@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Threading;
@@ -18,10 +19,12 @@ public partial class MainWindow : Window
     private readonly ObservableCollection<ChatMessage> _chatMessages = new();
     private readonly ObservableCollection<string> _timelineEvents = new();
     private readonly DispatcherTimer _pollTimer;
+    private readonly DispatcherTimer _backendWatchdogTimer;
     private readonly Forms.NotifyIcon _notifyIcon;
     private AppSettings _settings;
     private bool _autonomyPaused;
     private bool _allowClose;
+    private bool _isRecoveringBackend;
     private int _seenMessageCount;
 
     public MainWindow(
@@ -35,6 +38,7 @@ public partial class MainWindow : Window
         _settings = settings;
         _backendProcessService = backendProcessService;
         _startupRegistrationService = startupRegistrationService;
+        _backendProcessService.BackendExited += BackendProcessService_BackendExited;
 
         ChatListBox.ItemsSource = _chatMessages;
         TimelineListBox.ItemsSource = _timelineEvents;
@@ -60,12 +64,19 @@ public partial class MainWindow : Window
         };
         _pollTimer.Tick += async (_, _) => await TryRefreshFromBackendAsync(showNotifications: true);
 
+        _backendWatchdogTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(5),
+        };
+        _backendWatchdogTimer.Tick += async (_, _) => await EnsureBackendProcessAsync();
+
         Loaded += async (_, _) =>
         {
             try
             {
                 await InitializeFromBackendAsync();
                 _pollTimer.Start();
+                _backendWatchdogTimer.Start();
             }
             catch (Exception ex)
             {
@@ -106,6 +117,11 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
+            if (await TryRecoverBackendAsync(ex, "Backend refresh failed"))
+            {
+                await RefreshFromBackendAsync(showNotifications);
+                return;
+            }
             ShowBackendFailure(ex, "Backend refresh failed");
         }
     }
@@ -235,7 +251,10 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            ShowBackendFailure(ex, "Send failed");
+            if (!await TryRecoverBackendAsync(ex, "Send failed"))
+            {
+                ShowBackendFailure(ex, "Send failed");
+            }
         }
         finally
         {
@@ -265,7 +284,10 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            ShowBackendFailure(ex, "Autonomy update failed");
+            if (!await TryRecoverBackendAsync(ex, "Autonomy update failed"))
+            {
+                ShowBackendFailure(ex, "Autonomy update failed");
+            }
         }
     }
 
@@ -325,7 +347,10 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            ShowBackendFailure(ex, "Settings update failed");
+            if (!await TryRecoverBackendAsync(ex, "Settings update failed"))
+            {
+                ShowBackendFailure(ex, "Settings update failed");
+            }
         }
     }
 
@@ -341,7 +366,10 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            ShowBackendFailure(ex, "Quiet mode update failed");
+            if (!await TryRecoverBackendAsync(ex, "Quiet mode update failed"))
+            {
+                ShowBackendFailure(ex, "Quiet mode update failed");
+            }
         }
     }
 
@@ -349,6 +377,7 @@ public partial class MainWindow : Window
     {
         _notifyIcon.Visible = false;
         _pollTimer.Stop();
+        _backendWatchdogTimer.Stop();
         _allowClose = true;
         await _backendProcessService.DisposeAsync();
         System.Windows.Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
@@ -392,7 +421,10 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             RuntimeProbeTextBlock.Text = $"Live check: failed to run probe | {ex.Message}";
-            ShowBackendFailure(ex, "Runtime probe failed", showDialog: false);
+            if (!await TryRecoverBackendAsync(ex, "Runtime probe failed"))
+            {
+                ShowBackendFailure(ex, "Runtime probe failed", showDialog: false);
+            }
         }
     }
 
@@ -436,5 +468,82 @@ public partial class MainWindow : Window
         {
             System.Windows.MessageBox.Show(this, ex.Message, context, MessageBoxButton.OK, MessageBoxImage.Warning);
         }
+    }
+
+    private async Task<bool> TryRecoverBackendAsync(Exception ex, string context)
+    {
+        if (_isRecoveringBackend || !LooksLikeBackendConnectionFailure(ex))
+        {
+            return false;
+        }
+
+        _isRecoveringBackend = true;
+        try
+        {
+            RuntimeTextBlock.Text = $"Backend issue: {context}";
+            RuntimeDetailTextBlock.Text = "Trying to restart backend...";
+            StatusTextBlock.Text = "Recovering backend";
+            await _backendProcessService.RestartAsync();
+            await RefreshFromBackendAsync(showNotifications: false);
+            ComposerHintTextBlock.Text = "Backend recovered. You can keep going.";
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+        finally
+        {
+            _isRecoveringBackend = false;
+        }
+    }
+
+    private static bool LooksLikeBackendConnectionFailure(Exception ex)
+    {
+        return ex is IOException
+            || ex is TimeoutException
+            || ex.Message.Contains("pipe", StringComparison.OrdinalIgnoreCase)
+            || ex.Message.Contains("backend", StringComparison.OrdinalIgnoreCase)
+            || ex.Message.Contains("semaphore timeout", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task EnsureBackendProcessAsync()
+    {
+        if (_isRecoveringBackend || _backendProcessService.IsBackendProcessRunning)
+        {
+            return;
+        }
+
+        _isRecoveringBackend = true;
+        try
+        {
+            RuntimeTextBlock.Text = "Backend issue: process stopped";
+            RuntimeDetailTextBlock.Text = "Restarting backend process...";
+            StatusTextBlock.Text = "Recovering backend";
+            await _backendProcessService.StartAsync();
+            await RefreshFromBackendAsync(showNotifications: false);
+            ComposerHintTextBlock.Text = "Backend recovered. You can keep going.";
+        }
+        catch (Exception ex)
+        {
+            ShowBackendFailure(ex, "Backend process restart failed", showDialog: false);
+        }
+        finally
+        {
+            _isRecoveringBackend = false;
+        }
+    }
+
+    private void BackendProcessService_BackendExited(object? sender, EventArgs e)
+    {
+        _ = Dispatcher.BeginInvoke(async () =>
+        {
+            if (_allowClose)
+            {
+                return;
+            }
+
+            await EnsureBackendProcessAsync();
+        });
     }
 }
