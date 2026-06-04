@@ -29,6 +29,17 @@ public partial class OnboardingWindow : Window
             _settings.PersonaPath = PersonaPathTextBox.Text.Trim();
             _settings.AutonomyEnabled = AutonomyCheckBox.IsChecked == true;
             _settings.StartAtLogin = StartupCheckBox.IsChecked == true;
+
+            if (!System.IO.File.Exists(_settings.ModelPath))
+            {
+                throw new InvalidOperationException($"Model file was not found at '{_settings.ModelPath}'.");
+            }
+
+            if (!System.IO.File.Exists(_settings.PersonaPath))
+            {
+                throw new InvalidOperationException($"Persona file was not found at '{_settings.PersonaPath}'.");
+            }
+
             await _settingsStore.SaveAsync(_settings);
             DialogResult = true;
             Close();

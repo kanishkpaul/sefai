@@ -1,19 +1,16 @@
 using System.Windows;
 using CompanionApp.Models;
-using CompanionApp.Services;
 
 namespace CompanionApp.Views;
 
 public partial class SettingsWindow : Window
 {
-    private readonly SettingsStore _settingsStore;
     private readonly AppSettings _workingCopy;
     public AppSettings Settings { get; }
 
-    public SettingsWindow(SettingsStore settingsStore, AppSettings settings)
+    public SettingsWindow(AppSettings settings)
     {
         InitializeComponent();
-        _settingsStore = settingsStore;
         _workingCopy = settings.Clone();
         Settings = _workingCopy;
 
@@ -27,7 +24,7 @@ public partial class SettingsWindow : Window
         QuietModeCheckBox.IsChecked = _workingCopy.QuietMode;
     }
 
-    private async void Save_Click(object sender, RoutedEventArgs e)
+    private void Save_Click(object sender, RoutedEventArgs e)
     {
         try
         {
@@ -40,7 +37,16 @@ public partial class SettingsWindow : Window
             Settings.NotificationsEnabled = NotificationsCheckBox.IsChecked == true;
             Settings.QuietMode = QuietModeCheckBox.IsChecked == true;
 
-            await _settingsStore.SaveAsync(Settings);
+            if (!System.IO.File.Exists(Settings.ModelPath))
+            {
+                throw new InvalidOperationException($"Model file was not found at '{Settings.ModelPath}'.");
+            }
+
+            if (!System.IO.File.Exists(Settings.PersonaPath))
+            {
+                throw new InvalidOperationException($"Persona file was not found at '{Settings.PersonaPath}'.");
+            }
+
             DialogResult = true;
             Close();
         }

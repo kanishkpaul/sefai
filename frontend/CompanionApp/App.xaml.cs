@@ -45,8 +45,17 @@ public partial class App : System.Windows.Application
             if (!File.Exists(settings.PersonaPath))
             {
                 var onboarding = new OnboardingWindow(settingsStore, settings);
-                onboarding.ShowDialog();
+                if (onboarding.ShowDialog() != true)
+                {
+                    ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                    Shutdown();
+                    return;
+                }
                 settings = await settingsStore.LoadAsync();
+                if (!File.Exists(settings.PersonaPath) || !File.Exists(settings.ModelPath))
+                {
+                    throw new InvalidOperationException("Onboarding did not produce valid local model/persona paths.");
+                }
                 _backendProcessService = new BackendProcessService(settings);
             }
 

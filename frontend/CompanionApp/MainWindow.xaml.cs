@@ -298,7 +298,7 @@ public partial class MainWindow : Window
     private async void Settings_Click(object sender, RoutedEventArgs e)
     {
         var previousSettings = _settings.Clone();
-        var dialog = new SettingsWindow(_settingsStore, _settings) { Owner = this };
+        var dialog = new SettingsWindow(_settings) { Owner = this };
         if (dialog.ShowDialog() != true)
         {
             return;
