@@ -8,6 +8,7 @@ public class BackendProcessService : IAsyncDisposable
 {
     private readonly AppSettings _settings;
     private Process? _process;
+    private bool _suppressExitNotification;
     private readonly string _workingDirectory;
     private readonly string _backendEntryPoint;
     private readonly LlamaRuntimeProvisioner _llamaRuntimeProvisioner;
@@ -99,8 +100,16 @@ public class BackendProcessService : IAsyncDisposable
 
     public async Task RestartAsync()
     {
-        await DisposeAsync();
-        await StartAsync();
+        _suppressExitNotification = true;
+        try
+        {
+            await DisposeAsync();
+            await StartAsync();
+        }
+        finally
+        {
+            _suppressExitNotification = false;
+        }
     }
 
     public async Task WaitForHealthyAsync()
@@ -131,6 +140,7 @@ public class BackendProcessService : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        _suppressExitNotification = true;
         try
         {
             var client = CreateClient();
@@ -149,6 +159,11 @@ public class BackendProcessService : IAsyncDisposable
 
     private void HandleBackendExited(object? sender, EventArgs e)
     {
+        if (_suppressExitNotification)
+        {
+            return;
+        }
+
         BackendExited?.Invoke(this, EventArgs.Empty);
     }
 
