@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Companion Settings"
         Width="520"
-        Height="500"
+        Height="620"
         WindowStartupLocation="CenterOwner"
         Background="{StaticResource BackgroundBrush}">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -17,8 +17,14 @@
                     <TextBox x:Name="PersonaPathTextBox" Margin="0,8,0,16" Height="32" />
                     <TextBlock FontWeight="SemiBold" Text="Context size" />
                     <TextBox x:Name="ContextSizeTextBox" Margin="0,8,0,16" Height="32" />
+                    <TextBlock FontWeight="SemiBold" Text="Thread count" />
+                    <TextBox x:Name="ThreadCountTextBox" Margin="0,8,0,16" Height="32" />
                     <TextBlock FontWeight="SemiBold" Text="GPU layers" />
                     <TextBox x:Name="GpuLayersTextBox" Margin="0,8,0,16" Height="32" />
+                    <TextBlock FontWeight="SemiBold" Text="Temperature" />
+                    <TextBox x:Name="TemperatureTextBox" Margin="0,8,0,16" Height="32" />
+                    <TextBlock FontWeight="SemiBold" Text="Top P" />
+                    <TextBox x:Name="TopPTextBox" Margin="0,8,0,16" Height="32" />
                     <CheckBox x:Name="AutonomyCheckBox" Content="Autonomy enabled" Margin="0,0,0,10" />
                     <CheckBox x:Name="StartupCheckBox" Content="Launch at sign-in" Margin="0,0,0,10" />
                     <CheckBox x:Name="NotificationsCheckBox" Content="Notifications enabled" Margin="0,0,0,10" />

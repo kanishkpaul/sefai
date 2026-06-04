@@ -316,7 +316,10 @@ public partial class MainWindow : Window
             !string.Equals(previousSettings.ModelPath, proposedSettings.ModelPath, StringComparison.OrdinalIgnoreCase) ||
             !string.Equals(previousSettings.PersonaPath, proposedSettings.PersonaPath, StringComparison.OrdinalIgnoreCase) ||
             previousSettings.ContextSize != proposedSettings.ContextSize ||
-            previousSettings.GpuLayers != proposedSettings.GpuLayers;
+            previousSettings.ThreadCount != proposedSettings.ThreadCount ||
+            previousSettings.GpuLayers != proposedSettings.GpuLayers ||
+            Math.Abs(previousSettings.Temperature - proposedSettings.Temperature) > double.Epsilon ||
+            Math.Abs(previousSettings.TopP - proposedSettings.TopP) > double.Epsilon;
 
         _settings.ApplyFrom(proposedSettings);
 
@@ -337,7 +340,10 @@ public partial class MainWindow : Window
                     ["model_path"] = _settings.ModelPath,
                     ["persona_path"] = _settings.PersonaPath,
                     ["n_ctx"] = _settings.ContextSize,
+                    ["n_threads"] = _settings.ThreadCount,
                     ["n_gpu_layers"] = _settings.GpuLayers,
+                    ["temperature"] = _settings.Temperature,
+                    ["top_p"] = _settings.TopP,
                 });
 
             await _settingsStore.SaveAsync(_settings);

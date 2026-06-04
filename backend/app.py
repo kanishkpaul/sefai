@@ -374,6 +374,20 @@ class CompanionApplication:
     async def _handle_update_settings(self, envelope: MessageEnvelope) -> MessageEnvelope:
         for key, value in envelope.payload.items():
             await self.db.save_setting(key, value)
+        if "model_path" in envelope.payload:
+            self.settings.model_path = str(envelope.payload["model_path"])
+        if "persona_path" in envelope.payload:
+            self.settings.persona_path = str(envelope.payload["persona_path"])
+        if "n_ctx" in envelope.payload:
+            self.settings.n_ctx = int(envelope.payload["n_ctx"])
+        if "n_threads" in envelope.payload:
+            self.settings.n_threads = int(envelope.payload["n_threads"])
+        if "n_gpu_layers" in envelope.payload:
+            self.settings.n_gpu_layers = int(envelope.payload["n_gpu_layers"])
+        if "temperature" in envelope.payload:
+            self.settings.temperature = float(envelope.payload["temperature"])
+        if "top_p" in envelope.payload:
+            self.settings.top_p = float(envelope.payload["top_p"])
         if "autonomy_enabled" in envelope.payload:
             self.settings.autonomy_enabled = bool(envelope.payload["autonomy_enabled"])
             if self.autonomy_engine:
