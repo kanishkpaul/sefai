@@ -120,6 +120,8 @@ class CompanionApplication:
             )
 
         if self._is_simple_connection_prompt(lowered):
+            self.current_mood = "engaged"
+            self.surface_message_streak = 0
             reply = self._generate_connection_reply(message)
             await self._store_companion_message(reply, initiated_by="system")
             state = await self.memory_manager.build_app_state(
