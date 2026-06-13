@@ -1,0 +1,15 @@
+[package]
+name = "sefai"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4.5", features = ["derive"] }
+llama-cpp-4 = "0.3.1"
+
+[features]
+default = []
+cuda = ["llama-cpp-4/cuda"]
+vulkan = ["llama-cpp-4/vulkan"]
+metal = ["llama-cpp-4/metal"]
