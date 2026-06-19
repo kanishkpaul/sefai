@@ -23,6 +23,48 @@ struct Args {
     /// Maximum number of tokens to generate.
     #[arg(short = 'n', long, default_value_t = 128)]
     max_tokens: usize,
+
+    /// Number of model layers to offload to the GPU. Use `all` to offload as many as possible.
+    #[arg(long, default_value = "0")]
+    gpu_layers: GpuLayers,
+
+    /// GPU index to use for scratch buffers and small tensors when GPU offload is enabled.
+    #[arg(long, default_value_t = 0)]
+    main_gpu: i32,
+}
+
+#[derive(Clone, Debug)]
+enum GpuLayers {
+    Count(u32),
+    All,
+}
+
+impl GpuLayers {
+    fn apply_to(self, params: LlamaModelParams) -> LlamaModelParams {
+        match self {
+            Self::Count(count) => params.with_n_gpu_layers(count),
+            Self::All => params.with_n_gpu_layers(u32::MAX),
+        }
+    }
+
+    fn enabled(&self) -> bool {
+        !matches!(self, Self::Count(0))
+    }
+}
+
+impl std::str::FromStr for GpuLayers {
+    type Err = String;
+
+    fn from_str(value: &str) -> std::result::Result<Self, Self::Err> {
+        if value.eq_ignore_ascii_case("all") {
+            return Ok(Self::All);
+        }
+
+        let count = value
+            .parse::<u32>()
+            .map_err(|_| format!("invalid gpu layer count '{value}'; use a number or 'all'"))?;
+        Ok(Self::Count(count))
+    }
 }
 
 fn main() -> Result<()> {
@@ -34,7 +76,12 @@ fn main() -> Result<()> {
 
     let backend = LlamaBackend::init().context("failed to initialize llama backend")?;
 
-    let model = LlamaModel::load_from_file(&backend, &args.model, &LlamaModelParams::default())
+    let mut model_params = args.gpu_layers.clone().apply_to(LlamaModelParams::default());
+    if args.gpu_layers.enabled() {
+        model_params = model_params.with_main_gpu(args.main_gpu);
+    }
+
+    let model = LlamaModel::load_from_file(&backend, &args.model, &model_params)
         .with_context(|| format!("failed to load model from {}", args.model.display()))?;
 
     let ctx_params =
