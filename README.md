@@ -1,150 +1,109 @@
 # sefai
 
-Small Rust CLI for running a local GGUF model with `llama.cpp` bindings.
+A small Rust CLI that runs a local GGUF model through `llama.cpp` and lets you
+choose exactly how many layers go to the GPU.
 
-The binary accepts a local `.gguf` path, a prompt, a token budget, and optional GPU offload parameters:
+```bash
+sefai model.gguf --prompt "Write a haiku about Rust" --gpu-layers all
+```
 
-- `--gpu-layers 0` keeps the model on CPU.
-- `--gpu-layers <N>` offloads exactly `N` layers.
-- `--gpu-layers all` requests maximal offload.
-- `--main-gpu <INDEX>` selects the backend device index when offload is enabled.
+The whole program is one file ([`src/main.rs`](src/main.rs), about 150 lines):
+load the model, tokenize the prompt, decode greedily, and stream tokens to
+stdout. It's meant to be read as well as run.
 
-## Requirements
-
-- Rust toolchain (`rustup`, `cargo`, `rustc`)
-- A C/C++ build toolchain
-- `libclang` available during build
-- CMake
-- A local `.gguf` model file
-
-Windows-specific GPU builds also benefit from:
-
-- Visual Studio Build Tools 2022 with MSVC
-- Ninja
-- LLVM with `libclang.dll`
-- Vulkan SDK for `--features vulkan`
-- CUDA toolkit plus NVIDIA drivers for `--features cuda`
-
-## CLI Surface
+## Options
 
 ```text
 sefai <MODEL> --prompt <TEXT> [--max-tokens <N>] [--gpu-layers <COUNT|all>] [--main-gpu <INDEX>]
 ```
 
-Example:
+| Flag | Default | Meaning |
+| --- | --- | --- |
+| `--prompt`, `-p` | required | Text fed to the model as-is (no chat template) |
+| `--max-tokens`, `-n` | `128` | Stop after this many generated tokens |
+| `--gpu-layers` | `0` | `0` keeps everything on CPU, `N` offloads exactly N layers, `all` offloads as many as llama.cpp can |
+| `--main-gpu` | `0` | Backend device index, used only when offload is on |
 
-```powershell
-.\target\release\sefai.exe "C:\models\TinyLlama-1.1B-Chat-v1.0.Q4_K_M.gguf" --prompt "Write a haiku about Rust"
+## macOS (Apple Silicon)
+
+You need the Xcode command-line tools, a Rust toolchain, and CMake
+(`brew install cmake`).
+
+```bash
+xcode-select --install          # once, if you haven't already
+cargo build --release --features metal
+./target/release/sefai ~/models/model.gguf -p "Explain GGUF in one paragraph." --gpu-layers all
 ```
 
-Generate more tokens:
+Without `--features metal`, `--gpu-layers` has no GPU to offload to and
+everything runs on CPU.
+
+Measured on an Apple M5 (16 GB) with `Qwen2.5-Coder-0.5B-Instruct Q4_K_M`,
+generating 64 tokens, wall time including model load:
+
+| Mode | Time |
+| --- | ---: |
+| `--gpu-layers 0` (CPU) | 7.8 s |
+| `--gpu-layers all` (Metal) | 1.1 s |
+
+llama.cpp prints its load and device logs to stderr. Add `2>/dev/null` to see
+only the generated text.
+
+## Windows
+
+This is where the project started, and the CUDA and Vulkan paths were validated
+there. You need Visual Studio Build Tools 2022 (MSVC), LLVM (so `bindgen` can
+find `libclang.dll`), CMake, and Ninja. Add the Vulkan SDK for
+`--features vulkan`, or the CUDA toolkit plus NVIDIA drivers for
+`--features cuda`.
+
+If those tools aren't on your `PATH`, this PowerShell setup worked:
 
 ```powershell
-.\target\release\sefai.exe "C:\models\model.gguf" --prompt "Explain GGUF in one paragraph." --max-tokens 256
-```
-
-Run with explicit offload control:
-
-```powershell
-.\target\release\sefai.exe "C:\models\model.gguf" --prompt "Summarize this model." --gpu-layers 35 --main-gpu 0
-```
-
-## Build
-
-CPU-only release build:
-
-```powershell
-cargo build --release
-```
-
-Optional acceleration features:
-
-```powershell
-cargo build --release --features cuda
-cargo build --release --features vulkan
-```
-
-## Windows Toolchain Notes
-
-The project was validated on Windows with the following native toolchain stack:
-
-- Rust: `stable-x86_64-pc-windows-msvc`
-- MSVC: Visual Studio Build Tools 2022
-- LLVM: installed so `bindgen` can find `libclang.dll`
-- CMake: invoked as the full path to `cmake.exe`
-- Ninja: used as the CMake generator to avoid MSBuild argument translation issues
-
-If your shell does not already expose those tools, a known-good PowerShell setup looks like:
-
-```powershell
-$ninjaDir = "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\Ninja-build.Ninja_Microsoft.Winget.Source_8wekyb3d8bbwe"
-$env:PATH = "C:\Users\HP\.cargo\bin;C:\Program Files\LLVM\bin;C:\Program Files\CMake\bin;$ninjaDir;$env:PATH"
+$env:PATH = "$env:USERPROFILE\.cargo\bin;C:\Program Files\LLVM\bin;C:\Program Files\CMake\bin;<ninja-dir>;$env:PATH"
 $env:LIBCLANG_PATH = "C:\Program Files\LLVM\bin"
-$env:CMAKE = "C:\Program Files\CMake\bin\cmake.exe"
 $env:CMAKE_GENERATOR = "Ninja"
-$env:CMAKE_MAKE_PROGRAM = "$ninjaDir\ninja.exe"
+$env:VULKAN_SDK = "C:\VulkanSDK\<version>"   # only for --features vulkan
+
+cargo build --release --features cuda        # or: --features vulkan
+.\target\release\sefai.exe "D:\models\model.gguf" -p "Hello" --gpu-layers all --main-gpu 0
 ```
 
-## Vulkan Build And Run
+Ninja is the CMake generator because MSBuild mangled some of the arguments the
+build passes through.
 
-Install the Vulkan SDK and export `VULKAN_SDK` if the current shell does not already contain it:
+**Hybrid-graphics laptops.** On a laptop with an AMD iGPU and an RTX 3050,
+the Vulkan backend enumerated only the AMD adapter, so offload succeeded but ran
+on the integrated GPU. Build with `--features cuda` when you specifically want
+the NVIDIA card.
 
-```powershell
-$env:VULKAN_SDK = "C:\VulkanSDK\1.4.350.0"
-$env:PATH = "$env:VULKAN_SDK\Bin;$env:PATH"
-```
+In the validated Vulkan run, a 3.20 GiB model offloaded all 36 layers: about
+1.44 GiB of model buffer on the GPU, 2.10 GiB mapped on the CPU, and a 515 MiB
+Vulkan compute buffer.
 
-Build:
+Linux should work with the same features but hasn't been tested.
 
-```powershell
-cargo build --release --features vulkan
-```
+## Known limitations
 
-Run:
+These are real, reproducible, and next on the list to fix:
 
-```powershell
-.\target\release\sefai.exe "D:\models\model.gguf" --prompt "Hello" --gpu-layers all --main-gpu 0
-```
+- **Prompts over 512 tokens fail** with `Insufficient Space of 512`. The prompt
+  goes into a single 512-slot batch, and the context is fixed at 2,048 tokens.
+- **Non-Latin output can come out garbled.** Each token is decoded to UTF-8 on
+  its own, so a Bengali or Hindi character split across two tokens prints as
+  `�`.
+- **No chat template.** Instruction-tuned models get the raw prompt, which is
+  why short prompts sometimes produce rambling completions.
+- **Greedy decoding only.** No temperature, top-p, or seed options yet.
 
-Technical note: on hybrid-graphics Windows laptops, the Vulkan backend may enumerate only the integrated GPU. In one validated run, `ggml_vulkan` exposed `AMD Radeon(TM) Graphics` while `nvidia-smi` separately confirmed the presence of an `RTX 3050`. In that configuration, `sefai` still offloaded successfully, but the active Vulkan device was the AMD adapter rather than the NVIDIA adapter.
+## Build notes
 
-## CUDA Build And Run
+`llama-cpp-4` enables `dynamic-link` and `openmp` by default. On macOS that
+produces a binary that can't find its `libggml*.dylib` files at runtime and
+also depends on Homebrew's `libomp`. `Cargo.toml` turns the defaults off, so
+llama.cpp is linked statically and the release binary depends only on system
+frameworks. You can copy it anywhere.
 
-If you specifically need NVIDIA execution, build the CUDA backend instead of relying on Vulkan device enumeration:
+## License
 
-```powershell
-cargo build --release --features cuda
-```
-
-Run:
-
-```powershell
-.\target\release\sefai.exe "C:\models\model.gguf" --prompt "Explain GGUF in one paragraph." --gpu-layers all --main-gpu 0
-```
-
-For laptops with both integrated and discrete GPUs, CUDA is the more reliable path when the target is explicitly the NVIDIA device.
-
-## Validated Session
-
-The following workflow was validated end-to-end on Windows:
-
-1. Install Rust, LLVM, Ninja, CMake, and Vulkan SDK.
-2. Build `sefai` with the Ninja-backed CMake configuration.
-3. Build the `vulkan` feature successfully.
-4. Load a 3.20 GiB GGUF model from `D:\models`.
-5. Verify prompt execution with both CPU and Vulkan-enabled runs.
-
-Observed runtime characteristics:
-
-- CPU-only run loaded the model and generated output successfully.
-- Vulkan run offloaded all 36 layers reported by `llama.cpp`.
-- The validated Vulkan run used roughly `1437.86 MiB` of model buffer on the GPU device and `2152.50 MiB` of mapped CPU model buffer.
-- The same run reported `515.00 MiB` Vulkan compute buffer and `27.52 MiB` host-visible Vulkan compute buffer.
-
-## Notes
-
-- The CLI currently supports local GGUF files only.
-- It uses the default `llama_cpp` session parameters to stay small and easy to understand.
-- Release builds matter a lot for performance.
-- `--gpu-layers all` delegates maximal offload to `llama.cpp` by setting `n_gpu_layers` to `u32::MAX`.
-- `--main-gpu` is forwarded into `LlamaModelParams::with_main_gpu(...)`.
+MIT
