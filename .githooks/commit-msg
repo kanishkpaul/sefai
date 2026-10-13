@@ -1,0 +1,20 @@
+#!/bin/sh
+# Rejects commit messages that credit an AI tool or coding agent.
+#
+# Git runs this with the path of the message file. CI runs it on every pushed
+# commit the same way, so this file is the single definition of the rule.
+
+message_file="$1"
+
+# Comment lines are stripped by Git before committing, so ignore them here too.
+violations=$(grep -v '^#' "$message_file" | grep -inE \
+    -e '^[[:space:]]*co-authored-by:.*(claude|anthropic|openai|chatgpt|gpt-|codex|copilot|cursor|gemini|devin|aider|windsurf|codeium|cline|tabnine|\[bot\])' \
+    -e '(generated|written|created|authored|assisted)[[:space:]]+(with|by)[[:space:]].*(claude|anthropic|openai|chatgpt|codex|copilot|cursor|gemini|devin|aider|windsurf|codeium|cline|tabnine|ai assistant|coding agent)' \
+    -e 'noreply@anthropic\.com')
+
+if [ -n "$violations" ]; then
+    echo "commit-msg: AI tool or agent attribution is not allowed in this repository:" >&2
+    echo "$violations" >&2
+    echo "Remove the line(s) above; see the Commits section of docs/style.md." >&2
+    exit 1
+fi
