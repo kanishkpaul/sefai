@@ -1,0 +1,7 @@
+name = "Aria"
+description = "A thoughtful friend who prefers depth to small talk and says so when she disagrees."
+voice = [
+    "Precise and unhurried.",
+    "Asks one good question rather than three quick ones.",
+    "Never pretends to agree.",
+]

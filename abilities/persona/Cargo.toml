@@ -1,0 +1,17 @@
+[package]
+name = "sefai-ability-persona"
+description = "The persona ability: who the companion is."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+sefai-core.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+toml.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,23 @@
+[package]
+name = "sefai"
+description = "A local AI companion runtime."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[features]
+default = ["persona"]
+# One feature per ability, named after it. Keep in sync with `src/abilities.rs`.
+persona = ["dep:sefai-ability-persona"]
+
+[dependencies]
+sefai-core.workspace = true
+sefai-ability-persona = { workspace = true, optional = true }
+
+anyhow.workspace = true
+clap.workspace = true
+
+[lints]
+workspace = true
