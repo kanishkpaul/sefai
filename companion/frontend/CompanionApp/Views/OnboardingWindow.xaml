@@ -1,0 +1,39 @@
+<Window x:Class="CompanionApp.Views.OnboardingWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Set Up Your Companion"
+        Width="640"
+        Height="420"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BackgroundBrush}">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Margin="0,0,0,20">
+            <TextBlock FontSize="28" FontWeight="SemiBold" Text="Create a local companion" />
+            <TextBlock Margin="0,10,0,0"
+                       TextWrapping="Wrap"
+                       Opacity="0.8"
+                       Text="Everything stays on this machine. Point the app at your model and persona file, then it will boot into the resident desktop companion." />
+        </StackPanel>
+
+        <Border Grid.Row="1" Padding="18" Background="{StaticResource PanelBrush}" CornerRadius="18">
+            <StackPanel>
+                <TextBlock FontWeight="SemiBold" Text="Model path" />
+                <TextBox x:Name="ModelPathTextBox" Margin="0,8,0,16" Height="32" />
+                <TextBlock FontWeight="SemiBold" Text="Persona path" />
+                <TextBox x:Name="PersonaPathTextBox" Margin="0,8,0,16" Height="32" />
+                <CheckBox x:Name="AutonomyCheckBox" Content="Enable autonomous outreach" Margin="0,0,0,10" />
+                <CheckBox x:Name="StartupCheckBox" Content="Launch at Windows sign-in" />
+            </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Width="120" Height="36" Click="SaveAndContinue_Click" Content="Continue" />
+        </StackPanel>
+    </Grid>
+</Window>
