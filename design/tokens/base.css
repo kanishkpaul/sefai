@@ -1,0 +1,283 @@
+/* Shared design tokens for all eight projects.
+ *
+ * Load order: fonts → base.css → skins.css → components.css.
+ * A skin sets seven --seed-* values per mode (tokens/skins.css). Everything below is
+ * derived from them, so no project ever writes a surface, text, fill or stroke colour.
+ * The derivation follows Hermes desktop (apps/desktop/src/styles.css): accent-tinted
+ * hairlines over a translucent ink, text as ink at falling alpha, flat surfaces.
+ *
+ * Components reference --ui-*, --font-*, --radius-*, --shadow-*, --z-*, --dur-*.
+ * Never reference --seed-* outside this file.
+ */
+
+:root {
+  /* ── Fallback seeds (trophy light), so the file renders before a skin is chosen ── */
+  --seed-ink: #1e1a12;
+  --seed-accent: #8f6400;
+  --seed-primary: #8f6400;
+  --seed-warm: #cf806d;
+  --seed-bg: #fbfaf6;
+  --seed-sidebar: #f5f3ec;
+  --seed-card: #ffffff;
+
+  /* ── Semantic palette (Hermes desktop, light) ── */
+  --ui-red: #cf2d56;
+  --ui-orange: #db704b;
+  --ui-yellow: #c08532;
+  --ui-green: #1f8a65;
+  --ui-cyan: #4c7f8c;
+  --ui-blue: #0053fd;
+  --ui-purple: #7a6fc0;
+
+  /* ── Surfaces ── */
+  --ui-bg-chrome: var(--seed-bg);
+  --ui-bg-sidebar: var(--seed-sidebar);
+  --ui-bg-card: var(--seed-card);
+  --ui-bg-elevated: color-mix(in srgb, var(--seed-card) 96%, var(--seed-ink));
+  --ui-bg-popover: color-mix(in srgb, var(--ui-bg-elevated) 96%, transparent);
+  --ui-bg-input: color-mix(in srgb, var(--seed-card) 0%, transparent);
+  --ui-bg-widget: var(--seed-card);
+  --ui-bg-bubble: color-mix(in srgb, var(--seed-accent) 6%, var(--seed-card));
+
+  /* Fills: accent tint over translucent ink, strongest to faintest. */
+  --ui-fill-1: color-mix(in srgb, var(--seed-accent) 16%, color-mix(in srgb, var(--seed-ink) 8%, transparent));
+  --ui-fill-2: color-mix(in srgb, var(--seed-accent) 11%, color-mix(in srgb, var(--seed-ink) 6%, transparent));
+  --ui-fill-3: color-mix(in srgb, var(--seed-accent) 8%, color-mix(in srgb, var(--seed-ink) 5%, transparent));
+  --ui-fill-4: color-mix(in srgb, var(--seed-accent) 5%, color-mix(in srgb, var(--seed-ink) 4%, transparent));
+  --ui-fill-5: color-mix(in srgb, var(--seed-accent) 3%, color-mix(in srgb, var(--seed-ink) 3%, transparent));
+
+  --ui-row-hover: color-mix(in srgb, var(--seed-accent) 4%, color-mix(in srgb, var(--seed-ink) 3%, transparent));
+  --ui-row-active: color-mix(in srgb, var(--seed-accent) 8%, color-mix(in srgb, var(--seed-ink) 4%, transparent));
+  --ui-control-hover: color-mix(in srgb, var(--seed-accent) 6%, color-mix(in srgb, var(--seed-ink) 4%, transparent));
+  --ui-control-active: color-mix(in srgb, var(--seed-accent) 8%, color-mix(in srgb, var(--seed-ink) 6%, transparent));
+
+  /* ── Text: ink at falling alpha ── */
+  --ui-text-1: color-mix(in srgb, var(--seed-ink) 94%, transparent);
+  --ui-text-2: color-mix(in srgb, var(--seed-ink) 74%, transparent);
+  --ui-text-3: color-mix(in srgb, var(--seed-ink) 54%, transparent);
+  --ui-text-4: color-mix(in srgb, var(--seed-ink) 36%, transparent);
+  --ui-text-accent: var(--seed-accent);
+  --ui-text-on-primary: #fcfcfc;
+
+  /* ── Strokes: hairlines, strongest to faintest. 3 is the default divider. ── */
+  --ui-stroke-1: color-mix(in srgb, var(--seed-accent) 24%, color-mix(in srgb, var(--seed-ink) 10%, transparent));
+  --ui-stroke-2: color-mix(in srgb, var(--seed-accent) 16%, color-mix(in srgb, var(--seed-ink) 8%, transparent));
+  --ui-stroke-3: color-mix(in srgb, var(--seed-accent) 10%, color-mix(in srgb, var(--seed-ink) 5%, transparent));
+  --ui-stroke-4: color-mix(in srgb, var(--seed-accent) 6%, color-mix(in srgb, var(--seed-ink) 3%, transparent));
+  /* Overlay hairline; pairs with --shadow-float. currentColor keeps it theme-adaptive. */
+  --ui-stroke-float: color-mix(in srgb, currentColor 6%, transparent);
+
+  /* ── Brand ── */
+  --ui-accent: var(--seed-accent);
+  --ui-primary: var(--seed-primary);
+  --ui-primary-hover: color-mix(in srgb, var(--seed-primary) 88%, var(--seed-ink));
+  --ui-warm: var(--seed-warm);
+  --ui-warm-glow: color-mix(in srgb, var(--seed-warm) 32%, color-mix(in srgb, var(--seed-accent) 6%, transparent));
+  --ui-focus: color-mix(in srgb, var(--seed-accent) 70%, transparent);
+
+  /* The family trait: every project selects text in Hermes yellow. */
+  --ui-selection: color-mix(in srgb, #ffd24a 55%, transparent);
+
+  --ui-tip-bg: color-mix(in srgb, var(--seed-ink) 92%, var(--seed-bg));
+  --ui-tip-fg: var(--seed-bg);
+
+  --ui-code-bg: color-mix(in srgb, var(--seed-ink) 5%, transparent);
+  --ui-code-fg: color-mix(in srgb, var(--seed-ink) 88%, transparent);
+
+  --ui-ok: var(--ui-green);
+  --ui-warn: var(--ui-yellow);
+  --ui-error: var(--ui-red);
+  --ui-info: var(--ui-cyan);
+
+  --ui-diff-add-bg: color-mix(in srgb, var(--ui-green) 12%, transparent);
+  --ui-diff-add-fg: color-mix(in srgb, var(--ui-green) 70%, #000);
+  --ui-diff-remove-bg: color-mix(in srgb, var(--ui-red) 12%, transparent);
+  --ui-diff-remove-fg: color-mix(in srgb, var(--ui-red) 70%, #000);
+
+  /* ── Type ──
+     UI text uses the platform face, as Hermes desktop does. Code, traces, logs,
+     numbers that line up, and anything that came from a terminal use JetBrains Mono. */
+  --font-sans: 'Segoe WPC', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui,
+    'Inter', 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji';
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', 'SF Mono', ui-monospace, 'DejaVu Sans Mono',
+    'Noto Sans Mono', Menlo, Consolas, monospace;
+  /* Display serif for headings in empty states, onboarding, docs and reports only.
+     Stand-in for Nous's licensed Sigurd; see TYPOGRAPHY.md. */
+  --font-display: 'Newsreader Variable', 'Newsreader', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  /* Wordmark: bold, wide, uppercase. Stand-in for Nous's licensed Collapse. */
+  --font-wordmark: 'Archivo Variable', 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  /* Key caps always use the native face. */
+  --font-kbd: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+
+  /* Root stays 16px. Conversation and dense views size from these. */
+  --text-2xs: 0.6875rem;  /* 11px  tool rows, table meta, status bar */
+  --text-xs: 0.75rem;     /* 12px  captions, badges, labels */
+  --text-sm: 0.8125rem;   /* 13px  default app text, transcript */
+  --text-md: 0.875rem;    /* 14px  forms, settings rows, side panels */
+  --text-lg: 1rem;        /* 16px  section titles, mobile body */
+  --text-xl: 1.25rem;     /* 20px  page titles (sans) / H4 (display) */
+  --text-2xl: 1.75rem;    /* 28px  display H3 */
+  --text-3xl: 2.625rem;   /* 42px  display H2 */
+  --text-4xl: 3.25rem;    /* 52px  display H1, rare */
+
+  --leading-tight: 1.2;
+  --leading-ui: 1.385;    /* 18px on 13px */
+  --leading-body: 1.55;
+  --tracking-caps: 0.05em;
+  --tracking-display: 0.03em;
+  --tracking-wordmark: 0.08em;
+
+  /* User-adjustable: conversation text only, never chrome. Hermes defaults to 110%. */
+  --chat-scale: 1.1;
+
+  /* ── Space: 4px base ── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --gutter: 1rem;              /* page side inset; one value, never per page */
+  --turn-gap: 0.75rem;         /* between prose, tools and thinking blocks */
+  --scaffold-gap: 0.25rem;     /* between adjacent tool rows */
+  --paragraph-gap: 0.7rem;
+
+  /* ── Radius: near-square. Hermes renders at radius-scalar 0.2. ── */
+  --radius-xs: 2px;            /* inputs, chips, focus rings */
+  --radius-sm: 3px;            /* panels, popovers, cards */
+  --radius-md: 4px;            /* icon buttons, tooltips */
+  --radius-lg: 8px;            /* chat bubble, composer, phone sheets */
+  --radius-full: 999px;        /* status dots, avatars, toggles */
+  /* Text buttons carry no radius at all. */
+
+  /* ── Elevation ── */
+  --shadow-xs: 0 1px 2px color-mix(in srgb, #000 5%, transparent);
+  --shadow-md:
+    0 0 0 1px color-mix(in srgb, var(--seed-ink) 8%, transparent),
+    0 4px 16px color-mix(in srgb, #000 8%, transparent),
+    0 16px 32px -24px color-mix(in srgb, #000 18%, transparent);
+  /* Floating panels: one top light, layers pulled inward so the shadow pools below. */
+  --shadow-float:
+    0 2px 4px -2px color-mix(in srgb, #000 7%, transparent),
+    0 8px 12px -6px color-mix(in srgb, #000 6%, transparent),
+    0 20px 28px -14px color-mix(in srgb, #000 6%, transparent);
+  --input-inset: inset 0 1px 1px color-mix(in srgb, #000 10%, transparent);
+
+  /* ── Layers: pick a rung, never a literal ── */
+  --z-sticky: 10;
+  --z-modal-backdrop: 120;
+  --z-modal: 130;
+  --z-modal-popover: 140;
+  --z-over-modal: 200;         /* toasts, tooltips, command palette */
+  --z-blocking: 1200;          /* boot, onboarding, crash */
+
+  /* ── Motion ── */
+  --dur-instant: 0ms;
+  --dur-fast: 100ms;           /* controls, hover, tooltip exit */
+  --dur-base: 180ms;           /* drawers, disclosure, card clearance */
+  --dur-slow: 220ms;           /* card promotion, panel slide */
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --tip-delay: 200ms;
+  --tip-warm-window: 300ms;
+
+  /* ── Layout ── */
+  --sidebar-width: 15rem;
+  --content-max: 44rem;        /* transcript and reading column */
+  --hit-min: 1.5rem;           /* desktop icon target; touch uses 2.75rem */
+  --hit-touch: 2.75rem;
+}
+
+/* Dark adjustments that are not seeds: a dark card swallows shadow, and the
+   semantic palette lifts so it reads on near-black. A light-first app (parareport)
+   sets data-theme="light" at startup instead of relying on the OS. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ui-red: #e75e78;
+    --ui-orange: #e8875f;
+    --ui-yellow: #d9a24a;
+    --ui-green: #55a583;
+    --ui-cyan: #6f9ba6;
+    --ui-blue: #6b9bff;
+    --ui-purple: #9e94d5;
+    --ui-selection: color-mix(in srgb, #ffd24a 38%, transparent);
+    --ui-code-bg: color-mix(in srgb, #fff 7%, transparent);
+    --ui-code-fg: color-mix(in srgb, #fff 88%, transparent);
+    --ui-bg-widget: color-mix(in srgb, var(--seed-card) 88%, #000);
+    --ui-bg-bubble: color-mix(in srgb, var(--seed-accent) 8%, var(--seed-card));
+    --ui-diff-add-fg: color-mix(in srgb, var(--ui-green) 62%, #fff);
+    --ui-diff-remove-fg: color-mix(in srgb, var(--ui-red) 62%, #fff);
+    --input-inset: inset 0 1px 1px color-mix(in srgb, #000 38%, transparent);
+    --ui-text-on-primary: #0b0b0c;
+  }
+}
+:root[data-theme="dark"] {
+  --ui-red: #e75e78;
+  --ui-orange: #e8875f;
+  --ui-yellow: #d9a24a;
+  --ui-green: #55a583;
+  --ui-cyan: #6f9ba6;
+  --ui-blue: #6b9bff;
+  --ui-purple: #9e94d5;
+  --ui-selection: color-mix(in srgb, #ffd24a 38%, transparent);
+  --ui-code-bg: color-mix(in srgb, #fff 7%, transparent);
+  --ui-code-fg: color-mix(in srgb, #fff 88%, transparent);
+  --ui-bg-widget: color-mix(in srgb, var(--seed-card) 88%, #000);
+  --ui-bg-bubble: color-mix(in srgb, var(--seed-accent) 8%, var(--seed-card));
+  --ui-diff-add-fg: color-mix(in srgb, var(--ui-green) 62%, #fff);
+  --ui-diff-remove-fg: color-mix(in srgb, var(--ui-red) 62%, #fff);
+  --input-inset: inset 0 1px 1px color-mix(in srgb, #000 38%, transparent);
+  --ui-text-on-primary: #0b0b0c;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+  }
+}
+
+/* ── Element defaults ── */
+
+html {
+  background: var(--ui-bg-chrome);
+  color: var(--ui-text-1);
+  font-family: var(--font-sans);
+  font-size: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  background: var(--ui-bg-chrome);
+  font-size: var(--text-sm);
+  line-height: var(--leading-ui);
+}
+
+::selection {
+  background: var(--ui-selection);
+}
+
+code, kbd, pre, samp {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+
+:focus-visible {
+  outline: 1.5px solid var(--ui-focus);
+  outline-offset: 1px;
+  border-radius: var(--radius-xs);
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--seed-ink) 18%, transparent);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-track { background: transparent; }

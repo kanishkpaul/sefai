@@ -69,3 +69,33 @@ Run `git config core.hooksPath .githooks` once if `git config core.hooksPath` pr
 
 Say what you changed, what you ran to check it and what the output was, and anything you could not verify.
 If you changed behaviour that a document describes, update that document in the same change.
+
+## Design
+
+Any change to a user-facing surface (GUI, CLI output, overlay, docs page) follows `design/`.
+It is installed from the shared design kit, a separate master repository that lives next to
+this one at `../design-kit`, and recorded in `design/kit.json`.
+
+- Read `design/README.md` first: this project's direction. Skin: not chosen yet (default `candle`).
+- Shared rules are in `design/system/DESIGN.md`. Check its "Before you add something" list
+  before finishing a UI change.
+- Colours, type, spacing, radii, shadows and motion come only from `design/tokens/*.css`
+  (`--ui-*`, `--font-*`, `--text-*`, `--space-*`, `--radius-*`, `--shadow-*`, `--dur-*`).
+  No hex values, no `--seed-*`, no ad-hoc rgba, no new shadows in components.
+- Use the primitives in `design/system/COMPONENTS.md`. Pick a variant and size; never
+  override a primitive's padding, radius or colour at the call site.
+- Terminal output goes through `design/rust/theme.rs` and follows `design/system/TUI.md`:
+  banner only in interactive sessions, `┊` tool rows, `NO_COLOR` respected, `--json` output
+  free of colour and decoration.
+- Never load fonts, icons or scripts from a CDN at runtime. Everything ships with the app.
+- `design/README.md` belongs to this project; edit it freely. Everything else in `design/`
+  comes from the master. A change that every project should get (a token, a primitive, a
+  rule, a skin) belongs in the master at `../design-kit`, then reaches this repository through
+  an update.
+- From this repository's root: choose or change the skin with
+  `node ../design-kit/scripts/kit.mjs use . <skin>`; pull master changes with
+  `node ../design-kit/scripts/kit.mjs update .`, then merge any `*.kit-new` file it leaves and run
+  update again. To stop the kit touching a file, add its path to `"ignore"` in
+  `design/kit.json`.
+- If `../design-kit` is not on this machine, treat `design/` as the source of truth and don't
+  regenerate it by hand.
