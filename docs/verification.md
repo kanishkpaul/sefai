@@ -143,7 +143,10 @@ An EOG fixture expectation initially omitted `<reponame>`; enumeration identifie
 A text-dependent termination test passed on CPU but reached the output limit on Metal; it was replaced by deterministic forced-stop tests, rather than assuming identical model replies across backends.
 An initial hardware metadata query timed out, and a later sandboxed `sysctl` read was denied; the host description comes from the successful hardware overview and OS-version query.
 
-The new Windows/Linux CPU/model jobs and CUDA/Vulkan compile jobs have not executed on GitHub for this candidate yet.
+PR #6 started the Windows/Linux CPU/model jobs and CUDA/Vulkan compile jobs.
+The first Vulkan job failed with `Could not find a package configuration file provided by "SPIRV-Headers"`; its SDK package was added before rerunning.
+Push runs were restricted to main to avoid duplicate native builds alongside PR events.
+The remaining remote results are still pending.
 No CUDA, Vulkan, NVIDIA or AMD execution has been tested on this Mac; no SDK for those backends was silently installed.
 The maintainer authorized commits, branch publication and a PR; the required checks plus backend-build jobs must pass before Phase 1 closes.
 The shared master kit has an uncommitted one-conditional Rust lint fix; its generated local counterpart is included here, without committing unrelated master-repository work.

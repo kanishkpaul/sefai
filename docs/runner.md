@@ -34,7 +34,7 @@ cargo build --locked --no-default-features --features vulkan
 ```
 
 Use the ggml index reported by `devices`; it is not necessarily a GPU-only ordinal.
-CUDA needs NVIDIA's CUDA compiler/SDK; Vulkan needs Vulkan headers/loader and `glslc`.
+CUDA needs NVIDIA's CUDA compiler/SDK; Vulkan needs Vulkan headers/loader, `glslc` and SPIR-V headers with their CMake package configuration.
 A requested backend/index that is absent fails before model loading; it never switches to another backend.
 The Metal backend is registered as `MTL` by this pinned llama.cpp version.
 Single-device GPU mode requests all model layers on that device, with CPU kernels still possible for unsupported operations and host-side work.
