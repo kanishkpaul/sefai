@@ -53,12 +53,15 @@ A repository administrator remains able to alter protections; no tool configurat
 ## Publishing the foundation
 
 Bootstrap publication requires maintainer authorization and local validation before the new workflow exists on main.
-GitHub rejected commit-message metadata rules with HTTP 422; the proposed JSON is retained as a reference, not an active control.
-After committing and publishing the foundation through an explicitly authorized bootstrap, require `attribution`, `check (ubuntu-latest)`, `check (macos-latest)` and `check (windows-latest)` for main.
-The trusted-base attribution job assumes its checker already exists on the base branch; the first publication must run the checker locally and verify push CI before enabling the gate.
+GitHub rejected commit-message metadata rules with HTTP 422; trusted PR checks enforce the policy instead.
+Main requires `attribution`, `check (ubuntu-latest)`, `check (macos-latest)` and `check (windows-latest)` from GitHub Actions.
+The read-only `pull_request_target` attribution workflow and checker come from the trusted base branch; it never executes candidate code.
+The bootstrap was validated locally and passed CI before protection was activated.
 Require PRs for subsequent changes, disallow force pushes/deletion, and review changes to hooks/checkers/workflows as policy changes.
-The prepared main ruleset is disabled in `.github/main-ruleset.json`; activate only after verifying those exact check contexts on GitHub.
+The active ruleset is recorded in `.github/main-ruleset.json` and [GitHub rules](https://github.com/kanishkpaul/sefai/rules/25357015).
+It requires PRs, all four checks and resolved review threads, blocks deletion/force pushes, and has no bypass actors.
 
 Historical cleanup is a separate, verified candidate at `archive/clean-main-2026-10-19`.
-Its publication needs an explicit exception to the no-main-rewrite rule and a fresh check of remote main against the audited tip.
+It was published with a maintainer-authorized one-time exception and an exact lease against the audited main tip.
+Future main rewrites remain prohibited.
 Original local archives deliberately retain their original identities and history.
