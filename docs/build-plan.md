@@ -62,7 +62,8 @@ Publish controls only after the maintainer authorizes commits; enable required c
 A regex and an agent instruction cannot guarantee that an administrator or credential holder will never bypass policy.
 
 **Exit:** audited snapshot and verified local archives; all four required Rust checks; attribution tests; workflow validation; CI execution on Windows/macOS/Linux after publication; branch protections verified by API.
-Current status and outstanding publication work belong in [verification.md](verification.md).
+The foundation and controls are published; bootstrap CI passed on all three operating systems and main protection is active.
+Detailed evidence belongs in [verification.md](verification.md).
 
 ### Phase 1 — Fix the runner before expanding it
 
