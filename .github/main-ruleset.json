@@ -1,0 +1,56 @@
+{
+  "name": "Main checks and review",
+  "target": "branch",
+  "enforcement": "disabled",
+  "bypass_actors": [],
+  "conditions": {
+    "ref_name": {
+      "include": [
+        "refs/heads/main"
+      ],
+      "exclude": []
+    }
+  },
+  "rules": [
+    {
+      "type": "deletion"
+    },
+    {
+      "type": "non_fast_forward"
+    },
+    {
+      "type": "pull_request",
+      "parameters": {
+        "dismiss_stale_reviews_on_push": true,
+        "require_code_owner_review": false,
+        "require_last_push_approval": false,
+        "required_approving_review_count": 0,
+        "required_review_thread_resolution": true
+      }
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": true,
+        "required_status_checks": [
+          {
+            "context": "attribution",
+            "integration_id": 15368
+          },
+          {
+            "context": "check (ubuntu-latest)",
+            "integration_id": 15368
+          },
+          {
+            "context": "check (macos-latest)",
+            "integration_id": 15368
+          },
+          {
+            "context": "check (windows-latest)",
+            "integration_id": 15368
+          }
+        ]
+      }
+    }
+  ]
+}

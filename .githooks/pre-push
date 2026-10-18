@@ -1,0 +1,21 @@
+#!/bin/sh
+set -eu
+root=$(git rev-parse --show-toplevel)
+zero=0000000000000000000000000000000000000000
+while read -r local_ref local_sha remote_ref remote_sha; do
+    [ "$local_sha" != "$zero" ] || continue
+    if [ "$remote_sha" = "$zero" ]; then
+        base=$(git hash-object -t tree /dev/null)
+        python3 "$root/scripts/check_attribution.py" diff "$base" "$local_sha"
+        # Existing history is audited separately; check every newly reachable commit.
+        for commit in $(git rev-list "$local_sha" --not --remotes); do
+            message=$(mktemp)
+            git show -s --format=%B "$commit" > "$message"
+            python3 "$root/scripts/check_attribution.py" message "$message" || { rm -f "$message"; exit 1; }
+            rm -f "$message"
+        done
+    else
+        python3 "$root/scripts/check_attribution.py" range "$remote_sha" "$local_sha"
+        python3 "$root/scripts/check_attribution.py" diff "$remote_sha" "$local_sha"
+    fi
+done
