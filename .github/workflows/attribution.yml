@@ -1,0 +1,62 @@
+name: attribution-policy
+
+on:
+  push:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited]
+  merge_group:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: attribution-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  attribution:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.sha }}
+      - name: Check candidate messages and added content
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          BEFORE: ${{ github.event.before }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha || github.sha }}
+        run: |
+          if [ -n "$BASE" ]; then
+            git fetch --no-tags origin "$HEAD_SHA"
+          elif [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then
+            BASE="$BEFORE"
+          elif git rev-parse --verify "refs/remotes/origin/$DEFAULT_BRANCH" >/dev/null 2>&1; then
+            BASE=$(git merge-base "$HEAD_SHA" "refs/remotes/origin/$DEFAULT_BRANCH")
+            if [ "$BASE" = "$HEAD_SHA" ] && git rev-parse "$HEAD_SHA^" >/dev/null 2>&1; then
+              BASE=$(git rev-parse "$HEAD_SHA^")
+            fi
+          else
+            BASE=$(git hash-object -t tree /dev/null)
+          fi
+          if git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            python3 scripts/check_attribution.py range "$BASE" "$HEAD_SHA"
+          else
+            for commit in $(git rev-list "$HEAD_SHA"); do
+              git show -s --format=%B "$commit" > "$RUNNER_TEMP/message"
+              python3 scripts/check_attribution.py message "$RUNNER_TEMP/message"
+            done
+          fi
+          python3 scripts/check_attribution.py diff "$BASE" "$HEAD_SHA"
+      - name: Check pull request title and body
+        if: github.event_name == 'pull_request_target'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          printf '%s\n%s\n' "$PR_TITLE" "$PR_BODY" > "$RUNNER_TEMP/pull-request"
+          python3 scripts/check_attribution.py message "$RUNNER_TEMP/pull-request"

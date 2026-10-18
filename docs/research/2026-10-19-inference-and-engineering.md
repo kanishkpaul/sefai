@@ -159,6 +159,7 @@ If actual source is copied later, check its license and retain required legal no
 
 Local hooks are convenience guards; they can be omitted or bypassed.
 CI must validate all new commit messages, pull request title/body, and added content with a trusted base-branch checker.
+PR attribution policy runs through a separate read-only `pull_request_target` workflow and never executes candidate code.
 Required checks must block merging; changes to the checker/workflow need owner review.
 Use minimal workflow permissions, immutable action SHAs and no execution of PR-controlled text in shell expressions, following [GitHub's secure-use guidance](https://docs.github.com/en/actions/reference/security/secure-use).
 The [rules API](https://docs.github.com/en/rest/repos/rules#create-a-repository-ruleset) describes available rule types, but this repository rejected both broad and minimal `commit_message_pattern` requests with HTTP 422.
