@@ -2,7 +2,8 @@
 
 Rust owns the runner/harness, file semantics, permissions and terminal UI.
 Inference libraries are isolated optional dependencies.
-The current foundation only prints diagnostic prompts; the rows below are planned choices with explicit qualification work.
+The GGUF runner is locally tested on Apple M5 CPU/Metal with one pinned SmolLM2 fixture.
+Other runtime choices and the wider platform/model matrix still require qualification; see [runner.md](runner.md).
 
 | Concern | Choice | Boundary |
 | --- | --- | --- |

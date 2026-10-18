@@ -3,9 +3,9 @@
 A small Rust LLM runner and terminal harness, built around files you can read and edit.
 The goal is low RAM/VRAM use, a persistent TUI, Markdown-owned prompts/skills/preferences/memory, and explicit MCP connections.
 
-**Status: planning and Rust foundation.**
-The current command prints a diagnostic prompt.
-Model inference, TUI, Markdown loading and MCP support are not implemented yet.
+**Status: Phase 1 GGUF runner; cross-platform qualification pending.**
+Local CPU and Metal inference pass the pinned-model regression suite on this Mac.
+TUI, Markdown loading and MCP support are not implemented yet.
 
 ## Direction
 
@@ -20,15 +20,18 @@ Model inference, TUI, Markdown loading and MCP support are not implemented yet.
 Format support depends on the model architecture, quantization and backend.
 The [compatibility plan](docs/stack.md) distinguishes planned coverage from measured support.
 
-## Run the foundation
+## Run locally
 
-Install a stable Rust toolchain, then:
+Install stable Rust, CMake, a C/C++ compiler and libclang, then:
 
 ```sh
-cargo run --locked -- prompt hello
+cargo run --locked -- devices
+cargo run --locked -- run --model /path/to/model.gguf "hello"
 ```
 
-This prints `[user]` followed by `hello`; it does not load a model.
+The runner loads the chosen local GGUF and streams a reply; CPU is the explicit default.
+See the [runner guide](docs/runner.md) for GPU builds, limits, benchmarks and model tests.
+`cargo run --locked --no-default-features -- prompt hello` retains the diagnostic without native inference dependencies.
 There is no published installer yet.
 
 ## Read the plan

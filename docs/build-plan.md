@@ -1,7 +1,8 @@
 # Build plan
 
 Build a small Rust LLM runner and terminal harness, with Markdown-owned customization and optional inference backends.
-GGUF, ONNX, GPTQ, AWQ, and MLX are release targets; none is implemented in the current foundation.
+GGUF, ONNX, GPTQ, AWQ, and MLX are release targets.
+The Phase 1 GGUF runner is implemented and locally tested on CPU/Metal; its cross-platform CI gate remains open.
 Complete runner correctness before adding harness features.
 Every phase includes regression tests; the second-last phase is a complete product verification pass, and the last is repository organization, installation, and presentation.
 
@@ -66,6 +67,10 @@ The foundation and controls are published; bootstrap CI passed on all three oper
 Detailed evidence belongs in [verification.md](verification.md).
 
 ### Phase 1 — Fix the runner before expanding it
+
+**Current:** implementation and local CPU/Metal regression evidence are ready; publication, Windows/Linux execution and CUDA/Vulkan compilation remain unverified.
+The [runner guide](runner.md) describes the implemented API and limits; [verification.md](verification.md) records results and failures.
+Do not start Phase 2 until the remaining gate checks pass.
 
 Work through [bug-fix-plan.md](bug-fix-plan.md) in order.
 Create `engine-llama` only when the first real engine implementation lands.

@@ -1,0 +1,90 @@
+{
+  "date": "2026-10-19",
+  "state": "local Phase 1 candidate; not a released performance claim",
+  "host": {
+    "chip": "Apple M5",
+    "unified_memory_gb": 16,
+    "macos": "27.0.1",
+    "rust": "1.96.1"
+  },
+  "binding": "llama-cpp-2 =0.1.160",
+  "model_fixture": "../../tests/fixtures/gguf.json",
+  "settings": {
+    "context_tokens": 4096,
+    "batch_tokens": 512,
+    "microbatch_tokens": 128,
+    "prompt": "literal \" a\" repeated 512 times",
+    "output_tokens": 32,
+    "threads": 4,
+    "repetitions": 3
+  },
+  "measurement": "release build; one model load, fresh context per repetition; filesystem caches not purged; generation includes sampling/callback; final emitted token is not decoded again",
+  "runs": {
+    "cpu": {
+      "samples": [
+        {
+          "sample": 1,
+          "load_s": 0.086529,
+          "prompt_tokens": 512,
+          "generated_tokens": 32,
+          "prefill_s": 0.502028,
+          "generation_s": 0.095544,
+          "stop": "OutputLimit"
+        },
+        {
+          "sample": 2,
+          "load_s": 0.086529,
+          "prompt_tokens": 512,
+          "generated_tokens": 32,
+          "prefill_s": 0.511291,
+          "generation_s": 0.084942,
+          "stop": "OutputLimit"
+        },
+        {
+          "sample": 3,
+          "load_s": 0.086529,
+          "prompt_tokens": 512,
+          "generated_tokens": 32,
+          "prefill_s": 0.513505,
+          "generation_s": 0.086017,
+          "stop": "OutputLimit"
+        }
+      ],
+      "maximum_rss_bytes": 357433344,
+      "peak_physical_footprint_bytes": 235176872
+    },
+    "metal": {
+      "samples": [
+        {
+          "sample": 1,
+          "load_s": 0.039495,
+          "prompt_tokens": 512,
+          "generated_tokens": 32,
+          "prefill_s": 0.055556,
+          "generation_s": 0.083235,
+          "stop": "OutputLimit"
+        },
+        {
+          "sample": 2,
+          "load_s": 0.039495,
+          "prompt_tokens": 512,
+          "generated_tokens": 32,
+          "prefill_s": 0.038461,
+          "generation_s": 0.081604,
+          "stop": "OutputLimit"
+        },
+        {
+          "sample": 3,
+          "load_s": 0.039495,
+          "prompt_tokens": 512,
+          "generated_tokens": 32,
+          "prefill_s": 0.038147,
+          "generation_s": 0.080826,
+          "stop": "OutputLimit"
+        }
+      ],
+      "maximum_rss_bytes": 310345728,
+      "peak_physical_footprint_bytes": 192332760
+    }
+  }
+}
