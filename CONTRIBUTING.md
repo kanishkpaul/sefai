@@ -5,7 +5,7 @@ Keep changes small and remove unnecessary machinery before adding a replacement.
 
 ## Setup
 
-The current foundation needs stable Rust, Git and Python 3 for development guards.
+The GGUF build needs stable Rust, CMake, a C/C++ compiler and libclang; development guards also use Git and Python 3.
 Python is not a product runtime requirement.
 
 ```sh
@@ -13,8 +13,7 @@ git config core.hooksPath .githooks
 cargo run --locked -- prompt hello
 ```
 
-Engine phases add CMake, a native compiler and the SDK for the selected backend.
-Document exact platform prerequisites with the backend when it is implemented.
+The [runner guide](docs/runner.md) documents native prerequisites and backend SDK requirements.
 Do not install every engine SDK for a base build.
 
 ## Checks
@@ -28,7 +27,8 @@ python3 -m unittest discover -s tests -v
 ```
 
 CI targets Windows, macOS and Linux.
-The no-default-features check is currently equivalent to the base build; it becomes meaningful when optional engine/capability features exist.
+The no-default-features binary excludes both inference and the signal handler.
+CI downloads and verifies a pinned GGUF separately; ordinary workspace tests need no model or network.
 Hardware execution and real-model tests require their own explicit jobs and evidence.
 
 ## Review and push

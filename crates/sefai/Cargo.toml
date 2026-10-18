@@ -9,7 +9,7 @@ publish.workspace = true
 
 [features]
 default = ["gguf"]
-gguf = ["dep:sefai-engine-llama"]
+gguf = ["dep:sefai-engine-llama", "dep:ctrlc"]
 metal = ["gguf", "sefai-engine-llama/metal"]
 cuda = ["gguf", "sefai-engine-llama/cuda"]
 vulkan = ["gguf", "sefai-engine-llama/vulkan"]
@@ -19,6 +19,7 @@ sefai-engine-llama = { path = "../engine-llama", optional = true, default-featur
 sefai-core.workspace = true
 
 clap.workspace = true
+ctrlc = { version = "3.5.2", optional = true }
 
 [lints]
 workspace = true

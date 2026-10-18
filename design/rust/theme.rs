@@ -96,10 +96,10 @@ pub fn terminal_is_light(app_env_prefix: &str) -> bool {
     if let Ok(v) = env::var(format!("{app_env_prefix}_THEME")) {
         return v.eq_ignore_ascii_case("light");
     }
-    if let Ok(v) = env::var("COLORFGBG") {
-        if let Some(bg) = v.rsplit(';').next().and_then(|b| b.parse::<u8>().ok()) {
-            return bg == 7 || bg == 15;
-        }
+    if let Ok(v) = env::var("COLORFGBG")
+        && let Some(bg) = v.rsplit(';').next().and_then(|b| b.parse::<u8>().ok())
+    {
+        return bg == 7 || bg == 15;
     }
     env::var("TERM_PROGRAM").is_ok_and(|p| p == "Apple_Terminal")
 }

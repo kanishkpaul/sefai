@@ -1,4 +1,4 @@
-use crate::message::Message;
+use crate::message::{Message, Role};
 
 /// Everything the model will see for one turn, before chat-template rendering.
 ///
@@ -47,13 +47,20 @@ impl Prompt {
     ///
     /// All non-blank sections join into one leading system message, separated
     /// by blank lines, because many chat templates accept only one system
-    /// message and some reject one that is not first. With no sections there
-    /// is no system message at all.
+    /// message and some reject one that is not first. Existing system messages
+    /// follow sections in conversation order and join the same leading message.
+    /// Blank system text is omitted; other roles and their content stay intact.
     pub fn to_messages(&self) -> Vec<Message> {
         let system = self
             .sections
             .iter()
             .map(|section| section.text.trim())
+            .chain(
+                self.conversation
+                    .iter()
+                    .filter(|message| message.role == Role::System)
+                    .map(|message| message.content.trim()),
+            )
             .filter(|text| !text.is_empty())
             .collect::<Vec<_>>()
             .join("\n\n");
@@ -62,7 +69,12 @@ impl Prompt {
         if !system.is_empty() {
             messages.push(Message::system(system));
         }
-        messages.extend(self.conversation.iter().cloned());
+        messages.extend(
+            self.conversation
+                .iter()
+                .filter(|message| message.role != Role::System)
+                .cloned(),
+        );
         messages
     }
 }
@@ -87,6 +99,28 @@ mod tests {
             Message::system("You are Aria.\n\nThey like rain.")
         );
         assert_eq!(messages[1].role, Role::User);
+    }
+
+    #[test]
+    fn existing_system_text_joins_sections_once() {
+        let mut prompt = Prompt::new(vec![
+            Message::system("existing"),
+            Message::user("<system>literal</system>"),
+        ]);
+        prompt.add_section("system", "section");
+        assert_eq!(
+            prompt.to_messages(),
+            vec![
+                Message::system("section\n\nexisting"),
+                Message::user("<system>literal</system>")
+            ]
+        );
+    }
+
+    #[test]
+    fn blank_system_text_is_omitted() {
+        let prompt = Prompt::new(vec![Message::system(" \n"), Message::user("hi")]);
+        assert_eq!(prompt.to_messages(), vec![Message::user("hi")]);
     }
 
     #[test]

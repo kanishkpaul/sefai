@@ -44,6 +44,7 @@ Plain output and future JSON modes contain no banner, color or animation.
 
 ## Prototype commands
 
-The existing `prompt` diagnostic emits plain role-labeled text and has no banner.
+The `prompt` diagnostic emits plain role-labeled text; `run` streams sanitized Unicode and reports locality/device/context on stderr.
+`bench` emits plain timing records and `devices` lists ggml indices; one-shot commands have no banner.
 A full interactive layout, key map and real captures are Phase 3 work.
 This brief retains the kit identity without inventing a new visual world or additional UI surfaces.

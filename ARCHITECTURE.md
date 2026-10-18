@@ -7,8 +7,11 @@ The TUI is its permanent home.
 ## What exists
 
 `crates/core` contains dependency-free `Message`, `Role`, `Prompt` and `Section` types.
-`crates/sefai` contains the binary and a `prompt` diagnostic command.
-There is no inference engine, TUI, Markdown loader, MCP client or persistent memory yet.
+`crates/engine-llama` owns the exactly pinned llama.cpp binding, GGUF model loading, native templates/tokenizer, bounded prefill, sampling and streaming.
+`crates/sefai` composes the `run`, `bench`, `devices` and minimal `prompt` commands, cancellation and terminal sanitization.
+An engine lends one model at a time; requests allocate one temporary context while retaining the model weights.
+There is no TUI, Markdown loader, MCP client or persistent memory yet.
+The [runner guide](docs/runner.md) defines current limits and local qualification.
 The [build plan](docs/build-plan.md) separates implementation phases and acceptance gates.
 The [audit](docs/bug-fix-plan.md) records the legacy runner defects that a replacement must test.
 

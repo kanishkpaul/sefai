@@ -9,6 +9,8 @@ publish.workspace = true
 
 [features]
 default = []
+model-tests = []
+native-logs = []
 metal = ["llama-cpp-2/metal"]
 cuda = ["llama-cpp-2/cuda"]
 vulkan = ["llama-cpp-2/vulkan"]
@@ -19,3 +21,8 @@ sefai-core.workspace = true
 
 [lints]
 workspace = true
+
+[[test]]
+name = "gguf"
+path = "tests/gguf.rs"
+required-features = ["model-tests"]

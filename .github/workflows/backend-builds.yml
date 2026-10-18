@@ -1,0 +1,46 @@
+name: backend-builds
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-builds-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vulkan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - run: sudo apt-get update && sudo apt-get install -y cmake clang libclang-dev libvulkan-dev glslc
+      - run: cargo check --locked -p sefai --no-default-features --features vulkan
+        env:
+          CARGO_BUILD_JOBS: '2'
+  cuda:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    container:
+      image: nvidia/cuda:12.8.1-devel-ubuntu24.04@sha256:520292dbb4f755fd360766059e62956e9379485d9e073bbd2f6e3c20c270ed66
+    steps:
+      - run: apt-get update && apt-get install -y build-essential cmake clang libclang-dev curl ca-certificates git
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Install the repository toolchain
+        shell: bash
+        run: |
+          curl --fail --location --max-time 60 https://sh.rustup.rs --output /tmp/rustup.sh
+          sh /tmp/rustup.sh -y --profile minimal --default-toolchain none
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+      - run: cargo check --locked -p sefai --no-default-features --features cuda
+        env:
+          CARGO_BUILD_JOBS: '2'
+          CMAKE_CUDA_ARCHITECTURES: '75'

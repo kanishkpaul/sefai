@@ -53,3 +53,14 @@ No real GGUF inference, Windows execution or GPU validation was performed for th
 Each repair is a small logical commit, with one behavioral regression first, no unrelated reformatting and an updated document when its behavior changes.
 Use the fixed engine through a real model before advancing the phase gate.
 Record failed commands alongside successful ones; do not trade missing evidence for a broad claim such as "fully tested".
+
+
+## Phase 1 replacement evidence
+
+The local GGUF engine now exercises B1–B6 and B8 on the pinned SmolLM2 fixture on CPU and Metal; see [verification.md](verification.md) for commands, failed probes and limits.
+B3 also has deterministic byte-split Unicode and malformed-byte unit tests, and B5 has a stateful frequency-penalty regression rather than a greedy-only check.
+B4 uses the upstream native renderer and explicitly rejects unsupported templates; full tool-template support remains a harness gate.
+B7 has an exactly pinned, build-probed dependency and prepared real-model/compile CI, but the standalone commit and remote Windows/Linux/CUDA/Vulkan results are still pending.
+The new prompt boundaries enforce B9's size/message limits; one-shot rendering filters terminal controls across pieces for B10.
+Future Markdown, TUI and MCP consumers must enforce their own boundaries as those phases land.
+Phase 1 remains open until the publication and CI gates pass.
