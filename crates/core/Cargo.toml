@@ -1,0 +1,13 @@
+[package]
+name = "sefai-core"
+description = "Shared message and prompt types for sefai."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+
+[lints]
+workspace = true

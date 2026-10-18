@@ -1,0 +1,31 @@
+{
+  "kit": {
+    "version": "0.1.0",
+    "source": "../design-kit"
+  },
+  "project": "sefai",
+  "skin": "candle",
+  "options": {
+    "tailwind": false
+  },
+  "ignore": [],
+  "files": {
+    "README.md": "28be2d20bc5ac6d6",
+    "hermes.yaml": "9dad0b323ff12a5f",
+    "rust/identity.rs": "b4561055f233c61e",
+    "rust/palettes.rs": "19a6a339b06ca7cb",
+    "rust/theme.rs": "491259fc7dbb1d06",
+    "system/COLOR.md": "f99825e27c4ff599",
+    "system/COMPONENTS.md": "e8e3c4d8f1e2dccc",
+    "system/DESIGN.md": "6359bf5c1331ae30",
+    "system/RESEARCH.md": "0935e9aa0de4c3b3",
+    "system/TUI.md": "5a4f7073625e9e92",
+    "system/TYPOGRAPHY.md": "b346855bb281a63a",
+    "tokens/base.css": "ec4bec8b2cb679bb",
+    "tokens/components.css": "062d7e955f2ba3e5",
+    "tokens/loader.js": "b67d102ed7c34640",
+    "tokens/skins.css": "f1905feefa450904",
+    "tokens/tokens.json": "ad8b19e94aee9bef"
+  },
+  "pending": {}
+}

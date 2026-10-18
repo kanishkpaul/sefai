@@ -1,0 +1,16 @@
+[package]
+name = "sefai"
+description = "A small local LLM runner and terminal harness."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+sefai-core.workspace = true
+
+clap.workspace = true
+
+[lints]
+workspace = true

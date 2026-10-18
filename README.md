@@ -1,67 +1,52 @@
-# sefai — archived code
+# sefai
 
-This branch keeps the code sefai had before the rewrite that began on `main` in October 2026.
-Nothing here is developed further.
-It exists so the history stays readable and the old ideas stay easy to find.
+A small Rust LLM runner and terminal harness, built around files you can read and edit.
+The goal is low RAM/VRAM use, a persistent TUI, Markdown-owned prompts/skills/preferences/memory, and explicit MCP connections.
 
-Sefai has had two lives, and both are kept here side by side:
+**Status: planning and Rust foundation.**
+The current command prints a diagnostic prompt.
+Model inference, TUI, Markdown loading and MCP support are not implemented yet.
 
-| Directory | What it is | Period | Platform |
-| --- | --- | --- | --- |
-| [`companion/`](companion/) | Sefai Companion: a desktop AI companion with a persona, memory and proactive messages | May–June 2026 | Windows |
-| [`runner/`](runner/) | A ~140-line Rust CLI that runs a GGUF model through llama.cpp with explicit GPU offload | June–September 2026 | macOS (Metal), Windows (CUDA, Vulkan) |
+## Direction
 
-Each directory has its own README with build instructions as they were written at the time.
-The full commit history of both is on this branch.
+| Area | Planned support |
+| --- | --- |
+| Model runtimes | GGUF first; optional MLX, ONNX, GPTQ and AWQ adapters |
+| Systems | Windows, macOS and Linux |
+| GPUs | NVIDIA/CUDA, Apple/Metal, AMD/Vulkan; CPU fallback |
+| Customization | Markdown source of truth; binary models/caches and credential references are explicit exceptions |
+| Interface | Terminal TUI throughout the product's life |
 
-## companion/
+Format support depends on the model architecture, quantization and backend.
+The [compatibility plan](docs/stack.md) distinguishes planned coverage from measured support.
 
-A Windows desktop app that tried to be a friend rather than a chat box.
-It had two halves that talked over a Windows named pipe:
+## Run the foundation
 
-- **`frontend/CompanionApp/`** — a WPF app on .NET 8: chat window, onboarding, settings, tray icon, start-with-Windows, and a supervisor that restarted the backend if it died.
-- **`backend/`** — a Python service:
-  - `persona/` loads a persona file (see `persona.sample.json`) with identity, values, voice and refusal rules.
-  - `memory/` stores every exchange in SQLite and builds context from keyword overlap plus a rolling relationship summary.
-  - `autonomy/` uses APScheduler to send unprompted messages on time- and state-based triggers, with quiet hours.
-  - `inference/` runs the model.
+Install a stable Rust toolchain, then:
 
-Inference was the weak part.
-Each reply started a fresh `llama-cli` process with GPU offload turned off, so every message paid for a full model load and a CPU-only pass over the whole persona prompt.
-`llama-cpp-python` and a canned fallback responder were the backups.
-That cost is the reason the project moved to an in-process engine.
-
-To run it you need Windows, Python 3.12 and the .NET 8 SDK; see [`companion/README.md`](companion/README.md).
-
-## runner/
-
-The first step of the rewrite: one Rust file that loads a GGUF model, tokenizes a prompt, decodes greedily and streams the text.
-Its point was the `--gpu-layers` flag (`0`, a count, or `all`) and builds for Metal, CUDA and Vulkan.
-On an Apple M5 it showed Metal running a 0.5B model about seven times faster than the CPU path.
-
-```bash
-cd runner
-cargo build --release --features metal      # or: cuda, vulkan
-./target/release/sefai model.gguf -p "Hello" --gpu-layers all
+```sh
+cargo run --locked -- prompt hello
 ```
 
-Known problems, all fixed by design in the rewrite rather than here:
+This prints `[user]` followed by `hello`; it does not load a model.
+There is no published installer yet.
 
-- Prompts over 512 tokens fail because the prompt goes into one 512-slot batch, and the 2,048-token context is never checked.
-- Each token is decoded to UTF-8 on its own, so characters split across tokens print as `�`.
-- No chat template, and greedy decoding only.
-- The sampler accepts every token twice, which is harmless for greedy decoding and wrong for anything else.
-- `--gpu-layers 0` is not strictly CPU-only, and `--main-gpu` does not choose the device under llama.cpp's default split mode.
+## Read the plan
 
-## Where sefai went next
+| Document | Purpose |
+| --- | --- |
+| [Build plan](docs/build-plan.md) | Phases, retained scope and acceptance gates |
+| [Bug-fix plan](docs/bug-fix-plan.md) | Main-branch audit and ordered regression work |
+| [Research](docs/research/2026-10-19-inference-and-engineering.md) | Formats, memory arithmetic, Rust practice and sources |
+| [Architecture](ARCHITECTURE.md) | Current code and planned ownership boundaries |
+| [Verification](docs/verification.md) | Checks performed, failures and outstanding work |
+| [Contributing](CONTRIBUTING.md) | Setup, checks and publication policy |
 
-The `main` branch is a ground-up rewrite: a single Rust binary that keeps the model loaded, runs on Apple Silicon and NVIDIA GPUs, and brings the companion ideas back as abilities that can be added or removed independently.
-See its README and `docs/` for the design.
-
-## Credits
-
-Both versions run models through [llama.cpp](https://github.com/ggml-org/llama.cpp) and [ggml](https://github.com/ggml-org/ggml) by Georgi Gerganov and contributors.
+The old Windows companion and runner are preserved in local archives rather than carried into the new product.
+The former `new` branch is preserved locally as `archive/new-2026-10-19`.
+The full README, real demo and installation story are final-phase work after product verification.
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
+MIT; see [LICENSE](LICENSE).
+Third-party runtimes retain their own licenses and notices.

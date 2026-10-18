@@ -1,0 +1,5 @@
+/target
+*.gguf
+
+.local-archive/
+__pycache__/
