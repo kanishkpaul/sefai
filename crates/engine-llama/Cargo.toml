@@ -1,0 +1,21 @@
+[package]
+name = "sefai-engine-llama"
+description = "Bounded GGUF inference through llama.cpp."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[features]
+default = []
+metal = ["llama-cpp-2/metal"]
+cuda = ["llama-cpp-2/cuda"]
+vulkan = ["llama-cpp-2/vulkan"]
+
+[dependencies]
+llama-cpp-2 = { version = "=0.1.160", default-features = false }
+sefai-core.workspace = true
+
+[lints]
+workspace = true
