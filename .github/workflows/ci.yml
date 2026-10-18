@@ -77,7 +77,7 @@ jobs:
       - name: Test real GGUF inference on CPU
         shell: bash
         env:
-          SEFAI_TEST_MODEL: fixture.gguf
+          SEFAI_TEST_MODEL: ${{ github.workspace }}/fixture.gguf
           SEFAI_TEST_BACKEND: cpu
         run: |
           cargo test --locked -p sefai-engine-llama --features model-tests --test gguf
