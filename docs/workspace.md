@@ -25,7 +25,7 @@ Up to 16 skills are selected explicitly and read on demand.
 Skill resources are bounded workspace-relative references, validated but neither executed nor added to the prompt automatically.
 `--recall TEXT` performs case-sensitive literal matching over memory bodies and includes at most eight matching files.
 No embeddings or implicit memory extraction runs.
-`--raw` rejects workspace instructions rather than dropping them silently.
+`--raw` rejects nonempty workspace instructions and resumed history before loading weights rather than dropping them silently.
 The engine owns the final token budget and rejects an oversized rendered prompt.
 
 ## Schema 1
@@ -102,6 +102,7 @@ Schema 1 is the initial format, so no migration is applied automatically.
 Unsupported versions are rejected without rewriting; rollback means restoring the user's backed-up Markdown files and the matching application version.
 Schema fixtures live in `tests/fixtures/workspace`; model-free restart and filesystem qualification lives in `crates/sefai/tests/workspace.rs`.
 The existing three-OS CI matrix runs it automatically; local evidence is macOS and remote qualification remains pending.
+The acceptance matrix is in [phase2-closeout.md](phase2-closeout.md).
 
 ## Editing safely
 
@@ -110,7 +111,9 @@ For normal editing, use a text editor directly and run `workspace check` afterwa
 For writes through sefai, `workspace put system.md --from candidate.md` creates a missing file.
 Updating it requires `--expected snapshot.md`, where the snapshot is a separate unchanged byte-for-byte copy of the old file.
 The snapshot is read again immediately before replacement; keep it unchanged throughout the operation.
+Use an independent copy, not a hard link to a file being edited.
 A mismatched, missing or unexpected current file is a conflict, never a request to overwrite it.
+The target itself cannot serve as its expected snapshot.
 A malformed candidate is rejected before replacing the last good file.
 An invalid manual edit is reported and left untouched; the CLI does not invent or silently restore lost content.
 Keep a backup when editing manually; a future long-running TUI must retain its loaded valid state when reload fails.
@@ -126,6 +129,8 @@ A rejected or failed candidate leaves the target unchanged and removes its tempo
 A killed process can leave an unused `.sefai-*.tmp` file; it is not registered Markdown and is never loaded or promoted automatically.
 On Unix the containing directory is synced after replacement; a directory-sync error occurs after replacement and may mean the new file is already visible.
 No crash/power-loss durability guarantee is made for every filesystem.
+Cancellation before rename preserves the old target; interruption during or after rename requires inspecting the target before retrying.
+Workspace commands use normal process cancellation and do not automatically retry side effects.
 Windows rename/share errors are returned; there is no delete-then-rename fallback that could lose the old file.
 Writes reject symlinks in any relative path component.
 Read paths must resolve within the workspace.
@@ -160,3 +165,9 @@ Older records are discarded from the in-memory tail rather than loaded as one tr
 `--session ID` adds the last 32 records under the same byte limit before the new user message in `prompt` and `run`.
 Prompt composition can still reject the combined text budget or the engine's rendered token budget.
 Tail output sanitizes terminal controls; source Markdown remains unchanged.
+
+## Implementation references
+
+[Serde](https://docs.rs/serde/latest/serde/) provides typed decoding and unknown-field rejection.
+[Deserialize-only serde-saphyr](https://docs.rs/serde-saphyr/2.0.0/serde_saphyr/) supplies YAML budgets without filesystem includes or a serializer.
+[Standard-library file locks](https://doc.rust-lang.org/std/fs/struct.File.html#method.try_lock) and [rename](https://doc.rust-lang.org/std/fs/fn.rename.html) provide the OS primitives; sefai adds bounded staging and expected-revision checks around them.

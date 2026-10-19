@@ -57,6 +57,9 @@ impl Selection {
     }
 
     pub fn prepare(&self, message: String) -> io::Result<Prepared> {
+        if message.len() > PROMPT_BYTES_MAX {
+            return Err(invalid("prompt: exceeds 1048576 bytes"));
+        }
         if self.skill.len() > 16 {
             return Err(invalid("skill: at most 16 selections"));
         }
@@ -83,6 +86,19 @@ impl Selection {
         if let Some(id) = &self.session {
             let mut messages = workspace.session(id, 32)?;
             messages.extend_from_slice(result.prompt.conversation());
+            let additional = messages
+                .iter()
+                .map(|message| message.content.len())
+                .sum::<usize>();
+            let sections_bytes = result
+                .prompt
+                .sections()
+                .iter()
+                .map(|section| section.text.len())
+                .sum::<usize>();
+            if additional + sections_bytes > PROMPT_BYTES_MAX {
+                return Err(invalid("prompt: resumed text exceeds 1048576 bytes"));
+            }
             let sections = result.prompt.sections().to_vec();
             result.prompt = Prompt::new(messages);
             for section in sections {
@@ -123,7 +139,7 @@ impl Selection {
             let text = workspace.read(&path)?;
             let (header, body) = schema::parse::<Skill>(&text).map_err(|error| at(&path, error))?;
             workspace.validate_skill(&path, &header)?;
-            result.prompt.add_section("skill", body);
+            add_section(&mut result.prompt, "skill", body)?;
         }
         if let Some(query) = &self.recall {
             if query.is_empty() || query.len() > 1024 {
@@ -136,7 +152,7 @@ impl Selection {
                     schema::parse::<Memory>(&text).map_err(|error| at(&path, error))?;
                 workspace.identity(&path, header.schema, &header.id)?;
                 if body.contains(query) {
-                    result.prompt.add_section("memory", body);
+                    add_section(&mut result.prompt, "memory", body)?;
                     count += 1;
                     if count == 8 {
                         break;
@@ -144,21 +160,7 @@ impl Selection {
                 }
             }
         }
-        let bytes: usize = result
-            .prompt
-            .sections()
-            .iter()
-            .map(|section| section.text.len())
-            .sum::<usize>()
-            + result
-                .prompt
-                .conversation()
-                .iter()
-                .map(|message| message.content.len())
-                .sum::<usize>();
-        if bytes > PROMPT_BYTES_MAX {
-            return Err(invalid("prompt: composed text exceeds 1048576 bytes"));
-        }
+        prompt_budget(&result.prompt, 0)?;
         Ok(result)
     }
 }
@@ -242,7 +244,7 @@ impl Workspace {
                 let (header, body) =
                     schema::parse::<Text>(&text).map_err(|error| at(path, error))?;
                 schema::version(header.schema).map_err(|error| at(path, error))?;
-                prompt.add_section(source, body);
+                add_section(prompt, source, body)?;
             }
         }
         Ok(())
@@ -297,7 +299,10 @@ impl Workspace {
             self.read(Path::new(&format!("models/{id}.md")))?;
         }
         self.instructions(&mut Prompt::default())?;
-        let mut count = 1;
+        let mut count = 1 + ["system.md", "preferences.md"]
+            .iter()
+            .filter(|name| self.root.join(name).exists())
+            .count();
         for directory in ["models", "skills", "memory", "sessions", "mcp"] {
             for path in self.entries(directory)? {
                 self.validate_file(&path, &self.path(&path)?)?;
@@ -341,6 +346,30 @@ impl Workspace {
             _ => Err(at(path, "path: unsupported document kind")),
         }
     }
+}
+
+fn prompt_budget(prompt: &Prompt, additional: usize) -> io::Result<()> {
+    let bytes = prompt
+        .sections()
+        .iter()
+        .map(|section| section.text.len())
+        .sum::<usize>()
+        + prompt
+            .conversation()
+            .iter()
+            .map(|message| message.content.len())
+            .sum::<usize>()
+        + additional;
+    if bytes > PROMPT_BYTES_MAX {
+        return Err(invalid("prompt: composed text exceeds 1048576 bytes"));
+    }
+    Ok(())
+}
+
+fn add_section(prompt: &mut Prompt, source: &'static str, body: &str) -> io::Result<()> {
+    prompt_budget(prompt, body.len())?;
+    prompt.add_section(source, body);
+    Ok(())
 }
 
 fn kind(path: &Path) -> io::Result<&str> {

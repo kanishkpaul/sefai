@@ -1,5 +1,5 @@
 use crate::term::Output;
-use crate::workspace::{Backend, Selection};
+use crate::workspace::{Backend, Runner, Selection};
 use clap::Args;
 use sefai_engine_llama::{Device, Engine, GpuBackend, Settings, Stop};
 use std::{
@@ -65,6 +65,15 @@ pub fn run(
         Mode::Reply => 1,
         Mode::Benchmark(repetitions) => repetitions,
     };
+    let overrides = Runner {
+        backend: options.backend,
+        device: options.device,
+        context: options.context,
+        batch: options.batch,
+        microbatch: options.microbatch,
+        output: options.output,
+        threads: options.threads,
+    };
     let mut prompt = options.prompt;
     if prompt == "-" {
         prompt.clear();
@@ -75,67 +84,31 @@ pub fn run(
     if prompt.trim().is_empty() || prompt.len() > sefai_engine_llama::PROMPT_BYTES_MAX {
         return Err("prompt must contain text within 1048576 bytes".into());
     }
-    let prepared = selection.prepare(prompt.clone())?;
-    let configured = prepared.runner;
-    let device = match (
-        options
-            .backend
-            .or(configured.backend)
-            .unwrap_or(Backend::Cpu),
-        options.device.or(configured.device),
-    ) {
-        (Backend::Cpu, None) => Device::Cpu,
-        (Backend::Cpu, Some(_)) => return Err("cpu mode does not accept --device".into()),
-        (backend, Some(index)) => Device::Gpu {
-            index,
-            backend: match backend {
-                Backend::Metal => GpuBackend::Metal,
-                Backend::Cuda => GpuBackend::Cuda,
-                Backend::Vulkan => GpuBackend::Vulkan,
-                Backend::Cpu => unreachable!(),
-            },
-        },
-        (_, None) => return Err("gpu mode requires --device from `sefai devices`".into()),
-    };
-    let settings = Settings {
-        context_tokens: options
-            .context
-            .or(configured.context)
-            .unwrap_or(Settings::default().context_tokens),
-        batch_tokens: options
-            .batch
-            .or(configured.batch)
-            .unwrap_or(Settings::default().batch_tokens),
-        microbatch_tokens: options
-            .microbatch
-            .or(configured.microbatch)
-            .unwrap_or(Settings::default().microbatch_tokens),
-        output_tokens: options
-            .output
-            .or(configured.output)
-            .unwrap_or(Settings::default().output_tokens),
-        threads: options
-            .threads
-            .or(configured.threads)
-            .unwrap_or(Settings::default().threads),
-    };
-    settings.validate(1, u32::MAX)?;
+    let prepared = selection.prepare(prompt)?;
+    let (device, settings) = resolve(overrides, prepared.runner)?;
+    if options.raw
+        && (!prepared.prompt.sections().is_empty() || prepared.prompt.conversation().len() != 1)
+    {
+        return Err("raw mode cannot discard workspace instructions or session history".into());
+    }
+    let path = options
+        .model
+        .or(prepared.model)
+        .ok_or("model: specify --model or a Markdown profile")?;
     let cancelled = Arc::new(AtomicBool::new(false));
     let signal = cancelled.clone();
     ctrlc::set_handler(move || signal.store(true, Ordering::Relaxed))?;
     let mut engine = Engine::new()?;
     let loading = Instant::now();
-    let path = options
-        .model
-        .or(prepared.model)
-        .ok_or("model: specify --model or a Markdown profile")?;
     let model = engine.load(&path, device, cancelled.clone())?;
     let load_seconds = loading.elapsed().as_secs_f64();
     let input = if options.raw {
-        if !prepared.prompt.sections().is_empty() {
-            return Err("raw mode cannot discard workspace instructions".into());
-        }
-        model.prepare_raw(&prompt)?
+        let message = prepared
+            .prompt
+            .conversation()
+            .last()
+            .ok_or("prompt: missing user message")?;
+        model.prepare_raw(&message.content)?
     } else {
         model.prepare(&prepared.prompt)?
     };
@@ -178,4 +151,86 @@ pub fn run(
         }
     }
     Ok(())
+}
+
+fn resolve(
+    overrides: Runner,
+    mut configured: Runner,
+) -> Result<(Device, Settings), Box<dyn std::error::Error>> {
+    configured.overlay(&overrides);
+    let device = match (
+        configured.backend.unwrap_or(Backend::Cpu),
+        configured.device,
+    ) {
+        (Backend::Cpu, None) => Device::Cpu,
+        (Backend::Cpu, Some(_)) => return Err("cpu mode does not accept --device".into()),
+        (backend, Some(index)) => Device::Gpu {
+            index,
+            backend: match backend {
+                Backend::Metal => GpuBackend::Metal,
+                Backend::Cuda => GpuBackend::Cuda,
+                Backend::Vulkan => GpuBackend::Vulkan,
+                Backend::Cpu => unreachable!(),
+            },
+        },
+        (_, None) => return Err("gpu mode requires --device from `sefai devices`".into()),
+    };
+    let defaults = Settings::default();
+    let settings = Settings {
+        context_tokens: configured.context.unwrap_or(defaults.context_tokens),
+        batch_tokens: configured.batch.unwrap_or(defaults.batch_tokens),
+        microbatch_tokens: configured.microbatch.unwrap_or(defaults.microbatch_tokens),
+        output_tokens: configured.output.unwrap_or(defaults.output_tokens),
+        threads: configured.threads.unwrap_or(defaults.threads),
+    };
+    settings.validate(1, u32::MAX)?;
+    Ok((device, settings))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn explicit_cpu_clears_inherited_gpu_selection() {
+        let configured = Runner {
+            backend: Some(Backend::Cuda),
+            device: Some(2),
+            ..Runner::default()
+        };
+        let overrides = Runner {
+            backend: Some(Backend::Cpu),
+            ..Runner::default()
+        };
+        assert_eq!(
+            resolve(overrides, configured).expect("resolve").0,
+            Device::Cpu
+        );
+    }
+
+    #[test]
+    fn explicit_runner_flags_override_markdown_values() {
+        let configured = Runner {
+            threads: Some(3),
+            output: Some(16),
+            ..Runner::default()
+        };
+        let overrides = Runner {
+            threads: Some(4),
+            output: Some(0),
+            ..Runner::default()
+        };
+        let (_, settings) = resolve(overrides, configured).expect("resolve");
+        assert_eq!((settings.threads, settings.output_tokens), (4, 0));
+    }
+
+    #[test]
+    fn explicit_cpu_with_explicit_gpu_index_is_rejected() {
+        let overrides = Runner {
+            backend: Some(Backend::Cpu),
+            device: Some(2),
+            ..Runner::default()
+        };
+        assert!(resolve(overrides, Runner::default()).is_err());
+    }
 }

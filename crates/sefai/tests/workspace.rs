@@ -361,3 +361,34 @@ fn windows_junction_cannot_escape_the_workspace() {
     assert!(!output.status.success());
     assert!(String::from_utf8_lossy(&output.stderr).contains("escapes workspace"));
 }
+
+#[cfg(feature = "gguf")]
+#[test]
+fn raw_mode_rejects_history_before_loading_weights() {
+    let workspace = Workspace::new();
+    workspace.success(&["workspace", "append", "one", "--role", "user", "previous"]);
+    let output = workspace.run(&[
+        "--session",
+        "one",
+        "run",
+        "--raw",
+        "--model",
+        "missing.gguf",
+        "now",
+    ]);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("raw mode cannot discard"));
+}
+
+#[cfg(feature = "gguf")]
+#[test]
+fn raw_mode_rejects_instructions_before_loading_weights() {
+    let workspace = Workspace::new();
+    workspace.write(
+        "system.md",
+        "---\nschema: 1\n---\nFollow these instructions.\n",
+    );
+    let output = workspace.run(&["run", "--raw", "--model", "missing.gguf", "now"]);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("raw mode cannot discard"));
+}

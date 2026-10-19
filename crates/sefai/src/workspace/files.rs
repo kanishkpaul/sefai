@@ -65,6 +65,9 @@ impl Workspace {
         schema::id(id)?;
         let relative = PathBuf::from(format!("sessions/{id}.md"));
         let file = File::open(self.path(&relative)?)?;
+        if file.metadata()?.len() > session::SESSION_BYTES_MAX {
+            return Err(at(&relative, "session: exceeds 67108864 bytes"));
+        }
         let (header, messages) = session::read(
             BufReader::new(file.take(session::SESSION_BYTES_MAX + 1)),
             limit,
@@ -160,6 +163,12 @@ impl Workspace {
         match (target.exists(), expected) {
             (false, None) => Ok(()),
             (true, Some(expected)) => {
+                if expected.canonicalize()? == target.canonicalize()? {
+                    return Err(at(
+                        relative,
+                        "revision: snapshot must be a separate unchanged copy",
+                    ));
+                }
                 let mut actual = File::open(self.path(relative)?)?;
                 let mut expected = File::open(expected)?;
                 let limit = if relative.starts_with("sessions") {

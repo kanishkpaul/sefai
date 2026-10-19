@@ -176,6 +176,9 @@ pub fn id(value: &str) -> io::Result<()> {
 impl Runner {
     pub fn overlay(&mut self, other: &Self) {
         self.backend = other.backend.or(self.backend);
+        if matches!(other.backend, Some(Backend::Cpu)) {
+            self.device = None;
+        }
         self.device = other.device.or(self.device);
         self.context = other.context.or(self.context);
         self.batch = other.batch.or(self.batch);

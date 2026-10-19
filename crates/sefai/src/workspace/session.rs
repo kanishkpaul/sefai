@@ -120,9 +120,9 @@ pub fn encode(role: &str, text: &str) -> io::Result<String> {
 fn line(input: &mut impl BufRead) -> io::Result<Option<String>> {
     let mut result = String::new();
     let length = (&mut *input)
-        .take(schema::FILE_BYTES_MAX as u64 + 4)
+        .take(schema::FILE_BYTES_MAX as u64 + 5)
         .read_line(&mut result)?;
-    if length > schema::FILE_BYTES_MAX + 3 {
+    if length > schema::FILE_BYTES_MAX + 4 {
         return Err(invalid("session.line: exceeds 1048576 bytes"));
     }
     if length == 0 {

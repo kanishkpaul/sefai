@@ -476,3 +476,98 @@ fn windows_reserved_ids_are_rejected_on_all_platforms() {
         assert!(schema::id(id).is_err());
     }
 }
+
+#[test]
+fn prompt_budget_rejects_a_section_before_copying_it() {
+    let mut prompt = Prompt::new(vec![Message::user("user")]);
+    let text = "x".repeat(PROMPT_BYTES_MAX);
+    assert!(add_section(&mut prompt, "skill", &text).is_err());
+    assert!(prompt.sections().is_empty());
+}
+
+#[test]
+fn resumed_history_and_user_text_share_one_prompt_budget() {
+    let fixture = Fixture::new();
+    fixture
+        .workspace()
+        .append("one", "user", &"x".repeat(700_000), None)
+        .expect("persist");
+    let mut selection = fixture.selection();
+    selection.session = Some("one".into());
+    assert!(selection.prepare("y".repeat(700_000)).is_err());
+}
+
+#[test]
+fn profile_selection_overrides_config_model() {
+    let fixture = Fixture::new();
+    fixture.write("config.md", "---\nschema: 1\nmodel: one\n---\n");
+    for id in ["one", "two"] {
+        fixture.write(
+            &format!("models/{id}.md"),
+            &format!("---\nschema: 1\nid: {id}\npath: {id}.gguf\nformat: gguf\n---\n"),
+        );
+    }
+    let mut selection = fixture.selection();
+    selection.profile = Some("two".into());
+    assert_eq!(
+        selection.prepare("hi".into()).expect("profile").model,
+        Some(
+            fixture
+                .0
+                .canonicalize()
+                .expect("canonical workspace")
+                .join("two.gguf")
+        )
+    );
+}
+
+#[test]
+fn unsupported_engine_profiles_never_fall_back_to_gguf() {
+    let fixture = Fixture::new();
+    fixture.write(
+        "models/one.md",
+        "---\nschema: 1\nid: one\npath: weights\nformat: mlx\n---\n",
+    );
+    let mut selection = fixture.selection();
+    selection.profile = Some("one".into());
+    assert!(
+        selection
+            .prepare("hi".into())
+            .err()
+            .expect("unsupported engine")
+            .to_string()
+            .contains("only gguf")
+    );
+}
+
+#[test]
+fn unsupported_yaml_tags_are_rejected() {
+    assert!(schema::parse::<Config>("---\nschema: !custom 1\n---\n").is_err());
+}
+
+#[test]
+fn the_target_itself_cannot_be_used_as_a_revision_snapshot() {
+    let fixture = Fixture::new();
+    let target = fixture.0.join("config.md");
+    assert!(
+        fixture
+            .workspace()
+            .put(
+                Path::new("config.md"),
+                Some(&target),
+                "---\nschema: 1\n---\nreplacement".as_bytes()
+            )
+            .is_err()
+    );
+}
+
+#[test]
+fn full_size_crlf_record_has_the_same_decoded_limit() {
+    let body = "x".repeat(schema::FILE_BYTES_MAX);
+    let record = session::encode("user", &body)
+        .expect("encode")
+        .replace('\n', "\r\n");
+    let text = format!("---\r\nschema: 1\r\nid: one\r\noutcome: completed\r\n---\r\n{record}");
+    let (_, messages) = session::read(io::Cursor::new(text), 1).expect("maximum CRLF record");
+    assert_eq!(messages[0].content, body);
+}
