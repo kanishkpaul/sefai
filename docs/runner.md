@@ -2,8 +2,8 @@
 
 Phase 1 adds local GGUF inference with explicit CPU or GPU selection.
 Phase 1 passed local CPU/Metal model tests, Windows/macOS/Linux CPU-model CI and CUDA/Vulkan compilation.
-Phase 2 adds Markdown profiles and instruction/session composition; its new cross-platform CI results remain pending review.
-There is no TUI, tool execution or MCP connection yet.
+Phase 2 added Markdown profiles and instruction/session composition and merged after passing the required cross-platform checks.
+The [terminal conversation](tui.md) adds a persistent model worker; tool execution and MCP connections remain planned.
 See [workspace.md](workspace.md) for editable model settings, prompts, skills, memory and session resume.
 
 ## Build and run
@@ -79,8 +79,8 @@ Prefill chunks keep absolute monotonic positions and request logits only for the
 Sampling is greedy with a 64-token frequency-penalty window of 0.1; the prompt seeds the sampler, and sampling accepts each generated token exactly once.
 
 Only one model can borrow an engine at a time, and reentrant generation is rejected.
-The model stays loaded; contexts are released after each request.
-There is no prefix reuse yet.
+In `bench`, the model stays loaded and each sample uses a fresh context.
+The interactive TUI instead retains one model-bound context and reuses only equal rendered prompt-token prefixes.
 UTF-8 decoding retains at most three unfinished bytes between pieces; invalid bytes or an unfinished final character become U+FFFD.
 Ctrl-C requests cancellation during loading and between prefill/decode calls.
 A native call or a caller's blocking output callback cannot be interrupted midway by this API; no hard cancellation-latency guarantee is claimed.

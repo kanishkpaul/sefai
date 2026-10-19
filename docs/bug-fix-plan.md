@@ -64,5 +64,6 @@ B7 has an exactly pinned, build-probed dependency in standalone commit `8753694`
 The new prompt boundaries enforce B9's size/message limits; one-shot rendering filters terminal controls across pieces for B10.
 Phase 2 Markdown reads, prompt composition, recall and session tails now enforce their own named byte/count bounds.
 Its quoted session grammar preserves role-like user prose and the current user message is appended once.
-TUI and MCP consumers must enforce their own boundaries as those phases land.
+The Phase 3 TUI adds bounded command/event channels, composer/display limits and renderer sanitization.
+MCP consumers must enforce their own boundaries when that phase lands.
 Phase 1 is complete following merged PRs #6 and #7; CUDA/Vulkan execution remains a later hardware qualification gate.

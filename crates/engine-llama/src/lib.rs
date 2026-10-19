@@ -1,8 +1,8 @@
 //! One local GGUF model, with bounded prefill and synchronous streaming.
 //!
 //! The caller owns cancellation and output. Contexts are released after each
-//! request; weights stay loaded until the model is dropped. Prefix reuse is a
-//! later TUI concern. Native model files are trusted inputs, not sandboxed data.
+//! one-shot request; interactive callers may retain a model-bound prefix cache.
+//! Weights stay loaded until the model is dropped. Native model files are trusted inputs, not sandboxed data.
 
 mod error;
 mod limits;
@@ -84,6 +84,31 @@ pub struct Model<'engine> {
     generating: RefCell<()>,
     device: Device,
     piece_bytes_max: usize,
+}
+
+/// A model-bound context whose reusable prefix is verified against rendered tokens.
+/// Dropping or clearing it frees the context; no state is serialized.
+#[derive(Default)]
+pub struct Cache<'model> {
+    context: Option<llama_cpp_2::context::LlamaContext<'model>>,
+    tokens: Vec<LlamaToken>,
+    model: Option<&'model LlamaModel>,
+    settings: Option<Settings>,
+    reused_tokens: usize,
+}
+
+impl Cache<'_> {
+    pub fn clear(&mut self) {
+        self.context = None;
+        self.tokens = Vec::new();
+        self.model = None;
+        self.settings = None;
+        self.reused_tokens = 0;
+    }
+
+    pub fn reused_tokens(&self) -> usize {
+        self.reused_tokens
+    }
 }
 
 /// Tokens belong to the model that produced them and cannot outlive it.
@@ -288,21 +313,37 @@ impl Model<'_> {
         cancelled: impl FnMut() -> bool,
         emit: impl FnMut(&str) -> io::Result<()>,
     ) -> Result<Statistics, Error> {
-        self.generate_with_sampler(input, settings, cancelled, emit, || {
-            LlamaSampler::chain_simple([
-                LlamaSampler::penalties(self.model.vocab().n_tokens(), 64, 1.0, 0.1, 0.0),
-                LlamaSampler::greedy(),
-            ])
-        })
+        self.generate_cached(&mut Cache::default(), input, settings, cancelled, emit)
     }
 
-    fn generate_with_sampler(
-        &self,
+    /// Reuses only equal rendered prompt tokens for this model and settings.
+    /// Replays the final prompt token to obtain fresh logits, and invalidates
+    /// the context on cancellation or any error. Settings changes free it first.
+    ///
+    /// # Errors
+    /// Returns the same validation, native and callback errors as `generate`.
+    pub fn generate_cached<'model>(
+        &'model self,
+        cache: &mut Cache<'model>,
+        input: &Input<'_>,
+        settings: Settings,
+        cancelled: impl FnMut() -> bool,
+        emit: impl FnMut(&str) -> io::Result<()>,
+    ) -> Result<Statistics, Error> {
+        let result = self.generate_inner(cache, input, settings, cancelled, emit);
+        if result.as_ref().is_err() || result.as_ref().is_ok_and(|s| s.stop == Stop::Cancelled) {
+            cache.clear();
+        }
+        result
+    }
+
+    fn generate_inner<'model>(
+        &'model self,
+        cache: &mut Cache<'model>,
         input: &Input<'_>,
         settings: Settings,
         mut cancelled: impl FnMut() -> bool,
         mut emit: impl FnMut(&str) -> io::Result<()>,
-        create_sampler: impl FnOnce() -> LlamaSampler,
     ) -> Result<Statistics, Error> {
         let _generation = self
             .generating
@@ -326,15 +367,37 @@ impl Model<'_> {
         if settings.output_tokens == 0 {
             return Ok(statistics);
         }
-        let context_params = context_params(settings, self.device);
-        let mut context = self
+        if cache.settings != Some(settings) {
+            cache.clear();
+        }
+        if cache
             .model
-            .new_context(&self.engine.backend, context_params)
-            .map_err(|error| Error::operation("allocating model context", error))?;
+            .is_some_and(|model| !std::ptr::eq(model, &self.model))
+        {
+            cache.clear();
+        }
+        if cache.context.is_none() {
+            cache.context = Some(
+                self.model
+                    .new_context(&self.engine.backend, context_params(settings, self.device))
+                    .map_err(|error| Error::operation("allocating model context", error))?,
+            );
+            cache.settings = Some(settings);
+            cache.model = Some(&self.model);
+        }
+        let context = cache.context.as_mut().expect("context was allocated above");
+        let mut prefix = reusable_prefix(&cache.tokens, &input.tokens);
+        if !context
+            .clear_kv_cache_seq(Some(0), Some(prefix as u32), None)
+            .map_err(|error| Error::operation("invalidating cache suffix", error))?
+        {
+            context.clear_kv_cache();
+            prefix = 0;
+        }
+        cache.reused_tokens = prefix;
         let mut batch = LlamaBatch::new(settings.batch_tokens as usize, 1);
         let prefill_start = Instant::now();
-        for (chunk_index, chunk) in input
-            .tokens
+        for (chunk_index, chunk) in input.tokens[prefix..]
             .chunks(settings.batch_tokens as usize)
             .enumerate()
         {
@@ -344,7 +407,7 @@ impl Model<'_> {
                 return Ok(statistics);
             }
             batch.clear();
-            let offset = chunk_index * settings.batch_tokens as usize;
+            let offset = prefix + chunk_index * settings.batch_tokens as usize;
             for (index, token) in chunk.iter().enumerate() {
                 let position = offset + index;
                 batch
@@ -362,7 +425,11 @@ impl Model<'_> {
         }
         context.synchronize();
         statistics.prefill = prefill_start.elapsed();
-        let mut sampler = create_sampler();
+        cache.tokens.clone_from(&input.tokens);
+        let mut sampler = LlamaSampler::chain_simple([
+            LlamaSampler::penalties(self.model.vocab().n_tokens(), 64, 1.0, 0.1, 0.0),
+            LlamaSampler::greedy(),
+        ]);
         sampler.accept_many(&input.tokens);
         let mut piece = Vec::with_capacity(self.piece_bytes_max);
         let mut text = text::Text::new(self.piece_bytes_max);
@@ -372,7 +439,7 @@ impl Model<'_> {
                 statistics.stop = Stop::Cancelled;
                 break;
             }
-            let token = sample(&mut sampler, &context);
+            let token = sample(&mut sampler, context);
             statistics.generated_tokens += 1;
             if self.model.vocab().is_eog(token) {
                 statistics.stop = Stop::EndOfGeneration;
@@ -570,3 +637,32 @@ mod tests {
 
 #[cfg(all(test, feature = "model-tests"))]
 mod model_tests;
+
+fn reusable_prefix<T: PartialEq>(cached: &[T], next: &[T]) -> usize {
+    cached
+        .iter()
+        .zip(next)
+        .take_while(|(left, right)| left == right)
+        .count()
+        .min(next.len().saturating_sub(1))
+}
+
+#[cfg(test)]
+mod cache_tests {
+    use super::reusable_prefix;
+
+    #[test]
+    fn changed_instructions_invalidate_the_suffix() {
+        assert_eq!(reusable_prefix(&[1, 2, 3, 4], &[1, 9, 3, 4]), 1);
+    }
+
+    #[test]
+    fn identical_prompt_replays_its_last_token_for_logits() {
+        assert_eq!(reusable_prefix(&[1, 2, 3], &[1, 2, 3]), 2);
+    }
+
+    #[test]
+    fn empty_cache_reuses_nothing() {
+        assert_eq!(reusable_prefix::<u32>(&[], &[1]), 0);
+    }
+}

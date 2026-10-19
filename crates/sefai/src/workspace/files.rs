@@ -106,11 +106,15 @@ impl Workspace {
         }
     }
 
-    fn stage(
+    fn stage(&self, relative: &Path, expected: Option<&Path>, source: impl Read) -> io::Result<()> {
+        self.stage_checked(relative, source, || self.compare(relative, expected))
+    }
+
+    pub(super) fn stage_checked(
         &self,
         relative: &Path,
-        expected: Option<&Path>,
         mut source: impl Read,
+        verify: impl Fn() -> io::Result<()>,
     ) -> io::Result<()> {
         super::kind(relative)?;
         let parent = relative
@@ -118,7 +122,7 @@ impl Workspace {
             .ok_or_else(|| at(relative, "path: missing parent"))?;
         self.directory(parent)?;
         let target = self.destination(relative)?;
-        self.compare(relative, expected)?;
+        verify()?;
         let temporary = target.with_file_name(format!(
             ".sefai-{}-{}.tmp",
             std::process::id(),
@@ -143,7 +147,7 @@ impl Workspace {
         file.sync_all()?;
         drop(file);
         self.validate_file(relative, &cleanup.0)?;
-        self.compare(relative, expected)?;
+        verify()?;
         if self.destination(relative)? != target {
             return Err(at(relative, "path: changed during write"));
         }
@@ -255,7 +259,7 @@ impl Workspace {
         fs::create_dir_all(&path).map_err(|error| at(relative, error))
     }
 
-    fn lock(&self) -> io::Result<File> {
+    pub(super) fn lock(&self) -> io::Result<File> {
         let path = self.destination(Path::new(".sefai.lock"))?;
         let file = OpenOptions::new()
             .read(true)

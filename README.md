@@ -3,12 +3,13 @@
 A small Rust LLM runner and terminal harness, built around files you can read and edit.
 The goal is low RAM/VRAM use, a persistent TUI, Markdown-owned prompts/skills/preferences/memory, and explicit MCP connections.
 
-**Status: Phase 2 implemented and locally qualified; stacked PR review/CI is pending.**
+**Status: Phase 2 merged; Phase 3 terminal implementation is locally qualified; PR review/CI is pending.**
 Pinned-model CPU tests pass on Windows, macOS and Linux; local Metal tests and CUDA/Vulkan compilation also pass.
 CUDA/Vulkan execution and the full hardware matrix remain later qualification gates.
 Markdown schema validation and selected instruction/profile loading are implemented.
 Safe writes, explicit memory/session persistence and bounded session reads are implemented.
-TUI and MCP connections are not implemented yet.
+The terminal conversation, model worker and automatic Markdown turn persistence are implemented locally.
+MCP connections remain planned.
 See [the workspace guide](docs/workspace.md) for schema and selection controls.
 
 ## Direction
@@ -29,6 +30,7 @@ The [compatibility plan](docs/stack.md) distinguishes planned coverage from meas
 Install stable Rust, CMake, a C/C++ compiler and libclang, then:
 
 ```sh
+cargo run --locked -- chat --model /path/to/model.gguf
 cargo run --locked -- devices
 cargo run --locked -- run --model /path/to/model.gguf "hello"
 ```
@@ -49,7 +51,8 @@ cargo run --locked -- --workspace /path/to/workspace prompt hello
 
 Model profiles, explicitly selected skills, literal memory recall and session resume use the same workspace.
 The [workspace guide](docs/workspace.md) documents schema 1, precedence, limits, safe writes and session framing.
-The [Phase 2 closeout](docs/phase2-closeout.md) records acceptance evidence and the remaining CI gate.
+The [Phase 2 closeout](docs/phase2-closeout.md) records the merged workspace foundation.
+The [terminal guide](docs/tui.md) documents the interactive controls, limits and plain mode.
 
 ## Read the plan
 

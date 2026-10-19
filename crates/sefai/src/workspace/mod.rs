@@ -1,5 +1,7 @@
 //! Markdown is authoritative; loading instructions never grants tool authority.
 
+#[cfg(feature = "gguf")]
+mod conversation;
 mod files;
 mod schema;
 mod session;
@@ -18,7 +20,7 @@ use std::{
 const ENTRY_COUNT_MAX: usize = 1024;
 const PROMPT_BYTES_MAX: usize = 1024 * 1024;
 
-#[derive(clap::Args, Default)]
+#[derive(clap::Args, Clone, Default)]
 pub struct Selection {
     /// Markdown workspace; defaults to the platform configuration directory.
     #[arg(long, global = true)]
@@ -27,16 +29,16 @@ pub struct Selection {
     #[arg(long, global = true)]
     global_workspace: Option<PathBuf>,
     #[arg(long, global = true)]
-    profile: Option<String>,
+    pub(crate) profile: Option<String>,
     /// Selected skill IDs, in prompt order (at most 16).
     #[arg(long, global = true)]
-    skill: Vec<String>,
+    pub(crate) skill: Vec<String>,
     /// Recall at most eight memories containing this literal text.
     #[arg(long, global = true)]
-    recall: Option<String>,
+    pub(crate) recall: Option<String>,
     /// Resume at most 32 records and 1 MiB from this session.
     #[arg(long, global = true)]
-    session: Option<String>,
+    pub(crate) session: Option<String>,
 }
 
 pub struct Workspace {
@@ -50,6 +52,11 @@ pub struct Prepared {
 }
 
 impl Selection {
+    #[cfg(feature = "gguf")]
+    pub fn validate_id(id: &str) -> io::Result<()> {
+        schema::id(id)
+    }
+
     pub fn root(&self) -> io::Result<PathBuf> {
         self.workspace.clone().or_else(default_root).ok_or_else(|| {
             invalid("workspace: specify --workspace; platform config directory is unavailable")
@@ -192,7 +199,7 @@ impl Workspace {
         Ok(canonical)
     }
 
-    fn read(&self, relative: &Path) -> io::Result<String> {
+    pub(crate) fn read(&self, relative: &Path) -> io::Result<String> {
         let path = self.path(relative)?;
         let mut text = String::new();
         fs::File::open(path)?
@@ -205,7 +212,7 @@ impl Workspace {
         Ok(text)
     }
 
-    fn entries(&self, directory: &str) -> io::Result<Vec<PathBuf>> {
+    pub(crate) fn entries(&self, directory: &str) -> io::Result<Vec<PathBuf>> {
         let relative = Path::new(directory);
         let directory_path = self.root.join(relative);
         if !directory_path.exists() {

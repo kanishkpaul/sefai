@@ -1,0 +1,18 @@
+ ☾ sefai
+ v0.1.0 · local inference · /help
+❯ you
+Hello
+
+☾ sefai
+你 好  é · streaming reply
+
+
+
+
+
+
+────────────────────────────────────────────────
+❯
+
+Esc stop · Ctrl+D quit
+ tiny · cpu · ctx 20/512 · local

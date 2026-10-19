@@ -571,3 +571,56 @@ fn full_size_crlf_record_has_the_same_decoded_limit() {
     let (_, messages) = session::read(io::Cursor::new(text), 1).expect("maximum CRLF record");
     assert_eq!(messages[0].content, body);
 }
+
+#[cfg(feature = "gguf")]
+#[test]
+fn interactive_turn_saves_both_records_and_interrupted_outcome() {
+    let fixture = Fixture::new();
+    let workspace = fixture.workspace();
+    let revision = workspace
+        .save_turn("chat", None, "hello", "partial", true)
+        .expect("save");
+    assert!(revision.contains("outcome: interrupted"));
+    assert_eq!(
+        workspace.session("chat", 2).expect("session"),
+        vec![Message::user("hello"), Message::assistant("partial")]
+    );
+}
+
+#[cfg(feature = "gguf")]
+#[test]
+fn interactive_save_preserves_a_concurrent_editor_change() {
+    let fixture = Fixture::new();
+    let workspace = fixture.workspace();
+    let revision = workspace
+        .save_turn("chat", None, "hello", "reply", false)
+        .expect("save");
+    let changed = revision.replace("reply", "edited reply");
+    fixture.write("sessions/chat.md", &changed);
+    assert!(
+        workspace
+            .save_turn("chat", Some(&revision), "next", "next reply", false)
+            .is_err()
+    );
+    assert_eq!(
+        fs::read_to_string(fixture.0.join("sessions/chat.md")).expect("read"),
+        changed
+    );
+}
+
+#[cfg(feature = "gguf")]
+#[test]
+fn interactive_save_appends_to_an_exact_resumed_revision() {
+    let fixture = Fixture::new();
+    let workspace = fixture.workspace();
+    let revision = workspace
+        .save_turn("chat", None, "one", "first", true)
+        .expect("save");
+    let resumed = workspace.conversation_revision("chat").expect("revision");
+    assert_eq!(resumed, revision);
+    let next = workspace
+        .save_turn("chat", Some(&resumed), "two", "second", false)
+        .expect("append");
+    assert!(next.contains("outcome: completed"));
+    assert_eq!(workspace.session("chat", 4).expect("session").len(), 4);
+}
