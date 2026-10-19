@@ -20,6 +20,8 @@ sefai-core.workspace = true
 
 clap.workspace = true
 ctrlc = { version = "3.5.2", optional = true }
+serde = { version = "1.0.229", features = ["derive"] }
+serde-saphyr = { version = "2", default-features = false, features = ["deserialize"] }
 
 [lints]
 workspace = true

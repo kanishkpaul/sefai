@@ -10,7 +10,9 @@ The TUI is its permanent home.
 `crates/engine-llama` owns the exactly pinned llama.cpp binding, GGUF model loading, native templates/tokenizer, bounded prefill, sampling and streaming.
 `crates/sefai` composes the `run`, `bench`, `devices` and minimal `prompt` commands, cancellation and terminal sanitization.
 An engine lends one model at a time; requests allocate one temporary context while retaining the model weights.
-There is no TUI, Markdown loader, MCP client or persistent memory yet.
+The binary workspace module validates typed Markdown and composes selected instructions, model profiles and bounded literal memory recall.
+There is no TUI, MCP client or persistence writer yet.
+The [workspace guide](docs/workspace.md) defines schema 1 and its limits.
 The [runner guide](docs/runner.md) defines current limits and local qualification.
 The [build plan](docs/build-plan.md) separates implementation phases and acceptance gates.
 The [audit](docs/bug-fix-plan.md) records the legacy runner defects that a replacement must test.

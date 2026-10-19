@@ -3,9 +3,12 @@
 A small Rust LLM runner and terminal harness, built around files you can read and edit.
 The goal is low RAM/VRAM use, a persistent TUI, Markdown-owned prompts/skills/preferences/memory, and explicit MCP connections.
 
-**Status: Phase 1 GGUF runner; cross-platform qualification pending.**
-Local CPU and Metal inference pass the pinned-model regression suite on this Mac.
-TUI, Markdown loading and MCP support are not implemented yet.
+**Status: Phase 1 complete; Phase 2 Markdown workspace is in progress.**
+Pinned-model CPU tests pass on Windows, macOS and Linux; local Metal tests and CUDA/Vulkan compilation also pass.
+CUDA/Vulkan execution and the full hardware matrix remain later qualification gates.
+Markdown schema validation and selected instruction/profile loading are implemented.
+TUI, safe persistence writes and MCP connections are not implemented yet.
+See [the workspace guide](docs/workspace.md) for schema and selection controls.
 
 ## Direction
 

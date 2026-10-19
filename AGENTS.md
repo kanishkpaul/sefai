@@ -1,7 +1,7 @@
 # Instructions for coding agents
 
 sefai is a small Rust local LLM runner and terminal harness.
-The current runner embeds GGUF inference; Phase 1 qualification is in progress.
+The current runner embeds GGUF inference; Phase 1 is complete and Phase 2 workspace implementation is in progress.
 See `docs/runner.md` for controls and `docs/build-plan.md` for the remaining gates.
 Read `docs/style.md` in full, `ARCHITECTURE.md`, the relevant phase and `design/README.md` before the first edit.
 

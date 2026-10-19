@@ -2,7 +2,8 @@
 
 Build a small Rust LLM runner and terminal harness, with Markdown-owned customization and optional inference backends.
 GGUF, ONNX, GPTQ, AWQ, and MLX are release targets.
-The Phase 1 GGUF runner is implemented and locally tested on CPU/Metal; its cross-platform CI gate remains open.
+Phase 1 is complete: the published GGUF runner passes local CPU/Metal tests, Windows/macOS/Linux CPU-model CI and CUDA/Vulkan compile checks.
+Phase 2 is in progress: Markdown schema/loading is implemented; safe writes and persistence qualification remain.
 Complete runner correctness before adding harness features.
 Every phase includes regression tests; the second-last phase is a complete product verification pass, and the last is repository organization, installation, and presentation.
 
@@ -68,9 +69,11 @@ Detailed evidence belongs in [verification.md](verification.md).
 
 ### Phase 1 — Fix the runner before expanding it
 
-**Current:** implementation and local CPU/Metal regression evidence are ready; publication, Windows/Linux execution and CUDA/Vulkan compilation remain unverified.
+**Complete:** the runner is published through merged PR #6; local CPU/Metal regressions, cross-platform CPU-model CI and CUDA/Vulkan compilation have passed.
+Merged PR #7 retains those passing checks with updated CI actions and the repaired attribution workflow.
+CUDA/Vulkan execution remains a Phase 9 hardware gate.
 The [runner guide](runner.md) describes the implemented API and limits; [verification.md](verification.md) records results and failures.
-Do not start Phase 2 until the remaining gate checks pass.
+The Phase 1 gate is closed; Phase 2 may begin.
 
 Work through [bug-fix-plan.md](bug-fix-plan.md) in order.
 Create `engine-llama` only when the first real engine implementation lands.

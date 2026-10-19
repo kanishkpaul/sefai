@@ -1,7 +1,10 @@
 # Verification
 
 Evidence recorded on 19 October 2026 on this Apple Silicon Mac and GitHub-hosted Windows, macOS and Linux runners.
-Phase 0 is published; Phase 1 now has local CPU/Metal evidence in the working branch and remains gated on publication and CI.
+Phases 0 and 1 are complete and published.
+Phase 1 has local CPU/Metal evidence, passing Windows/macOS/Linux CPU-model CI and successful CUDA/Vulkan compilation.
+Phase 2 schema/loading is implemented in the first stacked PR; safe writes and persistence qualification remain.
+CUDA/Vulkan execution remains unverified.
 See the current Phase 1 results below; historical foundation results are retained separately.
 
 ## Preservation and history cleanup
@@ -76,14 +79,15 @@ The archived Python suite failed with `No module named pytest` and was not count
 A trailing blank line found by diff checking during workflow separation was removed before the policy commit.
 
 At Phase 0 close, no real-model inference or GPU benchmark had been performed.
-The existing published CI verifies the foundation; the new model/backend jobs have not yet run remotely.
+At Phase 0 close, published CI verified only the foundation; the Phase 1 model/backend jobs subsequently passed as recorded below.
 MLX/ONNX/GPTQ/AWQ execution, MCP integration and TUI interaction remain unimplemented.
 The ordered implementation and hardware gates remain in [build-plan.md](build-plan.md).
 
 
 ## Phase 1 local runner evidence
 
-The Phase 1 candidate is on `codex/gguf-runner`, based on published main `f0a274e`; remote CI qualification is pending.
+The Phase 1 runner was developed on `codex/gguf-runner` from published main `f0a274e` and merged through [PR #6](https://github.com/kanishkpaul/sefai/pull/6) as `6e75a08`.
+[PR #7](https://github.com/kanishkpaul/sefai/pull/7) subsequently updated pinned CI actions and repaired attribution checks, merging as `9112427`.
 The isolated exact-binding change passed all four Rust checks before runner work and is committed separately as `8753694`.
 Its apply-checked patch remains in `.local-archive/phase1-dependency.patch`.
 `llama-cpp-2` 0.1.160 was selected by inspecting its actual downloaded source and compiling an isolated probe, rather than copying the retired binding's calls.
@@ -147,8 +151,39 @@ PR #6 started the Windows/Linux CPU/model jobs and CUDA/Vulkan compile jobs.
 The first Vulkan job failed with `Could not find a package configuration file provided by "SPIRV-Headers"`; its SDK package was added before rerunning.
 Push runs were restricted to main to avoid duplicate native builds alongside PR events.
 The first macOS build/lint/unit checks passed, but model tests failed because the relative fixture path resolved from the crate directory.
-CI now passes the absolute workspace fixture path; the remaining remote results are still pending.
+CI now passes the absolute workspace fixture path; the corrected platform and backend jobs subsequently passed.
 No CUDA, Vulkan, NVIDIA or AMD execution has been tested on this Mac; no SDK for those backends was silently installed.
-The maintainer authorized commits, branch publication and a PR; the required checks plus backend-build jobs must pass before Phase 1 closes.
+The maintainer authorized publication and merged both PRs after their checks passed; the Phase 1 publication and CI gates are closed.
 The shared master kit has an uncommitted one-conditional Rust lint fix; its generated local counterpart is included here, without committing unrelated master-repository work.
-No Phase 2 feature has been started.
+At the Phase 1 closeout, no Phase 2 feature had been started.
+
+
+## Phase 1 closeout
+
+Phase 1 closed on 19 October 2026.
+The [runner platform run](https://github.com/kanishkpaul/sefai/actions/runs/39167302843) and [runner backend run](https://github.com/kanishkpaul/sefai/actions/runs/39165462628) passed before PR #6 merged.
+The following checks also passed on exact PR #7 head `750702d0ffb57b2b16bb0a194e0e53a24197c7e4`; the merged tree at `9112427` was verified identical to that tested head.
+
+| Check | Result and evidence |
+| --- | --- |
+| Windows, macOS and Linux | [All platform jobs passed](https://github.com/kanishkpaul/sefai/actions/runs/39245923416), including Rust checks, 30 workspace unit tests, minimal-build checks, 16 attribution regressions and both pinned-model CPU test targets |
+| CUDA and Vulkan | [Both compile jobs passed](https://github.com/kanishkpaul/sefai/actions/runs/39245923461); no GPU execution is implied |
+| Push attribution policy | [Passed](https://github.com/kanishkpaul/sefai/actions/runs/39245893523) |
+| Trusted PR attribution policy | [Passed](https://github.com/kanishkpaul/sefai/actions/runs/39245923411) |
+| Local CI maintenance validation | Formatting, both Clippy configurations, 30 Rust tests, 16 attribution tests, prompt diagnostic, actionlint 1.7.12 with ShellCheck disabled and diff whitespace checks passed |
+
+PR #7 pins checkout 7.0.1 and cache 6.1.0 and checks all reachable messages plus the current tree when a rebased push's previous commit is unavailable.
+PRs #3 and #4 were closed as superseded after the replacement passed.
+The results above describe pre-merge PR validation; post-merge workflow runs were not monitored.
+Phase 2 may begin with the versioned Markdown workspace; no Phase 2 implementation is included in this closeout.
+Full CUDA/Vulkan device execution, footprint budgets and the remaining format adapters retain their later-phase gates.
+
+## Phase 2 step 1 — schema and loading
+
+Schema 1 rejects unknown/duplicate fields, unsupported versions and invalid ranges without modifying Markdown.
+Ten model-free workspace tests cover body/config separation, ordered composition, profile precedence, selected-only skills, bounded ordered recall and identity/version errors.
+All four required Rust checks, the no-default-features test suite, 16 attribution tests and the `prompt hello` diagnostic pass locally on macOS.
+The first validation attempt found a no-default-features unused import; it was feature-gated and both Clippy configurations were rerun successfully.
+The two new dependencies are `serde` (typed field validation) and deserialize-only `serde-saphyr` (bounded YAML parsing); the standard library has no YAML parser.
+No engine runtime dependency or native binding version changes.
+Cross-platform CI has not been observed for these Phase 2 changes.
