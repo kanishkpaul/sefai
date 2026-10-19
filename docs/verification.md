@@ -263,3 +263,31 @@ The AGENTS.md edit changes only the phase-status sentence and remains subject to
 No optional MLX/ONNX/GPTQ/AWQ runtime, MCP process, tool permission authority or automatic memory extraction was added.
 This work claims tested behavior and verified prefix identity, not a throughput or RAM/VRAM improvement.
 The Phase 3 gate remains open for review and cross-platform qualification; Phase 4 has not started.
+
+## Phase 3 CI correction — feature-gated stop-token tests
+
+The initial [PR #12 CPU run](https://github.com/kanishkpaul/sefai/actions/runs/39340977976) failed on macOS, Linux and Windows when compiling `--features model-tests --lib gguf_`.
+The 13-test public GGUF integration target passed on macOS and Linux before that compilation failure.
+The cache refactor had removed `generate_with_sampler`, but the feature-gated every-stop-token regression still called it.
+The initial local qualification omitted this separate six-test library target; passing the public integration target did not establish that coverage.
+
+The cache-aware generation loop now accepts the existing sampler factory, and the stop-token regression supplies a fresh bounded cache to that loop.
+The production sampler and its initialization order are unchanged; all three fixture stop tokens still must halt generation before emitting text.
+No test, feature gate, workflow or binding pin was removed or weakened.
+
+Local correction checks include the four required Rust checks, feature-enabled engine Clippy, attribution regressions, the diagnostic prompt and both CPU model-test targets:
+
+```sh
+cargo clippy --locked -p sefai-engine-llama --features model-tests --all-targets -- -D warnings
+cargo test --locked -p sefai-engine-llama --features model-tests --test gguf
+cargo test --locked -p sefai-engine-llama --features model-tests --lib gguf_
+```
+
+The model commands require `SEFAI_TEST_MODEL` pointing to the pinned fixture and `SEFAI_TEST_BACKEND=cpu`.
+The library target passes six tests, including forced end-of-generation tokens, tokenizer BOS behavior, sampler acceptance and unsupported-template rejection.
+The public integration target passes 13 tests; the workspace passes 105 tests, and attribution passes 16 tests.
+PR #12 was closed during correction; new remote results remain unverified until the reopened PR completes CI.
+
+At the correction checkpoint, the original Vulkan build passed and CUDA was still running against the previous commit.
+Reopening PR #12 triggers fresh three-OS CPU checks and CUDA/Vulkan compilation against the correction; those remote results are not yet claimed.
+CUDA compilation requires the Linux CUDA toolchain from the existing workflow and cannot be qualified on this macOS host.

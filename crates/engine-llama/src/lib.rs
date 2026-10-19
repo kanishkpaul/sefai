@@ -330,7 +330,12 @@ impl Model<'_> {
         cancelled: impl FnMut() -> bool,
         emit: impl FnMut(&str) -> io::Result<()>,
     ) -> Result<Statistics, Error> {
-        let result = self.generate_inner(cache, input, settings, cancelled, emit);
+        let result = self.generate_inner(cache, input, settings, cancelled, emit, || {
+            LlamaSampler::chain_simple([
+                LlamaSampler::penalties(self.model.vocab().n_tokens(), 64, 1.0, 0.1, 0.0),
+                LlamaSampler::greedy(),
+            ])
+        });
         if result.as_ref().is_err() || result.as_ref().is_ok_and(|s| s.stop == Stop::Cancelled) {
             cache.clear();
         }
@@ -344,6 +349,7 @@ impl Model<'_> {
         settings: Settings,
         mut cancelled: impl FnMut() -> bool,
         mut emit: impl FnMut(&str) -> io::Result<()>,
+        create_sampler: impl FnOnce() -> LlamaSampler,
     ) -> Result<Statistics, Error> {
         let _generation = self
             .generating
@@ -426,10 +432,7 @@ impl Model<'_> {
         context.synchronize();
         statistics.prefill = prefill_start.elapsed();
         cache.tokens.clone_from(&input.tokens);
-        let mut sampler = LlamaSampler::chain_simple([
-            LlamaSampler::penalties(self.model.vocab().n_tokens(), 64, 1.0, 0.1, 0.0),
-            LlamaSampler::greedy(),
-        ]);
+        let mut sampler = create_sampler();
         sampler.accept_many(&input.tokens);
         let mut piece = Vec::with_capacity(self.piece_bytes_max);
         let mut text = text::Text::new(self.piece_bytes_max);
