@@ -7,7 +7,8 @@ The goal is low RAM/VRAM use, a persistent TUI, Markdown-owned prompts/skills/pr
 Pinned-model CPU tests pass on Windows, macOS and Linux; local Metal tests and CUDA/Vulkan compilation also pass.
 CUDA/Vulkan execution and the full hardware matrix remain later qualification gates.
 Markdown schema validation and selected instruction/profile loading are implemented.
-TUI, safe persistence writes and MCP connections are not implemented yet.
+Safe writes, explicit memory/session persistence and bounded session reads are implemented.
+TUI and MCP connections are not implemented yet.
 See [the workspace guide](docs/workspace.md) for schema and selection controls.
 
 ## Direction

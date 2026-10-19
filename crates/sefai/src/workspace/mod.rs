@@ -1,6 +1,8 @@
 //! Markdown is authoritative; loading instructions never grants tool authority.
 
+mod files;
 mod schema;
+mod session;
 
 #[cfg(feature = "gguf")]
 pub use schema::Backend;
@@ -32,6 +34,9 @@ pub struct Selection {
     /// Recall at most eight memories containing this literal text.
     #[arg(long, global = true)]
     recall: Option<String>,
+    /// Resume at most 32 records and 1 MiB from this session.
+    #[arg(long, global = true)]
+    session: Option<String>,
 }
 
 pub struct Workspace {
@@ -65,12 +70,25 @@ impl Selection {
         }
         let root = self.root()?;
         if self.workspace.is_none() && !root.exists() {
-            if self.profile.is_some() || !self.skill.is_empty() || self.recall.is_some() {
+            if self.profile.is_some()
+                || !self.skill.is_empty()
+                || self.recall.is_some()
+                || self.session.is_some()
+            {
                 return Err(invalid("workspace: initialize it before selecting content"));
             }
             return Ok(result);
         }
         let workspace = Workspace::open(&root)?;
+        if let Some(id) = &self.session {
+            let mut messages = workspace.session(id, 32)?;
+            messages.extend_from_slice(result.prompt.conversation());
+            let sections = result.prompt.sections().to_vec();
+            result.prompt = Prompt::new(messages);
+            for section in sections {
+                result.prompt.add_section(section.source, section.text);
+            }
+        }
         let text = workspace.read(Path::new("config.md"))?;
         let (config, _) = schema::parse::<Config>(&text).map_err(|error| at("config.md", error))?;
         schema::version(config.schema).map_err(|error| at("config.md", error))?;
@@ -282,39 +300,62 @@ impl Workspace {
         let mut count = 1;
         for directory in ["models", "skills", "memory", "sessions", "mcp"] {
             for path in self.entries(directory)? {
-                let text = self.read(&path)?;
-                let checked = (|| -> io::Result<()> {
-                    match directory {
-                        "models" => {
-                            let (header, _) = schema::parse::<Model>(&text)?;
-                            self.validate_model(&path, &header)
-                        }
-                        "skills" => {
-                            let (header, _) = schema::parse::<Skill>(&text)?;
-                            self.validate_skill(&path, &header)
-                        }
-                        "memory" => {
-                            let (header, _) = schema::parse::<Memory>(&text)?;
-                            self.identity(&path, header.schema, &header.id)
-                        }
-                        "sessions" => {
-                            let (header, _) = schema::parse::<schema::Session>(&text)?;
-                            let _outcome = header.outcome;
-                            self.identity(&path, header.schema, &header.id)
-                        }
-                        "mcp" => {
-                            let (header, _) = schema::parse::<schema::Mcp>(&text)?;
-                            self.identity(&path, header.schema, &header.id)?;
-                            validate_transport(&header.transport)
-                        }
-                        _ => unreachable!(),
-                    }
-                })();
-                checked.map_err(|error| at(&path, error))?;
+                self.validate_file(&path, &self.path(&path)?)?;
                 count += 1;
             }
         }
         Ok(count)
+    }
+
+    fn validate_document(&self, path: &Path, text: &str) -> io::Result<()> {
+        match kind(path)? {
+            "config" => {
+                let (header, _) = schema::parse::<Config>(text)?;
+                schema::version(header.schema)?;
+                if let Some(id) = header.model {
+                    schema::id(&id)?;
+                }
+                header.runner.validate()
+            }
+            "text" => {
+                let (header, _) = schema::parse::<Text>(text)?;
+                schema::version(header.schema)
+            }
+            "models" => {
+                let (header, _) = schema::parse::<Model>(text)?;
+                self.validate_model(path, &header)
+            }
+            "skills" => {
+                let (header, _) = schema::parse::<Skill>(text)?;
+                self.validate_skill(path, &header)
+            }
+            "memory" => {
+                let (header, _) = schema::parse::<Memory>(text)?;
+                self.identity(path, header.schema, &header.id)
+            }
+            "mcp" => {
+                let (header, _) = schema::parse::<schema::Mcp>(text)?;
+                self.identity(path, header.schema, &header.id)?;
+                validate_transport(&header.transport)
+            }
+            _ => Err(at(path, "path: unsupported document kind")),
+        }
+    }
+}
+
+fn kind(path: &Path) -> io::Result<&str> {
+    let parts: Vec<_> = path.iter().collect();
+    match parts.as_slice() {
+        [name] if *name == "config.md" => Ok("config"),
+        [name] if *name == "system.md" || *name == "preferences.md" => Ok("text"),
+        [directory, _] if path.extension().is_some_and(|extension| extension == "md") => {
+            match directory.to_str() {
+                Some(kind @ ("models" | "memory" | "mcp" | "sessions")) => Ok(kind),
+                _ => Err(at(path, "path: unsupported document kind")),
+            }
+        }
+        [directory, _, name] if *directory == "skills" && *name == "SKILL.md" => Ok("skills"),
+        _ => Err(at(path, "path: unsupported document kind")),
     }
 }
 

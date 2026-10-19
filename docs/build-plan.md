@@ -3,7 +3,7 @@
 Build a small Rust LLM runner and terminal harness, with Markdown-owned customization and optional inference backends.
 GGUF, ONNX, GPTQ, AWQ, and MLX are release targets.
 Phase 1 is complete: the published GGUF runner passes local CPU/Metal tests, Windows/macOS/Linux CPU-model CI and CUDA/Vulkan compile checks.
-Phase 2 is in progress: Markdown schema/loading is implemented; safe writes and persistence qualification remain.
+Phase 2 is in progress: Markdown schema/loading and safe persistence are implemented; cross-platform persistence qualification remains.
 Complete runner correctness before adding harness features.
 Every phase includes regression tests; the second-last phase is a complete product verification pass, and the last is repository organization, installation, and presentation.
 

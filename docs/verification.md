@@ -3,7 +3,7 @@
 Evidence recorded on 19 October 2026 on this Apple Silicon Mac and GitHub-hosted Windows, macOS and Linux runners.
 Phases 0 and 1 are complete and published.
 Phase 1 has local CPU/Metal evidence, passing Windows/macOS/Linux CPU-model CI and successful CUDA/Vulkan compilation.
-Phase 2 schema/loading is implemented in the first stacked PR; safe writes and persistence qualification remain.
+Phase 2 schema/loading is implemented in the first stacked PR; safe writes are implemented and persistence qualification remains.
 CUDA/Vulkan execution remains unverified.
 See the current Phase 1 results below; historical foundation results are retained separately.
 
@@ -187,3 +187,13 @@ The first validation attempt found a no-default-features unused import; it was f
 The two new dependencies are `serde` (typed field validation) and deserialize-only `serde-saphyr` (bounded YAML parsing); the standard library has no YAML parser.
 No engine runtime dependency or native binding version changes.
 Cross-platform CI has not been observed for these Phase 2 changes.
+
+## Phase 2 step 2 — safe persistence
+
+Same-directory temporary files, sync-before-rename, nonblocking standard-library OS locks and exact expected-file comparisons protect explicit writes.
+Seven new model-free tests cover invalid replacement rollback, stale snapshots, literal session roles, bounded tail count, truncated records, non-destructive initialization and memory edit/forget.
+Session reads and writes are bounded to 64 MiB on disk with a 1 MiB decoded tail, without a hidden database.
+The CLI offers explicit memory operations, validated file import and session append/tail/resume.
+Automatic generation persistence remains later harness work.
+All four Rust checks, the no-engine tests, attribution regression tests and the prompt diagnostic are required before this step's commit.
+Windows rename and process-lock behavior will be exercised by the existing three-OS CI matrix; local execution is macOS only.
