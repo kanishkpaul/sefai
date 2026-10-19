@@ -197,3 +197,18 @@ The CLI offers explicit memory operations, validated file import and session app
 Automatic generation persistence remains later harness work.
 All four Rust checks, the no-engine tests, attribution regression tests and the prompt diagnostic are required before this step's commit.
 Windows rename and process-lock behavior will be exercised by the existing three-OS CI matrix; local execution is macOS only.
+
+## Phase 2 step 3 — persistence qualification
+
+Local macOS passes 72 Rust tests: 36 binary tests, 10 CLI integration tests, 4 core tests and 22 engine tests.
+The no-engine configuration passes the same 46 workspace/terminal/CLI tests without loading an engine.
+Sixteen attribution regression tests and all four required Rust checks pass; `prompt hello` emits the expected user message.
+The schema fixture covers config, system, preferences, a GGUF profile, a selected skill, memory, an interrupted session and an inert MCP definition.
+
+The expanded suite covers Unicode workspace paths, CRLF, restart visibility, portable IDs, unknown nested keys, alias rejection, front matter/file/record bounds, every incomplete prefix of a session record, injected read failure, edits during staging, last-good-byte preservation, crash-leftover files and lock release after terminating a separate process.
+Unix tests reject escaped symlink reads and symlink-parent writes.
+Windows-specific tests exercise a junction escape and an exclusive sharing violation; they have not been executed locally.
+A portable integration test replaces an existing file through the real CLI on all three operating systems.
+The existing CI matrix automatically runs these tests with both default and no-engine configurations; remote results are deliberately not polled.
+A malformed manual edit remains on disk with a visible error; callers cannot silently overwrite it or promote a partial temporary file.
+YAML tags and merge keys are rejected, and ambiguous scalar-to-string coercion is disabled.

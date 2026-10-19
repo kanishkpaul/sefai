@@ -109,6 +109,7 @@ impl Workspace {
         expected: Option<&Path>,
         mut source: impl Read,
     ) -> io::Result<()> {
+        super::kind(relative)?;
         let parent = relative
             .parent()
             .ok_or_else(|| at(relative, "path: missing parent"))?;

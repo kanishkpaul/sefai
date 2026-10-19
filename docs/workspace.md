@@ -34,8 +34,9 @@ Every registered file starts with a YAML front matter block delimited by lines c
 CRLF and LF line endings are accepted.
 Only front matter has machine meaning; body prose, headings and code fences never change settings or grant authority.
 Every schema rejects unknown fields, duplicate YAML fields and schema versions other than `1`.
-YAML aliases and anchors are disabled; parsing is bounded to depth 8, 1,024 nodes and 4,096 events.
+Unsupported YAML tags, merge keys, aliases and anchors are rejected; parsing is bounded to depth 8, 1,024 nodes and 4,096 events.
 Errors identify the path and invalid field or YAML location.
+Fields must have their declared YAML type; quote numeric-only string IDs.
 
 IDs are portable lowercase ASCII names of 1–64 bytes, starting with a letter or digit and containing letters, digits or hyphens.
 Windows device names are rejected.
@@ -99,7 +100,8 @@ No hidden database or canonical binary customization store exists.
 
 Schema 1 is the initial format, so no migration is applied automatically.
 Unsupported versions are rejected without rewriting; rollback means restoring the user's backed-up Markdown files and the matching application version.
-Persistence qualification follows in step 3 of this stack.
+Schema fixtures live in `tests/fixtures/workspace`; model-free restart and filesystem qualification lives in `crates/sefai/tests/workspace.rs`.
+The existing three-OS CI matrix runs it automatically; local evidence is macOS and remote qualification remains pending.
 
 ## Editing safely
 
