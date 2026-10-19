@@ -1,35 +1,35 @@
 # Phase 2 acceptance
 
-Phase 2 implementation and local acceptance are complete in four stacked PRs.
-Review, cross-platform CI qualification and merge are still required before closing the phase gate.
-No CI run has been polled or assumed green.
+Phase 2 was merged through PRs #8–#11 on 19 October 2026.
+The Windows, macOS, Linux and attribution checks passed before the final protected merge.
+CUDA/Vulkan runtime qualification remains a separate hardware gate.
 
-## Stack and merge order
+## Published stack
 
-| Order | PR | Base | Scope |
+| Order | PR | Original base | Scope |
 | --- | --- | --- | --- |
 | 1 | [#8](https://github.com/kanishkpaul/sefai/pull/8) | `main` | Typed Markdown schema, workspace discovery and selected loading |
 | 2 | [#9](https://github.com/kanishkpaul/sefai/pull/9) | `codex/phase2-schema` | Atomic writes, explicit memory/session persistence and bounded tail |
 | 3 | [#10](https://github.com/kanishkpaul/sefai/pull/10) | `codex/phase2-files` | Schema fixtures, process/restart/filesystem qualification |
-| 4 | `codex/phase2-closeout` PR | `codex/phase2-persistence` | Final consistency fixes, documentation and acceptance evidence |
+| 4 | [#11](https://github.com/kanishkpaul/sefai/pull/11) | `codex/phase2-persistence` | Final consistency fixes, documentation and acceptance evidence |
 
-Review and merge oldest first, using merge commits to retain stack ancestry.
-After each parent merge, retarget the next PR to `main` and review its checks against that base before merging.
-Keep stack branches until their children have been retargeted.
-No force-push or history rewrite is needed.
+PR #8 merged first.
+Strict up-to-date protection required synchronizing the remaining stack with main.
+PR #11 merged the remaining ancestry as `33f1a8d2172db93eb0b8cb1759fa63c84d62d6ee`, which also marked #9 and #10 merged.
+No force push or protection bypass was used.
 
 ## Acceptance matrix
 
 | Requirement | Evidence | Remaining qualification |
 | --- | --- | --- |
-| Editor-owned customization | Schema fixture for every kind; real CLI restart observes system/preferences/skill/memory/session edits; selected profile and CLI precedence regressions | New three-OS CI results |
-| Strict configuration | Unknown/duplicate keys, unsupported versions, invalid ranges, YAML aliases/tags and nonportable IDs rejected | None beyond CI |
-| Inert body prose | Fences never execute; body cannot change config; MCP definitions never launch or connect | MCP execution is Phase 7 |
+| Editor-owned customization | Schema fixture for every kind; real CLI restart observes system/preferences/skill/memory/session edits; selected profile and CLI precedence regressions | Required three-OS CI passed |
+| Strict configuration | Unknown/duplicate keys, unsupported versions, invalid ranges, YAML aliases/tags and nonportable IDs rejected | None |
+| Inert body prose | Fences never execute; body cannot change config; MCP definitions never launch or connect | MCP execution is Phase 5 |
 | Bounded loading | 1 MiB ordinary files/composed prompt, 16 KiB front matter, bounded selection/recall/directories | No throughput or RSS claim |
-| Safe writes | Same-directory synced staging, OS lock, expected snapshots checked before rename, stale/during-staging edit tests, invalid candidate rollback | Windows sharing/rename tests in CI; hostile path races and arbitrary power-loss durability are outside this guarantee |
+| Safe writes | Same-directory synced staging, OS lock, expected snapshots checked before rename, stale/during-staging edit tests, invalid candidate rollback | Windows sharing/rename CI passed; hostile path races and arbitrary power-loss durability are outside this guarantee |
 | Durable memory | Explicit remember/edit/forget survive restart; deterministic literal recall | Automatic extraction/embeddings intentionally absent |
-| Sessions | Literal role-safe framing, every incomplete record prefix rejected, CRLF and Unicode round-trips, 64 MiB disk/1 MiB tail bounds, separate-process resume | Automatic generation/outcome persistence is later harness lifecycle work |
-| Lock/process failures | Separate process holds the lock, concurrent writer fails visibly, process termination releases the lock; failed source removes its temporary file | Windows/Linux execution of new tests |
+| Sessions | Literal role-safe framing, every incomplete record prefix rejected, CRLF and Unicode round-trips, 64 MiB disk/1 MiB tail bounds, separate-process resume | Automatic turn/outcome persistence is implemented in Phase 3 |
+| Lock/process failures | Separate process holds the lock, concurrent writer fails visibly, process termination releases the lock; failed source removes its temporary file | Windows/Linux CI passed |
 | Workspace containment | Unix escaped-read/symlink-write tests; Windows junction test; resource traversal rejected | Advisory checks are not an OS sandbox |
 | Migration/rollback | Unsupported versions fail without rewriting; malformed candidates preserve existing bytes; explicit matching-version backup restoration documented | Schema 1 is the initial version; no automatic migration |
 
@@ -44,7 +44,7 @@ cargo clippy --locked -p sefai --no-default-features --all-targets -- -D warning
 cargo test --locked --workspace
 ```
 
-The final suite passes 84 Rust tests: 46 binary tests, 12 CLI integration tests, 4 core tests and 22 engine tests.
+The Phase 2 final suite passed 84 Rust tests: 46 binary tests, 12 CLI integration tests, 4 core tests and 22 engine tests.
 `cargo test --locked -p sefai --no-default-features` passes 53 tests.
 `python3 -m unittest discover -s tests -v` passes all 16 attribution regressions.
 `cargo run --locked -- prompt hello` prints one user message.
@@ -58,7 +58,7 @@ The only new production dependencies are typed Serde decoding and deserialize-on
 
 ## Phase boundary
 
-The remaining product work begins with Phase 3's persistent terminal TUI after this stack is accepted.
+Phase 3 builds the persistent terminal TUI on this merged foundation.
 Automatic turn recording, live-state reload recovery, permission decisions and tool execution belong to the harness/TUI phases that own those lifecycles.
 Phase 2 gives them validated file APIs and a bounded, role-preserving session representation.
 The one-shot CLI reports and retains a malformed manual edit rather than silently restoring a backup or presenting it as valid.

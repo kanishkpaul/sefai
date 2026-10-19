@@ -1,0 +1,18 @@
+ ☾ sefai
+ v0.1.0 · local inference · /help
+Your local conversation
+
+Choose /model PATH or /profile ID, then write a
+message.
+Markdown owns your instructions and saved
+sessions.
+
+
+
+
+
+────────────────────────────────────────────────
+❯
+
+context full; /new preserves this session
+ tiny · cpu · ctx 512/512 · local

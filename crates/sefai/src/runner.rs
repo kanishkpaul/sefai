@@ -153,7 +153,7 @@ pub fn run(
     Ok(())
 }
 
-fn resolve(
+pub(crate) fn resolve(
     overrides: Runner,
     mut configured: Runner,
 ) -> Result<(Device, Settings), Box<dyn std::error::Error>> {

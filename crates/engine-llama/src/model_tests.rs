@@ -164,7 +164,8 @@ fn gguf_every_stop_token_halts_generation() {
     assert_eq!(stop_tokens.len(), 3);
     for token in stop_tokens {
         let result = model
-            .generate_with_sampler(
+            .generate_inner(
+                &mut Cache::default(),
                 &input,
                 Settings::default(),
                 || false,

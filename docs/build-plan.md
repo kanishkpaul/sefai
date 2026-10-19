@@ -3,7 +3,8 @@
 Build a small Rust LLM runner and terminal harness, with Markdown-owned customization and optional inference backends.
 GGUF, ONNX, GPTQ, AWQ, and MLX are release targets.
 Phase 1 is complete: the published GGUF runner passes local CPU/Metal tests, Windows/macOS/Linux CPU-model CI and CUDA/Vulkan compile checks.
-Phase 2 implementation and local acceptance are complete; the four stacked PRs still need review, cross-platform CI qualification and merge.
+Phase 2 is merged through PRs #8–#11 with passing Windows, macOS, Linux and attribution checks.
+Phase 3 terminal implementation is locally qualified; PR review/CI is pending.
 See [phase2-closeout.md](phase2-closeout.md) for the acceptance matrix and stack order.
 Complete runner correctness before adding harness features.
 Every phase includes regression tests; the second-last phase is a complete product verification pass, and the last is repository organization, installation, and presentation.
@@ -94,7 +95,7 @@ Run a tiny pinned, licensed GGUF in dedicated integration CI, with its SHA256 ch
 Record actual CPU/Metal results and compile CUDA/Vulkan configurations; GPU execution remains pending until hardware is used.
 No harness feature starts while a correctness defect in this gate remains unresolved.
 
-### Phase 2 — Markdown owns customization (implemented; CI/merge pending)
+### Phase 2 — Markdown owns customization (merged)
 
 The implemented workspace uses this layout, rooted at the platform's config/data location or an explicit `--workspace` path:
 
@@ -135,6 +136,9 @@ Test Unicode paths, CRLF, invalid front matter, oversize files, symlinks escapin
 Record schema fixtures and migration/rollback behavior.
 
 ### Phase 3 — Terminal home
+
+**Current:** local implementation and acceptance complete on `codex/phase3-terminal`; publication and cross-platform terminal qualification remain pending.
+See [tui.md](tui.md) for implemented controls and explicit limits.
 
 Use Ratatui with Crossterm, and `design/rust/theme.rs` as palette/identity authority.
 Introduce these dependencies only when implementing this phase.

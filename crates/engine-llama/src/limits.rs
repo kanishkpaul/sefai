@@ -5,7 +5,7 @@ pub const CONTEXT_TOKENS_MAX: u32 = 131_072;
 pub const BATCH_TOKENS_MAX: u32 = 4096;
 pub const THREADS_MAX: u32 = 256;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Settings {
     pub context_tokens: u32,
     pub batch_tokens: u32,

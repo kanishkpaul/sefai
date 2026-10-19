@@ -269,3 +269,72 @@ fn output_failure_is_reported() {
 fn empty_prompt_is_rejected() {
     with_model(|model| assert!(model.prepare_raw(" \n").is_err()));
 }
+
+#[test]
+fn cached_and_fresh_generation_match_after_prompt_edits() {
+    with_model(|model| {
+        let mut cache = sefai_engine_llama::Cache::default();
+        let settings = Settings {
+            context_tokens: 512,
+            batch_tokens: 64,
+            microbatch_tokens: 32,
+            output_tokens: 8,
+            threads: 2,
+        };
+        for text in [
+            "The capital of France is",
+            "The capital of France is",
+            "The capital of Italy is",
+        ] {
+            let input = model.prepare_raw(text).expect("prompt");
+            let mut cached = String::new();
+            model
+                .generate_cached(
+                    &mut cache,
+                    &input,
+                    settings,
+                    || false,
+                    |part| {
+                        cached.push_str(part);
+                        Ok(())
+                    },
+                )
+                .expect("cached decode");
+            let mut fresh = String::new();
+            model
+                .generate(
+                    &input,
+                    settings,
+                    || false,
+                    |part| {
+                        fresh.push_str(part);
+                        Ok(())
+                    },
+                )
+                .expect("fresh decode");
+            assert_eq!(cached, fresh);
+        }
+        assert!(cache.reused_tokens() > 0);
+    });
+}
+
+#[test]
+fn cancelled_cached_generation_clears_reuse() {
+    with_model(|model| {
+        let mut cache = sefai_engine_llama::Cache::default();
+        let input = model.prepare_raw("hello").expect("prompt");
+        let settings = Settings {
+            context_tokens: 512,
+            output_tokens: 4,
+            ..Settings::default()
+        };
+        model
+            .generate_cached(&mut cache, &input, settings, || false, |_| Ok(()))
+            .expect("first turn");
+        let result = model
+            .generate_cached(&mut cache, &input, settings, || true, |_| Ok(()))
+            .expect("cancelled turn");
+        assert_eq!(result.stop, Stop::Cancelled);
+        assert_eq!(cache.reused_tokens(), 0);
+    });
+}

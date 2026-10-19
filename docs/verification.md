@@ -3,7 +3,8 @@
 Evidence recorded on 19 October 2026 on this Apple Silicon Mac and GitHub-hosted Windows, macOS and Linux runners.
 Phases 0 and 1 are complete and published.
 Phase 1 has local CPU/Metal evidence, passing Windows/macOS/Linux CPU-model CI and successful CUDA/Vulkan compilation.
-Phase 2 implementation and local acceptance are complete in four stacked PRs; cross-platform CI review and merge remain pending.
+Phase 2 merged through PRs #8–#11 as `33f1a8d2172db93eb0b8cb1759fa63c84d62d6ee` after the three platform checks and attribution passed.
+Phase 3 local evidence is recorded at the end; its remote CI and cross-platform terminal qualification remain pending.
 CUDA/Vulkan execution remains unverified.
 See the current Phase 1 results below; historical foundation results are retained separately.
 
@@ -80,7 +81,7 @@ A trailing blank line found by diff checking during workflow separation was remo
 
 At Phase 0 close, no real-model inference or GPU benchmark had been performed.
 At Phase 0 close, published CI verified only the foundation; the Phase 1 model/backend jobs subsequently passed as recorded below.
-MLX/ONNX/GPTQ/AWQ execution, MCP integration and TUI interaction remain unimplemented.
+At Phase 0 close, MLX/ONNX/GPTQ/AWQ execution, MCP integration and TUI interaction were unimplemented.
 The ordered implementation and hardware gates remain in [build-plan.md](build-plan.md).
 
 
@@ -186,7 +187,7 @@ All four required Rust checks, the no-default-features test suite, 16 attributio
 The first validation attempt found a no-default-features unused import; it was feature-gated and both Clippy configurations were rerun successfully.
 The two new dependencies are `serde` (typed field validation) and deserialize-only `serde-saphyr` (bounded YAML parsing); the standard library has no YAML parser.
 No engine runtime dependency or native binding version changes.
-Cross-platform CI has not been observed for these Phase 2 changes.
+At the step-1 checkpoint, cross-platform CI had not been observed; the Phase 2 stack subsequently passed the required platform checks and merged.
 
 ## Phase 2 step 2 — safe persistence
 
@@ -226,3 +227,67 @@ Markdown system text and the model profile produced an 18-token prompt and a suc
 A second benchmark probe explicitly overrode output to zero and returned `generated_tokens=0` with `OutputLimit`; this is an override diagnostic, not a throughput measurement.
 No new RAM/VRAM claim or broader architecture qualification follows from these smoke tests.
 Remote CI has not been polled or declared green.
+
+## Phase 3 — terminal home, local acceptance
+
+Recorded on 20 October 2026 on `codex/phase3-terminal`, based on merged main `33f1a8d2172db93eb0b8cb1759fa63c84d62d6ee`.
+The default command now opens the terminal conversation; `chat --plain` provides line-oriented input without terminal controls.
+One bounded worker owns inference, context/prefix reuse and Markdown I/O; model weights remain loaded across turns.
+The [terminal guide](tui.md) records controls, dependency justification, byte/count bounds and explicit recovery behavior.
+
+| Check | Result |
+| --- | --- |
+| `cargo fmt --all --check` | Passed |
+| `cargo clippy --locked --workspace --all-targets -- -D warnings` | Passed |
+| `cargo clippy --locked -p sefai --no-default-features --all-targets -- -D warnings` | Passed |
+| `cargo test --locked --workspace` | Passed: 105 tests — 61 binary, 3 chat CLI, 12 workspace CLI, 4 core and 25 engine |
+| `cargo test --locked -p sefai --no-default-features` | Passed: 53 tests; no TUI/native engine dependency is activated by this build |
+| `python3 -m unittest discover -s tests -v` | Passed: 16 attribution regressions |
+| `cargo run --locked -- prompt hello` | Printed one `[user]` message containing `hello` |
+| Dedicated GGUF target with `SEFAI_TEST_MODEL` and CPU backend | Passed: 13 tests, including cached/fresh equality after prompt edits and cancellation invalidation |
+| Local PTYs | Seven scenarios passed; each exited 0 and restored the original terminal attributes |
+| Cell snapshots and layout regressions | First run, streaming, context full and overlay snapshots; narrow/tiny terminals, long Unicode text, grapheme editing/cursor placement, palette polarity and no-color cells passed |
+| Recovery regressions | Rejected requests restore the composer; concurrent session edits preserve disk bytes; an interrupted turn persists both records and outcome |
+| `git diff --check` | Passed |
+
+The real-model fixture was rehashed and matched `2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d`.
+The two-turn PTY session resumed its exact saved records; the second request reused 10 verified prompt tokens.
+Cancellation during prefill left an explicit interrupted session, and native tests separately cover cancellation after output.
+See [normalized terminal transcripts](evidence/phase3/terminal-transcripts.md), [scenario results](evidence/phase3/terminal-results.json) and the cell fixtures under `tests/fixtures/tui/`.
+
+Phase 3 has not been committed, pushed or qualified by remote CI at this checkpoint.
+Windows/Linux real terminal lifecycle behavior, GPU execution and a full hardware matrix remain unverified for these changes.
+The existing three-OS CI automatically runs the new ordinary tests and the dedicated pinned CPU fixture target once published.
+No checks or workflow definitions were weakened or bypassed; the llama.cpp binding stays exactly `0.1.160`, and core stays dependency-free.
+The AGENTS.md edit changes only the phase-status sentence and remains subject to maintainer inspection before publication.
+No optional MLX/ONNX/GPTQ/AWQ runtime, MCP process, tool permission authority or automatic memory extraction was added.
+This work claims tested behavior and verified prefix identity, not a throughput or RAM/VRAM improvement.
+The Phase 3 gate remains open for review and cross-platform qualification; Phase 4 has not started.
+
+## Phase 3 CI correction — feature-gated stop-token tests
+
+The initial [PR #12 CPU run](https://github.com/kanishkpaul/sefai/actions/runs/39340977976) failed on macOS, Linux and Windows when compiling `--features model-tests --lib gguf_`.
+The 13-test public GGUF integration target passed on macOS and Linux before that compilation failure.
+The cache refactor had removed `generate_with_sampler`, but the feature-gated every-stop-token regression still called it.
+The initial local qualification omitted this separate six-test library target; passing the public integration target did not establish that coverage.
+
+The cache-aware generation loop now accepts the existing sampler factory, and the stop-token regression supplies a fresh bounded cache to that loop.
+The production sampler and its initialization order are unchanged; all three fixture stop tokens still must halt generation before emitting text.
+No test, feature gate, workflow or binding pin was removed or weakened.
+
+Local correction checks include the four required Rust checks, feature-enabled engine Clippy, attribution regressions, the diagnostic prompt and both CPU model-test targets:
+
+```sh
+cargo clippy --locked -p sefai-engine-llama --features model-tests --all-targets -- -D warnings
+cargo test --locked -p sefai-engine-llama --features model-tests --test gguf
+cargo test --locked -p sefai-engine-llama --features model-tests --lib gguf_
+```
+
+The model commands require `SEFAI_TEST_MODEL` pointing to the pinned fixture and `SEFAI_TEST_BACKEND=cpu`.
+The library target passes six tests, including forced end-of-generation tokens, tokenizer BOS behavior, sampler acceptance and unsupported-template rejection.
+The public integration target passes 13 tests; the workspace passes 105 tests, and attribution passes 16 tests.
+PR #12 was closed during correction; new remote results remain unverified until the reopened PR completes CI.
+
+At the correction checkpoint, the original Vulkan build passed and CUDA was still running against the previous commit.
+Reopening PR #12 triggers fresh three-OS CPU checks and CUDA/Vulkan compilation against the correction; those remote results are not yet claimed.
+CUDA compilation requires the Linux CUDA toolchain from the existing workflow and cannot be qualified on this macOS host.

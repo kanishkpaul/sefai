@@ -1,6 +1,8 @@
 #[cfg(feature = "gguf")]
 mod runner;
 mod term;
+#[cfg(feature = "gguf")]
+mod tui;
 mod workspace;
 
 use clap::{Parser, Subcommand};
@@ -12,11 +14,14 @@ struct Cli {
     #[command(flatten)]
     selection: workspace::Selection,
     #[command(subcommand)]
-    command: Command,
+    command: Option<Command>,
 }
 
 #[derive(Subcommand)]
 enum Command {
+    /// Open the persistent terminal conversation (use --plain for line input).
+    #[cfg(feature = "gguf")]
+    Chat(tui::Options),
     /// Validate Markdown workspace files without executing their contents.
     Workspace {
         #[command(subcommand)]
@@ -104,7 +109,17 @@ fn main() -> ExitCode {
 }
 
 fn execute(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
-    match cli.command {
+    #[cfg(feature = "gguf")]
+    let command = cli
+        .command
+        .unwrap_or(Command::Chat(tui::Options::default()));
+    #[cfg(not(feature = "gguf"))]
+    let command = cli
+        .command
+        .ok_or("choose a command; chat requires the gguf feature")?;
+    match command {
+        #[cfg(feature = "gguf")]
+        Command::Chat(options) => tui::run(cli.selection, options)?,
         Command::Workspace { action } => {
             let root = cli.selection.root()?;
             if matches!(action, WorkspaceCommand::Init) {

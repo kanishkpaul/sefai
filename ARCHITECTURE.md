@@ -9,11 +9,13 @@ The TUI is its permanent home.
 `crates/core` contains dependency-free `Message`, `Role`, `Prompt` and `Section` types.
 `crates/engine-llama` owns the exactly pinned llama.cpp binding, GGUF model loading, native templates/tokenizer, bounded prefill, sampling and streaming.
 `crates/sefai` composes the `run`, `bench`, `devices` and minimal `prompt` commands, cancellation and terminal sanitization.
-An engine lends one model at a time; requests allocate one temporary context while retaining the model weights.
+An engine lends one model at a time; one-shot requests use a temporary context, while interactive callers may retain one model-bound prefix cache.
 The binary workspace module validates typed Markdown and composes selected instructions, model profiles and bounded literal memory recall.
 Workspace writes use same-directory atomic replacement, an OS file lock and exact revision snapshots.
 Session grammar is streamed from disk into a bounded tail; explicit CLI memory and session writes are available.
-There is no TUI or MCP client yet.
+The TUI owns rendering/input and communicates through bounded channels with one model/workspace worker.
+The worker retains weights, verifies actual rendered-token prefixes and persists each started turn atomically with an explicit outcome.
+There is no MCP client yet.
 The [workspace guide](docs/workspace.md) defines schema 1 and its limits.
 The [runner guide](docs/runner.md) defines current limits and local qualification.
 The [build plan](docs/build-plan.md) separates implementation phases and acceptance gates.
