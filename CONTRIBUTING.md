@@ -45,6 +45,7 @@ Agents commit only when the maintainer explicitly requests it.
 Do not add coauthor trailers or coding-tool signatures to commits, PRs, code or documentation.
 Tool-specific settings disable automatic signatures; repository instructions cover all contributors.
 The commit and pre-push hooks use `scripts/check_attribution.py`; CI checks new commit messages, PR metadata and added signature lines.
+If a push's previous commit is unavailable after a rebase, CI checks all reachable commit messages and the full current tree.
 Policy explanations, technical product names and required third-party license notices are allowed.
 The guard's implementation and fixture files are excluded from the added-content scan so they can describe the patterns they test; changes to those files require maintainer inspection.
 Hooks are bypassable; required CI checks and review are needed on GitHub.
