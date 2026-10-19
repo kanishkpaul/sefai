@@ -60,7 +60,7 @@ Record failed commands alongside successful ones; do not trade missing evidence 
 The local GGUF engine now exercises B1–B6 and B8 on the pinned SmolLM2 fixture on CPU and Metal; see [verification.md](verification.md) for commands, failed probes and limits.
 B3 also has deterministic byte-split Unicode and malformed-byte unit tests, and B5 has a stateful frequency-penalty regression rather than a greedy-only check.
 B4 uses the upstream native renderer and explicitly rejects unsupported templates; full tool-template support remains a harness gate.
-B7 has an exactly pinned, build-probed dependency and prepared real-model/compile CI, but the standalone commit and remote Windows/Linux/CUDA/Vulkan results are still pending.
+B7 has an exactly pinned, build-probed dependency in standalone commit `8753694`; Windows/macOS/Linux CPU-model CI and CUDA/Vulkan compile checks have passed.
 The new prompt boundaries enforce B9's size/message limits; one-shot rendering filters terminal controls across pieces for B10.
 Future Markdown, TUI and MCP consumers must enforce their own boundaries as those phases land.
-Phase 1 remains open until the publication and CI gates pass.
+Phase 1 is complete following merged PRs #6 and #7; CUDA/Vulkan execution remains a later hardware qualification gate.

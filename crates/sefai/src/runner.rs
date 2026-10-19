@@ -1,6 +1,6 @@
 use crate::term::Output;
-use clap::{Args, ValueEnum};
-use sefai_core::{Message, Prompt};
+use crate::workspace::{Backend, Selection};
+use clap::Args;
 use sefai_engine_llama::{Device, Engine, GpuBackend, Settings, Stop};
 use std::{
     io::{self, Read, Write},
@@ -15,35 +15,27 @@ use std::{
 #[derive(Args)]
 pub struct Options {
     #[arg(long)]
-    model: PathBuf,
+    model: Option<PathBuf>,
     /// Prompt text, or - to read bounded UTF-8 from stdin.
     prompt: String,
     /// Bypass chat templating and tokenize literal text.
     #[arg(long)]
     raw: bool,
-    #[arg(long, value_enum, default_value_t = Backend::Cpu)]
-    backend: Backend,
+    #[arg(long, value_enum)]
+    backend: Option<Backend>,
     /// ggml device index from `sefai devices`; required for a GPU backend.
     #[arg(long)]
     device: Option<usize>,
-    #[arg(long, default_value_t = 4096)]
-    context: u32,
-    #[arg(long, default_value_t = 512)]
-    batch: u32,
-    #[arg(long, default_value_t = 128)]
-    microbatch: u32,
-    #[arg(long, default_value_t = 128)]
-    output: u32,
+    #[arg(long)]
+    context: Option<u32>,
+    #[arg(long)]
+    batch: Option<u32>,
+    #[arg(long)]
+    microbatch: Option<u32>,
+    #[arg(long)]
+    output: Option<u32>,
     #[arg(long)]
     threads: Option<u32>,
-}
-
-#[derive(Clone, Copy, ValueEnum)]
-enum Backend {
-    Cpu,
-    Metal,
-    Cuda,
-    Vulkan,
 }
 
 pub enum Mode {
@@ -64,12 +56,34 @@ pub fn devices() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-pub fn run(options: Options, mode: Mode) -> Result<(), Box<dyn std::error::Error>> {
+pub fn run(
+    options: Options,
+    mode: Mode,
+    selection: &Selection,
+) -> Result<(), Box<dyn std::error::Error>> {
     let repetitions = match mode {
         Mode::Reply => 1,
         Mode::Benchmark(repetitions) => repetitions,
     };
-    let device = match (options.backend, options.device) {
+    let mut prompt = options.prompt;
+    if prompt == "-" {
+        prompt.clear();
+        io::stdin()
+            .take(sefai_engine_llama::PROMPT_BYTES_MAX as u64 + 1)
+            .read_to_string(&mut prompt)?;
+    }
+    if prompt.trim().is_empty() || prompt.len() > sefai_engine_llama::PROMPT_BYTES_MAX {
+        return Err("prompt must contain text within 1048576 bytes".into());
+    }
+    let prepared = selection.prepare(prompt.clone())?;
+    let configured = prepared.runner;
+    let device = match (
+        options
+            .backend
+            .or(configured.backend)
+            .unwrap_or(Backend::Cpu),
+        options.device.or(configured.device),
+    ) {
         (Backend::Cpu, None) => Device::Cpu,
         (Backend::Cpu, Some(_)) => return Err("cpu mode does not accept --device".into()),
         (backend, Some(index)) => Device::Gpu {
@@ -83,22 +97,27 @@ pub fn run(options: Options, mode: Mode) -> Result<(), Box<dyn std::error::Error
         },
         (_, None) => return Err("gpu mode requires --device from `sefai devices`".into()),
     };
-    let mut prompt = options.prompt;
-    if prompt == "-" {
-        prompt.clear();
-        io::stdin()
-            .take(sefai_engine_llama::PROMPT_BYTES_MAX as u64 + 1)
-            .read_to_string(&mut prompt)?;
-    }
-    if prompt.trim().is_empty() || prompt.len() > sefai_engine_llama::PROMPT_BYTES_MAX {
-        return Err("prompt must contain text within 1048576 bytes".into());
-    }
     let settings = Settings {
-        context_tokens: options.context,
-        batch_tokens: options.batch,
-        microbatch_tokens: options.microbatch,
-        output_tokens: options.output,
-        threads: options.threads.unwrap_or(Settings::default().threads),
+        context_tokens: options
+            .context
+            .or(configured.context)
+            .unwrap_or(Settings::default().context_tokens),
+        batch_tokens: options
+            .batch
+            .or(configured.batch)
+            .unwrap_or(Settings::default().batch_tokens),
+        microbatch_tokens: options
+            .microbatch
+            .or(configured.microbatch)
+            .unwrap_or(Settings::default().microbatch_tokens),
+        output_tokens: options
+            .output
+            .or(configured.output)
+            .unwrap_or(Settings::default().output_tokens),
+        threads: options
+            .threads
+            .or(configured.threads)
+            .unwrap_or(Settings::default().threads),
     };
     settings.validate(1, u32::MAX)?;
     let cancelled = Arc::new(AtomicBool::new(false));
@@ -106,12 +125,19 @@ pub fn run(options: Options, mode: Mode) -> Result<(), Box<dyn std::error::Error
     ctrlc::set_handler(move || signal.store(true, Ordering::Relaxed))?;
     let mut engine = Engine::new()?;
     let loading = Instant::now();
-    let model = engine.load(&options.model, device, cancelled.clone())?;
+    let path = options
+        .model
+        .or(prepared.model)
+        .ok_or("model: specify --model or a Markdown profile")?;
+    let model = engine.load(&path, device, cancelled.clone())?;
     let load_seconds = loading.elapsed().as_secs_f64();
     let input = if options.raw {
+        if !prepared.prompt.sections().is_empty() {
+            return Err("raw mode cannot discard workspace instructions".into());
+        }
         model.prepare_raw(&prompt)?
     } else {
-        model.prepare(&Prompt::new(vec![Message::user(prompt)]))?
+        model.prepare(&prepared.prompt)?
     };
     let mut output = io::stdout().lock();
     let mut terminal = Output::default();
