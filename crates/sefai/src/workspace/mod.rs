@@ -1,6 +1,8 @@
 //! Markdown is authoritative; loading instructions never grants tool authority.
 
+mod files;
 mod schema;
+mod session;
 
 #[cfg(feature = "gguf")]
 pub use schema::Backend;
@@ -32,6 +34,9 @@ pub struct Selection {
     /// Recall at most eight memories containing this literal text.
     #[arg(long, global = true)]
     recall: Option<String>,
+    /// Resume at most 32 records and 1 MiB from this session.
+    #[arg(long, global = true)]
+    session: Option<String>,
 }
 
 pub struct Workspace {
@@ -52,6 +57,9 @@ impl Selection {
     }
 
     pub fn prepare(&self, message: String) -> io::Result<Prepared> {
+        if message.len() > PROMPT_BYTES_MAX {
+            return Err(invalid("prompt: exceeds 1048576 bytes"));
+        }
         if self.skill.len() > 16 {
             return Err(invalid("skill: at most 16 selections"));
         }
@@ -65,12 +73,38 @@ impl Selection {
         }
         let root = self.root()?;
         if self.workspace.is_none() && !root.exists() {
-            if self.profile.is_some() || !self.skill.is_empty() || self.recall.is_some() {
+            if self.profile.is_some()
+                || !self.skill.is_empty()
+                || self.recall.is_some()
+                || self.session.is_some()
+            {
                 return Err(invalid("workspace: initialize it before selecting content"));
             }
             return Ok(result);
         }
         let workspace = Workspace::open(&root)?;
+        if let Some(id) = &self.session {
+            let mut messages = workspace.session(id, 32)?;
+            messages.extend_from_slice(result.prompt.conversation());
+            let additional = messages
+                .iter()
+                .map(|message| message.content.len())
+                .sum::<usize>();
+            let sections_bytes = result
+                .prompt
+                .sections()
+                .iter()
+                .map(|section| section.text.len())
+                .sum::<usize>();
+            if additional + sections_bytes > PROMPT_BYTES_MAX {
+                return Err(invalid("prompt: resumed text exceeds 1048576 bytes"));
+            }
+            let sections = result.prompt.sections().to_vec();
+            result.prompt = Prompt::new(messages);
+            for section in sections {
+                result.prompt.add_section(section.source, section.text);
+            }
+        }
         let text = workspace.read(Path::new("config.md"))?;
         let (config, _) = schema::parse::<Config>(&text).map_err(|error| at("config.md", error))?;
         schema::version(config.schema).map_err(|error| at("config.md", error))?;
@@ -105,7 +139,7 @@ impl Selection {
             let text = workspace.read(&path)?;
             let (header, body) = schema::parse::<Skill>(&text).map_err(|error| at(&path, error))?;
             workspace.validate_skill(&path, &header)?;
-            result.prompt.add_section("skill", body);
+            add_section(&mut result.prompt, "skill", body)?;
         }
         if let Some(query) = &self.recall {
             if query.is_empty() || query.len() > 1024 {
@@ -118,7 +152,7 @@ impl Selection {
                     schema::parse::<Memory>(&text).map_err(|error| at(&path, error))?;
                 workspace.identity(&path, header.schema, &header.id)?;
                 if body.contains(query) {
-                    result.prompt.add_section("memory", body);
+                    add_section(&mut result.prompt, "memory", body)?;
                     count += 1;
                     if count == 8 {
                         break;
@@ -126,21 +160,7 @@ impl Selection {
                 }
             }
         }
-        let bytes: usize = result
-            .prompt
-            .sections()
-            .iter()
-            .map(|section| section.text.len())
-            .sum::<usize>()
-            + result
-                .prompt
-                .conversation()
-                .iter()
-                .map(|message| message.content.len())
-                .sum::<usize>();
-        if bytes > PROMPT_BYTES_MAX {
-            return Err(invalid("prompt: composed text exceeds 1048576 bytes"));
-        }
+        prompt_budget(&result.prompt, 0)?;
         Ok(result)
     }
 }
@@ -224,7 +244,7 @@ impl Workspace {
                 let (header, body) =
                     schema::parse::<Text>(&text).map_err(|error| at(path, error))?;
                 schema::version(header.schema).map_err(|error| at(path, error))?;
-                prompt.add_section(source, body);
+                add_section(prompt, source, body)?;
             }
         }
         Ok(())
@@ -279,42 +299,92 @@ impl Workspace {
             self.read(Path::new(&format!("models/{id}.md")))?;
         }
         self.instructions(&mut Prompt::default())?;
-        let mut count = 1;
+        let mut count = 1 + ["system.md", "preferences.md"]
+            .iter()
+            .filter(|name| self.root.join(name).exists())
+            .count();
         for directory in ["models", "skills", "memory", "sessions", "mcp"] {
             for path in self.entries(directory)? {
-                let text = self.read(&path)?;
-                let checked = (|| -> io::Result<()> {
-                    match directory {
-                        "models" => {
-                            let (header, _) = schema::parse::<Model>(&text)?;
-                            self.validate_model(&path, &header)
-                        }
-                        "skills" => {
-                            let (header, _) = schema::parse::<Skill>(&text)?;
-                            self.validate_skill(&path, &header)
-                        }
-                        "memory" => {
-                            let (header, _) = schema::parse::<Memory>(&text)?;
-                            self.identity(&path, header.schema, &header.id)
-                        }
-                        "sessions" => {
-                            let (header, _) = schema::parse::<schema::Session>(&text)?;
-                            let _outcome = header.outcome;
-                            self.identity(&path, header.schema, &header.id)
-                        }
-                        "mcp" => {
-                            let (header, _) = schema::parse::<schema::Mcp>(&text)?;
-                            self.identity(&path, header.schema, &header.id)?;
-                            validate_transport(&header.transport)
-                        }
-                        _ => unreachable!(),
-                    }
-                })();
-                checked.map_err(|error| at(&path, error))?;
+                self.validate_file(&path, &self.path(&path)?)?;
                 count += 1;
             }
         }
         Ok(count)
+    }
+
+    fn validate_document(&self, path: &Path, text: &str) -> io::Result<()> {
+        match kind(path)? {
+            "config" => {
+                let (header, _) = schema::parse::<Config>(text)?;
+                schema::version(header.schema)?;
+                if let Some(id) = header.model {
+                    schema::id(&id)?;
+                }
+                header.runner.validate()
+            }
+            "text" => {
+                let (header, _) = schema::parse::<Text>(text)?;
+                schema::version(header.schema)
+            }
+            "models" => {
+                let (header, _) = schema::parse::<Model>(text)?;
+                self.validate_model(path, &header)
+            }
+            "skills" => {
+                let (header, _) = schema::parse::<Skill>(text)?;
+                self.validate_skill(path, &header)
+            }
+            "memory" => {
+                let (header, _) = schema::parse::<Memory>(text)?;
+                self.identity(path, header.schema, &header.id)
+            }
+            "mcp" => {
+                let (header, _) = schema::parse::<schema::Mcp>(text)?;
+                self.identity(path, header.schema, &header.id)?;
+                validate_transport(&header.transport)
+            }
+            _ => Err(at(path, "path: unsupported document kind")),
+        }
+    }
+}
+
+fn prompt_budget(prompt: &Prompt, additional: usize) -> io::Result<()> {
+    let bytes = prompt
+        .sections()
+        .iter()
+        .map(|section| section.text.len())
+        .sum::<usize>()
+        + prompt
+            .conversation()
+            .iter()
+            .map(|message| message.content.len())
+            .sum::<usize>()
+        + additional;
+    if bytes > PROMPT_BYTES_MAX {
+        return Err(invalid("prompt: composed text exceeds 1048576 bytes"));
+    }
+    Ok(())
+}
+
+fn add_section(prompt: &mut Prompt, source: &'static str, body: &str) -> io::Result<()> {
+    prompt_budget(prompt, body.len())?;
+    prompt.add_section(source, body);
+    Ok(())
+}
+
+fn kind(path: &Path) -> io::Result<&str> {
+    let parts: Vec<_> = path.iter().collect();
+    match parts.as_slice() {
+        [name] if *name == "config.md" => Ok("config"),
+        [name] if *name == "system.md" || *name == "preferences.md" => Ok("text"),
+        [directory, _] if path.extension().is_some_and(|extension| extension == "md") => {
+            match directory.to_str() {
+                Some(kind @ ("models" | "memory" | "mcp" | "sessions")) => Ok(kind),
+                _ => Err(at(path, "path: unsupported document kind")),
+            }
+        }
+        [directory, _, name] if *directory == "skills" && *name == "SKILL.md" => Ok("skills"),
+        _ => Err(at(path, "path: unsupported document kind")),
     }
 }
 

@@ -129,6 +129,9 @@ pub fn parse<T: DeserializeOwned>(text: &str) -> io::Result<(T, &str)> {
         }
         if line.trim_end_matches(['\r', '\n']) == "---" {
             let options = serde_saphyr::options! {
+                reject_unsupported_tags: true,
+                merge_keys: serde_saphyr::MergeKeyPolicy::Error,
+                no_schema: true,
                 budget: serde_saphyr::budget! {
                     max_depth: 8, max_nodes: 1024, max_events: 4096,
                     max_aliases: 0, max_anchors: 0, max_documents: 1,
@@ -173,6 +176,9 @@ pub fn id(value: &str) -> io::Result<()> {
 impl Runner {
     pub fn overlay(&mut self, other: &Self) {
         self.backend = other.backend.or(self.backend);
+        if matches!(other.backend, Some(Backend::Cpu)) {
+            self.device = None;
+        }
         self.device = other.device.or(self.device);
         self.context = other.context.or(self.context);
         self.batch = other.batch.or(self.batch);

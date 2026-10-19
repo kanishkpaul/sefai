@@ -3,7 +3,7 @@
 Evidence recorded on 19 October 2026 on this Apple Silicon Mac and GitHub-hosted Windows, macOS and Linux runners.
 Phases 0 and 1 are complete and published.
 Phase 1 has local CPU/Metal evidence, passing Windows/macOS/Linux CPU-model CI and successful CUDA/Vulkan compilation.
-Phase 2 schema/loading is implemented in the first stacked PR; safe writes and persistence qualification remain.
+Phase 2 implementation and local acceptance are complete in four stacked PRs; cross-platform CI review and merge remain pending.
 CUDA/Vulkan execution remains unverified.
 See the current Phase 1 results below; historical foundation results are retained separately.
 
@@ -187,3 +187,42 @@ The first validation attempt found a no-default-features unused import; it was f
 The two new dependencies are `serde` (typed field validation) and deserialize-only `serde-saphyr` (bounded YAML parsing); the standard library has no YAML parser.
 No engine runtime dependency or native binding version changes.
 Cross-platform CI has not been observed for these Phase 2 changes.
+
+## Phase 2 step 2 — safe persistence
+
+Same-directory temporary files, sync-before-rename, nonblocking standard-library OS locks and exact expected-file comparisons protect explicit writes.
+Seven new model-free tests cover invalid replacement rollback, stale snapshots, literal session roles, bounded tail count, truncated records, non-destructive initialization and memory edit/forget.
+Session reads and writes are bounded to 64 MiB on disk with a 1 MiB decoded tail, without a hidden database.
+The CLI offers explicit memory operations, validated file import and session append/tail/resume.
+Automatic generation persistence remains later harness work.
+All four Rust checks, the no-engine tests, attribution regression tests and the prompt diagnostic are required before this step's commit.
+Windows rename and process-lock behavior will be exercised by the existing three-OS CI matrix; local execution is macOS only.
+
+## Phase 2 step 3 — persistence qualification
+
+Local macOS passes 72 Rust tests: 36 binary tests, 10 CLI integration tests, 4 core tests and 22 engine tests.
+The no-engine configuration passes the same 46 workspace/terminal/CLI tests without loading an engine.
+Sixteen attribution regression tests and all four required Rust checks pass; `prompt hello` emits the expected user message.
+The schema fixture covers config, system, preferences, a GGUF profile, a selected skill, memory, an interrupted session and an inert MCP definition.
+
+The expanded suite covers Unicode workspace paths, CRLF, restart visibility, portable IDs, unknown nested keys, alias rejection, front matter/file/record bounds, every incomplete prefix of a session record, injected read failure, edits during staging, last-good-byte preservation, crash-leftover files and lock release after terminating a separate process.
+Unix tests reject escaped symlink reads and symlink-parent writes.
+Windows-specific tests exercise a junction escape and an exclusive sharing violation; they have not been executed locally.
+A portable integration test replaces an existing file through the real CLI on all three operating systems.
+The existing CI matrix automatically runs these tests with both default and no-engine configurations; remote results are deliberately not polled.
+A malformed manual edit remains on disk with a visible error; callers cannot silently overwrite it or promote a partial temporary file.
+YAML tags and merge keys are rejected, and ambiguous scalar-to-string coercion is disabled.
+
+## Phase 2 step 4 — closeout and consistency
+
+The fourth PR closes documentation gaps and adds small runner/composition regressions: explicit CPU selection clears inherited GPU placement, CLI flags override Markdown values, raw mode cannot silently discard instructions or history, expected snapshots must be separate copies, and prompt sections are budgeted before copying.
+Exact-size CRLF records have the same decoded byte limit as LF records.
+Runner defaults are computed once per request, and invalid raw-mode requests fail before loading weights.
+No native adapter or binding upgrade is included.
+
+Final local checks and model evidence are summarized in [phase2-closeout.md](phase2-closeout.md).
+The local GGUF smoke used the hash-verified `tests/fixtures/gguf.json` model on CPU with context 512, batch 64, microbatch 32, output 4 and two threads.
+Markdown system text and the model profile produced an 18-token prompt and a successful reply.
+A second benchmark probe explicitly overrode output to zero and returned `generated_tokens=0` with `OutputLimit`; this is an override diagnostic, not a throughput measurement.
+No new RAM/VRAM claim or broader architecture qualification follows from these smoke tests.
+Remote CI has not been polled or declared green.

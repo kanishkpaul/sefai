@@ -4,7 +4,7 @@ mod term;
 mod workspace;
 
 use clap::{Parser, Subcommand};
-use std::{io, process::ExitCode};
+use std::{fs::File, io, path::PathBuf, process::ExitCode};
 
 #[derive(Parser)]
 #[command(styles = term::styles(), version, about = "A small local LLM runner and terminal harness")]
@@ -43,6 +43,49 @@ enum Command {
 #[derive(Subcommand)]
 enum WorkspaceCommand {
     Check,
+    /// Create missing workspace directories and starter Markdown files.
+    Init,
+    /// Validate and atomically install a Markdown file; updates require a snapshot.
+    Put {
+        path: PathBuf,
+        #[arg(long)]
+        from: PathBuf,
+        #[arg(long)]
+        expected: Option<PathBuf>,
+    },
+    /// Create an explicitly requested durable memory.
+    Remember {
+        id: String,
+        text: String,
+    },
+    /// Edit memory only if it still matches a saved snapshot.
+    Edit {
+        id: String,
+        text: String,
+        #[arg(long)]
+        expected: PathBuf,
+    },
+    /// Delete memory only if it still matches a saved snapshot.
+    Forget {
+        id: String,
+        #[arg(long)]
+        expected: PathBuf,
+    },
+    /// Append one literal record; existing sessions require a saved snapshot.
+    Append {
+        id: String,
+        #[arg(long, value_parser = ["user", "assistant"])]
+        role: String,
+        text: String,
+        #[arg(long)]
+        expected: Option<PathBuf>,
+    },
+    /// Read a bounded session tail without loading a model.
+    Tail {
+        id: String,
+        #[arg(long, default_value_t = 32)]
+        messages: usize,
+    },
 }
 
 fn main() -> ExitCode {
@@ -62,21 +105,43 @@ fn main() -> ExitCode {
 
 fn execute(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
     match cli.command {
-        Command::Workspace {
-            action: WorkspaceCommand::Check,
-        } => {
-            let workspace = workspace::Workspace::open(&cli.selection.root()?)?;
-            println!("validated {} records", workspace.check()?);
+        Command::Workspace { action } => {
+            let root = cli.selection.root()?;
+            if matches!(action, WorkspaceCommand::Init) {
+                workspace::Workspace::init(&root)?;
+            } else {
+                let workspace = workspace::Workspace::open(&root)?;
+                match action {
+                    WorkspaceCommand::Check => println!("validated {} records", workspace.check()?),
+                    WorkspaceCommand::Put {
+                        path,
+                        from,
+                        expected,
+                    } => workspace.put(&path, expected.as_deref(), File::open(from)?)?,
+                    WorkspaceCommand::Remember { id, text } => {
+                        workspace.remember(&id, &text, None)?;
+                    }
+                    WorkspaceCommand::Edit { id, text, expected } => {
+                        workspace.remember(&id, &text, Some(&expected))?
+                    }
+                    WorkspaceCommand::Forget { id, expected } => {
+                        workspace.forget(&id, &expected)?
+                    }
+                    WorkspaceCommand::Append {
+                        id,
+                        role,
+                        text,
+                        expected,
+                    } => workspace.append(&id, &role, &text, expected.as_deref())?,
+                    WorkspaceCommand::Tail { id, messages } => {
+                        print_messages(workspace.session(&id, messages)?)?
+                    }
+                    WorkspaceCommand::Init => unreachable!(),
+                }
+            }
         }
         Command::Prompt { message } => {
-            let mut output = io::stdout().lock();
-            let mut terminal = term::Output::default();
-            for message in cli.selection.prepare(message)?.prompt.to_messages() {
-                terminal.write(
-                    &format!("[{}]\n{}\n\n", message.role.as_str(), message.content),
-                    &mut output,
-                )?;
-            }
+            print_messages(cli.selection.prepare(message)?.prompt.to_messages())?;
         }
         #[cfg(feature = "gguf")]
         Command::Devices => runner::devices()?,
@@ -91,6 +156,18 @@ fn execute(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
             runner::Mode::Benchmark(repetitions),
             &cli.selection,
         )?,
+    }
+    Ok(())
+}
+
+fn print_messages(messages: Vec<sefai_core::Message>) -> io::Result<()> {
+    let mut output = io::stdout().lock();
+    let mut terminal = term::Output::default();
+    for message in messages {
+        terminal.write(
+            &format!("[{}]\n{}\n\n", message.role.as_str(), message.content),
+            &mut output,
+        )?;
     }
     Ok(())
 }

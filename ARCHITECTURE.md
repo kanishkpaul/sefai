@@ -11,7 +11,9 @@ The TUI is its permanent home.
 `crates/sefai` composes the `run`, `bench`, `devices` and minimal `prompt` commands, cancellation and terminal sanitization.
 An engine lends one model at a time; requests allocate one temporary context while retaining the model weights.
 The binary workspace module validates typed Markdown and composes selected instructions, model profiles and bounded literal memory recall.
-There is no TUI, MCP client or persistence writer yet.
+Workspace writes use same-directory atomic replacement, an OS file lock and exact revision snapshots.
+Session grammar is streamed from disk into a bounded tail; explicit CLI memory and session writes are available.
+There is no TUI or MCP client yet.
 The [workspace guide](docs/workspace.md) defines schema 1 and its limits.
 The [runner guide](docs/runner.md) defines current limits and local qualification.
 The [build plan](docs/build-plan.md) separates implementation phases and acceptance gates.

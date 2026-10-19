@@ -62,5 +62,7 @@ B3 also has deterministic byte-split Unicode and malformed-byte unit tests, and 
 B4 uses the upstream native renderer and explicitly rejects unsupported templates; full tool-template support remains a harness gate.
 B7 has an exactly pinned, build-probed dependency in standalone commit `8753694`; Windows/macOS/Linux CPU-model CI and CUDA/Vulkan compile checks have passed.
 The new prompt boundaries enforce B9's size/message limits; one-shot rendering filters terminal controls across pieces for B10.
-Future Markdown, TUI and MCP consumers must enforce their own boundaries as those phases land.
+Phase 2 Markdown reads, prompt composition, recall and session tails now enforce their own named byte/count bounds.
+Its quoted session grammar preserves role-like user prose and the current user message is appended once.
+TUI and MCP consumers must enforce their own boundaries as those phases land.
 Phase 1 is complete following merged PRs #6 and #7; CUDA/Vulkan execution remains a later hardware qualification gate.

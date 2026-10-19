@@ -3,11 +3,12 @@
 A small Rust LLM runner and terminal harness, built around files you can read and edit.
 The goal is low RAM/VRAM use, a persistent TUI, Markdown-owned prompts/skills/preferences/memory, and explicit MCP connections.
 
-**Status: Phase 1 complete; Phase 2 Markdown workspace is in progress.**
+**Status: Phase 2 implemented and locally qualified; stacked PR review/CI is pending.**
 Pinned-model CPU tests pass on Windows, macOS and Linux; local Metal tests and CUDA/Vulkan compilation also pass.
 CUDA/Vulkan execution and the full hardware matrix remain later qualification gates.
 Markdown schema validation and selected instruction/profile loading are implemented.
-TUI, safe persistence writes and MCP connections are not implemented yet.
+Safe writes, explicit memory/session persistence and bounded session reads are implemented.
+TUI and MCP connections are not implemented yet.
 See [the workspace guide](docs/workspace.md) for schema and selection controls.
 
 ## Direction
@@ -36,6 +37,19 @@ The runner loads the chosen local GGUF and streams a reply; CPU is the explicit 
 See the [runner guide](docs/runner.md) for GPU builds, limits, benchmarks and model tests.
 `cargo run --locked --no-default-features -- prompt hello` retains the diagnostic without native inference dependencies.
 There is no published installer yet.
+
+## Customize with Markdown
+
+Initialize a workspace, edit its `system.md` or `preferences.md`, then inspect the composed prompt:
+
+```sh
+cargo run --locked -- --workspace /path/to/workspace workspace init
+cargo run --locked -- --workspace /path/to/workspace prompt hello
+```
+
+Model profiles, explicitly selected skills, literal memory recall and session resume use the same workspace.
+The [workspace guide](docs/workspace.md) documents schema 1, precedence, limits, safe writes and session framing.
+The [Phase 2 closeout](docs/phase2-closeout.md) records acceptance evidence and the remaining CI gate.
 
 ## Read the plan
 

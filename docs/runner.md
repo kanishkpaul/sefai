@@ -1,8 +1,10 @@
 # GGUF runner
 
 Phase 1 adds local GGUF inference with explicit CPU or GPU selection.
-The current implementation has passed model tests on this Mac's CPU and Metal backend; Windows/Linux execution and CUDA/Vulkan compilation still require the new CI workflows to run.
-There is no TUI, Markdown workspace, tool execution or MCP connection yet.
+Phase 1 passed local CPU/Metal model tests, Windows/macOS/Linux CPU-model CI and CUDA/Vulkan compilation.
+Phase 2 adds Markdown profiles and instruction/session composition; its new cross-platform CI results remain pending review.
+There is no TUI, tool execution or MCP connection yet.
+See [workspace.md](workspace.md) for editable model settings, prompts, skills, memory and session resume.
 
 ## Build and run
 
@@ -16,6 +18,10 @@ cargo run --locked -- run --model /path/to/model.gguf "hello"
 cargo run --locked -- run --model /path/to/model.gguf --raw "complete this text"
 cargo run --locked --release -- bench --model /path/to/model.gguf --threads 4 --output 32 "hello"
 ```
+
+Explicit flags override a selected Markdown model profile, which overrides workspace config and built-in defaults.
+Explicit CPU selection clears an inherited GPU device; passing CPU and an explicit device together remains an error.
+`--raw` rejects nonempty workspace instructions or resumed history before loading weights.
 
 Pass `-` as the prompt to read at most 1 MiB of UTF-8 from stdin.
 The ordinary `run` command streams text to stdout and reports locality/device/context on stderr.

@@ -3,7 +3,8 @@
 Build a small Rust LLM runner and terminal harness, with Markdown-owned customization and optional inference backends.
 GGUF, ONNX, GPTQ, AWQ, and MLX are release targets.
 Phase 1 is complete: the published GGUF runner passes local CPU/Metal tests, Windows/macOS/Linux CPU-model CI and CUDA/Vulkan compile checks.
-Phase 2 is in progress: Markdown schema/loading is implemented; safe writes and persistence qualification remain.
+Phase 2 implementation and local acceptance are complete; the four stacked PRs still need review, cross-platform CI qualification and merge.
+See [phase2-closeout.md](phase2-closeout.md) for the acceptance matrix and stack order.
 Complete runner correctness before adding harness features.
 Every phase includes regression tests; the second-last phase is a complete product verification pass, and the last is repository organization, installation, and presentation.
 
@@ -73,7 +74,7 @@ Detailed evidence belongs in [verification.md](verification.md).
 Merged PR #7 retains those passing checks with updated CI actions and the repaired attribution workflow.
 CUDA/Vulkan execution remains a Phase 9 hardware gate.
 The [runner guide](runner.md) describes the implemented API and limits; [verification.md](verification.md) records results and failures.
-The Phase 1 gate is closed; Phase 2 may begin.
+The Phase 1 gate is closed; Phase 2 implementation is recorded below.
 
 Work through [bug-fix-plan.md](bug-fix-plan.md) in order.
 Create `engine-llama` only when the first real engine implementation lands.
@@ -93,9 +94,9 @@ Run a tiny pinned, licensed GGUF in dedicated integration CI, with its SHA256 ch
 Record actual CPU/Metal results and compile CUDA/Vulkan configurations; GPU execution remains pending until hardware is used.
 No harness feature starts while a correctness defect in this gate remains unresolved.
 
-### Phase 2 — Markdown owns customization
+### Phase 2 — Markdown owns customization (implemented; CI/merge pending)
 
-Use this proposed workspace, rooted at the platform's config/data location or an explicit `--workspace` path:
+The implemented workspace uses this layout, rooted at the platform's config/data location or an explicit `--workspace` path:
 
 ```text
 config.md
@@ -112,7 +113,7 @@ cache/                 disposable engine state and indexes
 Keep prose as ordinary Markdown and machine settings in a strictly typed YAML front matter block.
 Only front matter changes configuration; a sentence in the body cannot execute a command, grant a permission, or change a setting.
 Version the schema; reject unknown keys, invalid ranges, duplicate IDs and unsupported versions with a path and field name.
-Choose deterministic precedence: explicit CLI override, workspace config, built-in defaults; user/global prose is composed before workspace prose in a documented order.
+Use the documented precedence: explicit CLI override, selected model profile, workspace config, built-in defaults; user/global prose is composed before workspace prose in a documented order.
 Do not execute Markdown code fences.
 Skills are instructions and resource references, with metadata and input limits; do not build a new plugin programming language.
 Read skills on demand and include only selected skills in the prompt.
