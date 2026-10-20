@@ -49,8 +49,13 @@ pub fn read(input: impl BufRead, limit: usize) -> io::Result<(schema::Session, V
         }
         let role = match heading.as_str() {
             "## user" => Role::User,
-            "## assistant" => Role::Assistant,
-            _ => return Err(invalid("session.role: expected ## user or ## assistant")),
+            "## assistant" | "## harness" => Role::Assistant,
+            "## tool" => Role::Tool,
+            _ => {
+                return Err(invalid(
+                    "session.role: expected ## user, ## assistant, ## tool or ## harness",
+                ));
+            }
         };
         let mut body = String::new();
         let mut lines = 0;
@@ -75,6 +80,9 @@ pub fn read(input: impl BufRead, limit: usize) -> io::Result<(schema::Session, V
         if lines == 0 {
             return Err(invalid("session.body: expected at least one quoted line"));
         }
+        if heading == "## harness" {
+            continue;
+        }
         bytes += body.len();
         messages.push_back(Message {
             role,
@@ -93,8 +101,10 @@ pub fn read(input: impl BufRead, limit: usize) -> io::Result<(schema::Session, V
 }
 
 pub fn encode(role: &str, text: &str) -> io::Result<String> {
-    if !matches!(role, "user" | "assistant") {
-        return Err(invalid("session.role: expected user or assistant"));
+    if !matches!(role, "user" | "assistant" | "tool" | "harness") {
+        return Err(invalid(
+            "session.role: expected user, assistant, tool or harness",
+        ));
     }
     if text.len() > schema::FILE_BYTES_MAX || text.contains('\0') {
         return Err(invalid(

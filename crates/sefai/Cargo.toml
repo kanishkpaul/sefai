@@ -9,12 +9,14 @@ publish.workspace = true
 
 [features]
 default = ["gguf"]
-gguf = ["dep:sefai-engine-llama", "dep:ctrlc", "dep:ratatui", "dep:crossterm", "dep:unicode-segmentation"]
+harness-model-tests = ["gguf"]
+gguf = ["dep:sefai-engine-llama", "dep:ctrlc", "dep:ratatui", "dep:crossterm", "dep:unicode-segmentation", "dep:serde_json"]
 metal = ["gguf", "sefai-engine-llama/metal"]
 cuda = ["gguf", "sefai-engine-llama/cuda"]
 vulkan = ["gguf", "sefai-engine-llama/vulkan"]
 
 [dependencies]
+serde_json = { version = "1", optional = true }
 sefai-engine-llama = { path = "../engine-llama", optional = true, default-features = false }
 sefai-core.workspace = true
 
@@ -28,3 +30,7 @@ unicode-segmentation = { version = "1.13.3", optional = true }
 
 [lints]
 workspace = true
+
+[[test]]
+name = "harness_gguf"
+required-features = ["harness-model-tests"]

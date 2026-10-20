@@ -3,7 +3,7 @@
 A small Rust LLM runner and terminal harness, built around files you can read and edit.
 The goal is low RAM/VRAM use, a persistent TUI, Markdown-owned prompts/skills/preferences/memory, and explicit MCP connections.
 
-**Status: Phase 2 merged; Phase 3 terminal implementation is locally qualified; PR review/CI is pending.**
+**Status: Phases 1–3 merged; Phase 4 harness is locally qualified; PR review and CI are pending.**
 Pinned-model CPU tests pass on Windows, macOS and Linux; local Metal tests and CUDA/Vulkan compilation also pass.
 CUDA/Vulkan execution and the full hardware matrix remain later qualification gates.
 Markdown schema validation and selected instruction/profile loading are implemented.
@@ -61,6 +61,7 @@ The [terminal guide](docs/tui.md) documents the interactive controls, limits and
 | [Build plan](docs/build-plan.md) | Phases, retained scope and acceptance gates |
 | [Bug-fix plan](docs/bug-fix-plan.md) | Main-branch audit and ordered regression work |
 | [Research](docs/research/2026-10-19-inference-and-engineering.md) | Formats, memory arithmetic, Rust practice and sources |
+| [Bounded harness](docs/harness.md) | Tool protocol, exact approvals, budgets and recovery |
 | [Architecture](ARCHITECTURE.md) | Current code and planned ownership boundaries |
 | [Verification](docs/verification.md) | Checks performed, failures and outstanding work |
 | [Contributing](CONTRIBUTING.md) | Setup, checks and publication policy |

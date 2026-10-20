@@ -1,0 +1,34 @@
+{
+  "results": [
+    {
+      "case": "approve-read",
+      "exit": 0,
+      "terminal_restored": true,
+      "bytes": 9391
+    },
+    {
+      "case": "approve-write",
+      "exit": 0,
+      "terminal_restored": true,
+      "bytes": 10326
+    },
+    {
+      "case": "enter-deny",
+      "exit": 0,
+      "terminal_restored": true,
+      "bytes": 13579
+    },
+    {
+      "case": "escape-deny",
+      "exit": 0,
+      "terminal_restored": true,
+      "bytes": 10440
+    },
+    {
+      "case": "cancel-approval",
+      "exit": 0,
+      "terminal_restored": true,
+      "bytes": 9562
+    }
+  ]
+}

@@ -4,6 +4,7 @@ pub enum Role {
     System,
     User,
     Assistant,
+    Tool,
 }
 
 impl Role {
@@ -13,6 +14,7 @@ impl Role {
             Role::System => "system",
             Role::User => "user",
             Role::Assistant => "assistant",
+            Role::Tool => "tool",
         }
     }
 }
@@ -35,6 +37,13 @@ impl Message {
     pub fn user(content: impl Into<String>) -> Self {
         Message {
             role: Role::User,
+            content: content.into(),
+        }
+    }
+
+    pub fn tool(content: impl Into<String>) -> Self {
+        Message {
+            role: Role::Tool,
             content: content.into(),
         }
     }

@@ -82,3 +82,24 @@ jobs:
         run: |
           cargo test --locked -p sefai-engine-llama --features model-tests --test gguf
           cargo test --locked -p sefai-engine-llama --features model-tests --lib gguf_
+
+      - name: Fetch the pinned tool-capable GGUF fixture
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          python3 - <<'PYTHON'
+          import hashlib, json, subprocess
+          from pathlib import Path
+          model = json.loads(Path("tests/fixtures/tool-gguf.json").read_text())
+          url = f"https://huggingface.co/{model['repository']}/resolve/{model['revision']}/{model['file']}"
+          subprocess.run(["curl", "--fail", "--location", "--retry", "2", "--max-time", "600", url, "--output", "tool-fixture.gguf"], check=True)
+          assert Path("tool-fixture.gguf").stat().st_size == model["bytes"], "tool fixture size mismatch"
+          with open("tool-fixture.gguf", "rb") as source:
+              assert hashlib.file_digest(source, "sha256").hexdigest() == model["sha256"], "tool fixture hash mismatch"
+          PYTHON
+      - name: Test the real GGUF harness on CPU
+        if: runner.os == 'Linux'
+        shell: bash
+        env:
+          SEFAI_TOOL_TEST_MODEL: ${{ github.workspace }}/tool-fixture.gguf
+        run: cargo test --locked -p sefai --features harness-model-tests --test harness_gguf

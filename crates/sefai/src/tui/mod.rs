@@ -1,4 +1,4 @@
-//! One input thread and one bounded model/workspace worker; no runtime tool authority.
+//! One input thread and one bounded model/workspace worker; exact-action local tool approvals.
 mod view;
 mod worker;
 
@@ -38,9 +38,20 @@ pub struct Options {
     /// Line-oriented conversation without raw mode, screen controls or colour.
     #[arg(long)]
     plain: bool,
+    /// Enable the documented SmolLM2 tool-call protocol and local memory tools.
+    #[arg(long, value_enum)]
+    tool_protocol: Option<ToolProtocol>,
+}
+
+#[derive(Clone, Copy, clap::ValueEnum)]
+enum ToolProtocol {
+    Smollm2,
 }
 
 enum Event {
+    Approval(String),
+    Continue,
+    Tool(String),
     History(Vec<Message>),
     Ready(String),
     Status(String),
@@ -57,6 +68,7 @@ struct App {
     status: String,
     error: Option<String>,
     overlay: Option<String>,
+    approval: bool,
     overlay_scroll: u16,
     busy: bool,
     scroll: Option<u16>,
@@ -73,6 +85,7 @@ impl Default for App {
             status: "opening workspace".into(),
             error: None,
             overlay: None,
+            approval: false,
             overlay_scroll: 0,
             busy: true,
             scroll: None,
@@ -100,7 +113,16 @@ pub fn run(selection: Selection, options: Options) -> Result<(), Box<dyn std::er
     let flag = cancelled.clone();
     let worker = std::thread::Builder::new()
         .name("model".into())
-        .spawn(move || worker::run(selection, options.model, incoming, outgoing, flag))?;
+        .spawn(move || {
+            worker::run(
+                selection,
+                options.model,
+                options.tool_protocol,
+                incoming,
+                outgoing,
+                flag,
+            )
+        })?;
     let result = if plain {
         plain_loop(&commands, &events, &cancelled)
     } else {
@@ -191,6 +213,20 @@ impl Drop for Restore {
 impl App {
     fn apply(&mut self, event: Event) {
         match event {
+            Event::Continue => {
+                self.sanitizer = term::Output::default();
+                self.transcript.push(Message::assistant(""));
+            }
+            Event::Approval(text) => {
+                self.overlay = Some(clean(&text));
+                self.overlay_scroll = 0;
+                self.approval = true;
+                self.status = "1 approval pending · deny by default".into();
+            }
+            Event::Tool(text) => {
+                self.transcript
+                    .push(Message::tool(format!("┊ {}", clean(&text))));
+            }
             Event::History(messages) => {
                 self.transcript = messages
                     .into_iter()
@@ -204,6 +240,10 @@ impl App {
             Event::Ready(status) => {
                 self.status = clean(&status);
                 self.busy = false;
+                if self.approval {
+                    self.overlay = None;
+                    self.approval = false;
+                }
                 self.submitted = None;
             }
             Event::Status(status) => self.status = clean(&status),
@@ -271,6 +311,24 @@ impl App {
         cancelled: &AtomicBool,
     ) -> io::Result<bool> {
         if self.overlay.is_some() {
+            if self.approval
+                && matches!(
+                    code,
+                    KeyCode::Char('y' | 'n') | KeyCode::Esc | KeyCode::Enter
+                )
+            {
+                let decision = if code == KeyCode::Char('y') && modifiers.is_empty() {
+                    "/approve"
+                } else {
+                    "/deny"
+                };
+                commands
+                    .try_send(decision.into())
+                    .map_err(io::Error::other)?;
+                self.approval = false;
+                self.overlay = None;
+                return Ok(true);
+            }
             match code {
                 KeyCode::Esc | KeyCode::Enter => self.overlay = None,
                 KeyCode::PageUp | KeyCode::Up => {
@@ -350,6 +408,29 @@ fn plain_loop(
     loop {
         loop {
             match events.recv().map_err(io::Error::other)? {
+                Event::Continue => {
+                    sanitizer = term::Output::default();
+                    writeln!(output, "\n[assistant]")?;
+                }
+                Event::Approval(text) => {
+                    writeln!(output, "\n[approve?]\n{}", clean(&text))?;
+                    output.flush()?;
+                    let mut decision = String::new();
+                    (&mut input)
+                        .take(COMPOSER_BYTES_MAX as u64 + 1)
+                        .read_line(&mut decision)?;
+                    commands
+                        .send(
+                            if decision.trim() == "y" {
+                                "/approve"
+                            } else {
+                                "/deny"
+                            }
+                            .into(),
+                        )
+                        .map_err(io::Error::other)?;
+                }
+                Event::Tool(text) => writeln!(output, "\n┊ {}", clean(&text))?,
                 Event::Ready(status) => {
                     writeln!(output, "[ready] {}", clean(&status))?;
                     break;
@@ -502,5 +583,59 @@ mod tests {
             .expect("stop");
         assert!(cancelled.load(Ordering::Relaxed));
         assert!(incoming.try_recv().is_err());
+    }
+}
+
+#[cfg(test)]
+mod approval_tests {
+    use super::*;
+
+    #[test]
+    fn enter_denies_an_approval() {
+        let (commands, incoming) = mpsc::sync_channel(1);
+        let mut app = App::default();
+        app.apply(Event::Approval("exact action".into()));
+        app.key(
+            KeyCode::Enter,
+            KeyModifiers::NONE,
+            &commands,
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        assert_eq!(incoming.try_recv().unwrap(), "/deny");
+    }
+
+    #[test]
+    fn paste_cannot_approve_a_tool() {
+        let (commands, incoming) = mpsc::sync_channel(1);
+        let mut app = App::default();
+        app.apply(Event::Approval("exact action".into()));
+        app.paste("y\n");
+        assert!(incoming.try_recv().is_err());
+        app.key(
+            KeyCode::Char('y'),
+            KeyModifiers::NONE,
+            &commands,
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        assert_eq!(incoming.try_recv().unwrap(), "/approve");
+        app.key(
+            KeyCode::Char('y'),
+            KeyModifiers::NONE,
+            &commands,
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        assert!(incoming.try_recv().is_err());
+    }
+
+    #[test]
+    fn timeout_dismisses_pending_approval() {
+        let mut app = App::default();
+        app.apply(Event::Approval("exact action".into()));
+        app.apply(Event::Ready("timed out".into()));
+        assert!(!app.approval);
+        assert!(app.overlay.is_none());
     }
 }

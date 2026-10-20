@@ -1,4 +1,6 @@
 #[cfg(feature = "gguf")]
+mod harness;
+#[cfg(feature = "gguf")]
 mod runner;
 mod term;
 #[cfg(feature = "gguf")]
