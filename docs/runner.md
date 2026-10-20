@@ -3,7 +3,7 @@
 Phase 1 adds local GGUF inference with explicit CPU or GPU selection.
 Phase 1 passed local CPU/Metal model tests, Windows/macOS/Linux CPU-model CI and CUDA/Vulkan compilation.
 Phase 2 added Markdown profiles and instruction/session composition and merged after passing the required cross-platform checks.
-The [terminal conversation](tui.md) adds a persistent model worker; the [bounded harness](harness.md) adds opt-in approved local memory tools; MCP connections remain planned.
+The [terminal conversation](tui.md) adds a persistent model worker; the [bounded harness](harness.md) adds opt-in approved local memory tools; optional [MCP connections](mcp.md) add explicitly approved external tools.
 See [workspace.md](workspace.md) for editable model settings, prompts, skills, memory and session resume.
 
 ## Build and run

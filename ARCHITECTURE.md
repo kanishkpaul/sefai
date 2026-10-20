@@ -17,7 +17,8 @@ The TUI owns rendering/input and communicates through bounded channels with one 
 The worker retains weights, verifies actual rendered-token prefixes and persists each started turn atomically with an explicit outcome.
 The binary harness drives bounded generations and opt-in local memory tools with one exact approval at a time.
 Dispatch intent and outcomes use separate Markdown audit records that never become model messages.
-There is no MCP client yet.
+The optional MCP module owns supervised stdio, bounded Streamable HTTP, explicit OAuth and frozen discovery catalogs.
+The harness owns per-call approval and durable dispatch; server metadata never grants authority.
 The [workspace guide](docs/workspace.md) defines schema 1 and its limits.
 The [runner guide](docs/runner.md) defines current limits and local qualification.
 The [build plan](docs/build-plan.md) separates implementation phases and acceptance gates.

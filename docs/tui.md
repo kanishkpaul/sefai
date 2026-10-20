@@ -59,7 +59,8 @@ Idle input polling uses 250 ms without repainting unchanged frames.
 | `/memory ID` | Inspect the source file and a bounded excerpt |
 | `/recall TEXT` | Select literal memory recall; an empty argument disables it |
 | `/settings` | Inspect workspace and instruction selections |
-| `/mcp` | List connection files; metadata only, no client or process launch |
+| `/mcp` | List connection files and the explicitly selected connection (`chat --mcp ID`, optional `mcp` build) |
+| `/disconnect` | Close the MCP connection and its owned child process group/job (optional `mcp` build) |
 | `/stats` | Show token counts, timings, stop reason and reused prompt tokens |
 | `/help` | Show commands and shortcuts |
 
@@ -126,3 +127,5 @@ Unicode segmentation supplies grapheme deletion instead of splitting combining m
 All three dependencies belong to the binary's optional `gguf` feature; the minimal diagnostic build does not install the TUI or an engine runtime.
 Ratatui's rendered-line-count feature is used for wrapped transcript/composer scrolling and is checked by tests against the locked version.
 See [verification.md](verification.md) for local checks and qualification boundaries.
+
+Optional MCP startup, external-access status, tool approvals and OAuth controls are described in [mcp.md](mcp.md).

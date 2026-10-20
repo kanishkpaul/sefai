@@ -19,7 +19,8 @@ The 135M regression fixture is not qualified for tools.
 ## Authority
 
 The runtime exposes only `local-memory/read_memory` and `local-memory/remember_memory`.
-There is no shell, arbitrary file tool, network operation or MCP client.
+Local memory tools provide no shell, arbitrary file or network operation.
+The optional [MCP client](mcp.md) adds a separately selected external connection and exact approval for every proposed MCP call.
 The two tool definitions are runtime-owned; Markdown prose, tool results and model replies cannot add one.
 Before composing instructions, the worker freezes the canonical workspace path and at most 128 existing memory IDs for reads.
 A memory added after that snapshot is unavailable until a new user turn.
@@ -95,7 +96,7 @@ Before serializing new session record bodies and audit text, sefai replaces capt
 Capture is bounded at 128 values and 4,096 bytes per value; unsupported credential capture fails startup.
 A memory-write proposal containing a captured credential is refused before approval or file creation.
 This covers known environment values, not arbitrary secrets typed into prose, encoded forms, edited files, or credentials outside that set.
-Keep credentials out of Markdown; MCP credential-reference resolution belongs to Phase 5.
+Keep credentials out of Markdown; the optional MCP client resolves explicitly named environment references and keeps OAuth credentials in memory.
 
 ## Verification
 

@@ -1,0 +1,22 @@
+{
+  "results": [
+    {
+      "case": "connect-deny",
+      "exit": 0,
+      "terminal_restored": true,
+      "bytes": 5072
+    },
+    {
+      "case": "connect-echo",
+      "exit": 0,
+      "terminal_restored": true,
+      "bytes": 15371
+    },
+    {
+      "case": "cancel-connect",
+      "exit": 0,
+      "terminal_restored": true,
+      "bytes": 5220
+    }
+  ]
+}

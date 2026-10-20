@@ -92,7 +92,7 @@ pub enum Outcome {
     Interrupted,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Mcp {
     pub schema: u32,
@@ -100,7 +100,7 @@ pub struct Mcp {
     pub transport: Transport,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "kind", rename_all = "lowercase", deny_unknown_fields)]
 pub enum Transport {
     Stdio {
@@ -113,7 +113,18 @@ pub enum Transport {
     Http {
         url: String,
         token_env: Option<String>,
+        oauth: Option<OAuth>,
     },
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct OAuth {
+    pub issuer: String,
+    pub client_id: String,
+    pub redirect_uri: String,
+    #[serde(default)]
+    pub scopes: Vec<String>,
 }
 
 pub fn parse<T: DeserializeOwned>(text: &str) -> io::Result<(T, &str)> {
