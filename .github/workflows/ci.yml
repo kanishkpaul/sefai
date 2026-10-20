@@ -50,6 +50,15 @@ jobs:
       - run: cargo clippy --locked --workspace --all-targets -- -D warnings
       - run: cargo clippy --locked -p sefai --no-default-features --all-targets -- -D warnings
       - run: cargo test --locked --workspace
+      - run: cargo clippy --locked -p sefai --features mcp-fixture-tests,harness-model-tests --all-targets -- -D warnings
+      - run: cargo clippy --locked -p sefai --no-default-features --features mcp-oauth --all-targets -- -D warnings
+      - run: cargo test --locked -p sefai --features mcp-oauth --bin sefai
+      - run: cargo test --locked -p sefai --no-default-features --features mcp-oauth
+      - name: Test MCP processes and authenticated loopback transports
+        shell: bash
+        run: |
+          export SEFAI_MCP_TEST_PYTHON="$(python3 -c 'import sys; print(sys.executable)')"
+          cargo test --locked -p sefai --features mcp-fixture-tests --test mcp_transport
       - run: cargo test --locked -p sefai --no-default-features
       - run: cargo run --locked -- prompt hello
       - run: python3 -m unittest discover -s tests -v
@@ -102,4 +111,6 @@ jobs:
         shell: bash
         env:
           SEFAI_TOOL_TEST_MODEL: ${{ github.workspace }}/tool-fixture.gguf
-        run: cargo test --locked -p sefai --features harness-model-tests --test harness_gguf
+        run: |
+          export SEFAI_MCP_TEST_PYTHON="$(python3 -c 'import sys; print(sys.executable)')"
+          cargo test --locked -p sefai --features harness-model-tests,mcp --test harness_gguf

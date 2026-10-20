@@ -38,9 +38,13 @@ pub struct Options {
     /// Line-oriented conversation without raw mode, screen controls or colour.
     #[arg(long)]
     plain: bool,
-    /// Enable the documented SmolLM2 tool-call protocol and local memory tools.
+    /// Enable the documented SmolLM2 protocol and explicitly approved tools.
     #[arg(long, value_enum)]
     tool_protocol: Option<ToolProtocol>,
+    /// Connect one Markdown MCP definition after exact launch approval.
+    #[cfg(feature = "mcp")]
+    #[arg(long, requires = "tool_protocol")]
+    mcp: Option<String>,
 }
 
 #[derive(Clone, Copy, clap::ValueEnum)]
@@ -118,6 +122,8 @@ pub fn run(selection: Selection, options: Options) -> Result<(), Box<dyn std::er
                 selection,
                 options.model,
                 options.tool_protocol,
+                #[cfg(feature = "mcp")]
+                options.mcp,
                 incoming,
                 outgoing,
                 flag,

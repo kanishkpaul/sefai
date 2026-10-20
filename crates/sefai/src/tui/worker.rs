@@ -47,17 +47,29 @@ struct State {
     tools: Option<ToolProtocol>,
     redactor: Redactor,
     uncertain: bool,
+    #[cfg(feature = "mcp")]
+    mcp: Option<crate::mcp::Connection>,
 }
 
 pub fn run(
     selection: Selection,
     model: Option<PathBuf>,
     tools: Option<ToolProtocol>,
+    #[cfg(feature = "mcp")] mcp: Option<String>,
     commands: Receiver<String>,
     events: SyncSender<Event>,
     cancelled: Arc<AtomicBool>,
 ) {
-    let result = work(selection, model, tools, commands, &events, cancelled);
+    let result = work(
+        selection,
+        model,
+        tools,
+        #[cfg(feature = "mcp")]
+        mcp,
+        commands,
+        &events,
+        cancelled,
+    );
     if let Err(error) = result {
         let _ = events.send(Event::Error(error.to_string()));
     }
@@ -67,6 +79,7 @@ fn work(
     selection: Selection,
     model: Option<PathBuf>,
     tools: Option<ToolProtocol>,
+    #[cfg(feature = "mcp")] mcp: Option<String>,
     commands: Receiver<String>,
     events: &SyncSender<Event>,
     cancelled: Arc<AtomicBool>,
@@ -86,8 +99,41 @@ fn work(
         tools,
         redactor: Redactor::environment()?,
         uncertain: false,
+        #[cfg(feature = "mcp")]
+        mcp: None,
         statistics: "no generation yet; one model and context at most".into(),
     };
+    #[cfg(feature = "mcp")]
+    if let Some(id) = mcp {
+        let definition = crate::mcp::Definition::load(&root, &id)?;
+        state.redactor.capture(definition.credential_values()?)?;
+        events.send(Event::Approval(definition.preview()))?;
+        if approval(&commands, Instant::now(), &cancelled)? {
+            let connected = crate::mcp::Connection::connect(definition, &cancelled, |text| {
+                events
+                    .send(Event::Status("authorizing MCP · external access".into()))
+                    .map_err(io::Error::other)?;
+                events
+                    .send(Event::Overlay(text.into()))
+                    .map_err(io::Error::other)
+            });
+            match connected {
+                Ok(connection) => {
+                    state.redactor.capture(connection.credential_values())?;
+                    state.mcp = Some(connection);
+                }
+                Err(error) => {
+                    events.send(Event::Error(format!(
+                        "mcp connection failed: {error}; no server connected"
+                    )))?;
+                }
+            }
+        } else {
+            events.send(Event::Error(
+                "mcp connection denied; no server started".into(),
+            ))?;
+        }
+    }
     if let Some(id) = state.selection.session.take() {
         state.resume(&id)?;
     }
@@ -99,8 +145,9 @@ fn work(
         ))?;
     }
     events.send(Event::Ready(format!(
-        "session {} · /model PATH or /profile ID · /help",
-        state.session
+        "session {} · {} · /model PATH or /profile ID · /help",
+        state.session,
+        state.locality()
     )))?;
     let mut engine = Engine::new()?;
     let mut pending = None;
@@ -140,11 +187,12 @@ fn work(
                 .take(20)
                 .collect::<String>();
             events.send(Event::Ready(format!(
-                "{} · {:?} · ctx {}/{} · local · {} records{}",
+                "{} · {:?} · ctx {}/{} · {} · {} records{}",
                 label,
                 model.device(),
                 state.context_used,
                 job.settings.context_tokens,
+                state.locality(),
                 state.history.len(),
                 if cancelled.load(Ordering::Relaxed) {
                     " · cancelled"
@@ -170,6 +218,14 @@ fn work(
 }
 
 impl State {
+    fn locality(&self) -> &'static str {
+        #[cfg(feature = "mcp")]
+        if self.mcp.is_some() {
+            return "local model · MCP external access";
+        }
+        "local"
+    }
+
     fn resume(&mut self, id: &str) -> io::Result<()> {
         let workspace = Workspace::open(&self.selection.root()?)?;
         let revision = workspace.conversation_revision(id)?;
@@ -238,9 +294,31 @@ impl State {
                         lines.push(path.display().to_string());
                     }
                     if name == "mcp" {
-                        lines.push("metadata only; connections arrive in Phase 5".into());
+                        #[cfg(feature = "mcp")]
+                        lines.push(self.mcp.as_ref().map_or_else(
+                            || {
+                                "no connection; restart with chat --mcp ID --tool-protocol smollm2"
+                                    .into()
+                            },
+                            |connection| {
+                                format!(
+                                    "connected {} · {}",
+                                    connection.id(),
+                                    connection.destination()
+                                )
+                            },
+                        ));
+                        #[cfg(not(feature = "mcp"))]
+                        lines.push("connections require the optional mcp feature".into());
                     }
                     events.send(Event::Overlay(lines.join("\n")))?;
+                }
+                #[cfg(feature = "mcp")]
+                "disconnect" => {
+                    self.mcp = None;
+                    events.send(Event::Overlay(
+                        "mcp disconnected; child process tree stopped".into(),
+                    ))?;
                 }
                 "model" if !argument.is_empty() => {
                     self.model = Some(argument.into());
@@ -382,6 +460,11 @@ impl State {
         let started = Instant::now();
         let base = self.revision.clone();
         let mut turn = Turn::new(&job.prepared.prompt, self.tools.is_some());
+        #[cfg(feature = "mcp")]
+        if let Some(connection) = &self.mcp {
+            connection.validate()?;
+            turn.mcp_catalog(connection.id(), connection.tools())?;
+        }
         let first = model.prepare(&turn.prompt(&job.prepared.prompt))?;
         Settings {
             output_tokens: job.settings.output_tokens.min(harness::TOKENS_MAX),
@@ -400,6 +483,7 @@ impl State {
             "generation did not finish; native step statistics unavailable".to_owned();
         let tools_enabled = self.tools.is_some();
         let mut continued = false;
+        let locality = self.locality();
         let result = turn.drive(
             &job.prepared.prompt,
             || (started.elapsed(), cancelled.load(Ordering::Relaxed)),
@@ -411,10 +495,11 @@ impl State {
                 };
                 settings.validate(input.token_count(), model.context_tokens_max()).map_err(io::Error::other)?;
                 events.send(Event::Status(format!(
-                    "prefill · {:?} · ctx {}/{} · local",
+                    "prefill · {:?} · ctx {}/{} · {}",
                     model.device(),
                     input.token_count(),
-                    settings.context_tokens
+                    settings.context_tokens,
+                    locality
                 ))).map_err(io::Error::other)?;
                 if continued { events.send(Event::Continue).map_err(io::Error::other)?; }
                 continued = true;
@@ -494,6 +579,10 @@ impl State {
         action: &Action,
         dispatch: &Dispatch<'_>,
     ) -> io::Result<()> {
+        #[cfg(feature = "mcp")]
+        if action.name == "mcp_call" {
+            return self.dispatch_mcp(turn, action, dispatch);
+        }
         self.redactor.check_write(action)?;
         dispatch.job.scope.validate(action)?;
         dispatch
@@ -546,6 +635,97 @@ impl State {
             .send(Event::Tool(action.row(outcome)))
             .map_err(io::Error::other)?;
 
+        Ok(())
+    }
+
+    #[cfg(feature = "mcp")]
+    fn dispatch_mcp(
+        &mut self,
+        turn: &mut Turn,
+        action: &Action,
+        dispatch: &Dispatch<'_>,
+    ) -> io::Result<()> {
+        let connection = self
+            .mcp
+            .as_ref()
+            .ok_or_else(|| harness::fail("no explicitly connected mcp server"))?;
+        let call = action
+            .arguments
+            .mcp
+            .as_ref()
+            .ok_or_else(|| harness::fail("mcp call arguments missing"))?;
+        if connection.id() != action.arguments.id || !connection.has_tool(&call.tool) {
+            return Err(harness::fail(
+                "mcp call is outside the frozen connection catalog",
+            ));
+        }
+        connection.validate()?;
+        let arguments = serde_json::Value::Object(call.arguments.clone())
+            .to_string()
+            .chars()
+            .map(|c| {
+                if c.is_ascii() {
+                    c.to_string()
+                } else {
+                    c.escape_unicode().to_string()
+                }
+            })
+            .collect::<String>();
+        dispatch.events.send(Event::Approval(format!("server: {}\ntool: {:?}\ndestination: {}\narguments (Unicode escaped): {arguments}\nmay read or modify external state; server annotations grant no authority\n[y] approve once · [n/Esc/Enter] deny", connection.id(), call.tool, connection.destination()))).map_err(io::Error::other)?;
+        let approved = approval(dispatch.commands, dispatch.started, dispatch.cancelled)?;
+        connection.validate()?;
+        if !turn.authorize(
+            action,
+            approved,
+            dispatch.started.elapsed(),
+            dispatch.cancelled.load(Ordering::Relaxed),
+        )? {
+            dispatch
+                .events
+                .send(Event::Tool(action.row("denied")))
+                .map_err(io::Error::other)?;
+            return Ok(());
+        }
+        self.checkpoint(dispatch.job, dispatch.base, turn)?;
+        turn.check(
+            dispatch.started.elapsed(),
+            dispatch.cancelled.load(Ordering::Relaxed),
+        )?;
+        let connection = self
+            .mcp
+            .as_ref()
+            .ok_or_else(|| harness::fail("mcp disconnected"))?;
+        connection.validate()?;
+        let result = connection.tool(
+            &call.tool,
+            serde_json::Value::Object(call.arguments.clone()),
+            dispatch.cancelled,
+            harness::TURN_TIME_MAX.saturating_sub(dispatch.started.elapsed()),
+        );
+        let (outcome, text) = match result {
+            Ok(text) => {
+                let failed = serde_json::from_str::<serde_json::Value>(&text)
+                    .is_ok_and(|value| value["isError"] == true);
+                (if failed { "failed" } else { "completed" }, text)
+            }
+            Err(error) => {
+                self.mcp = None;
+                ("unknown", error.to_string())
+            }
+        };
+        let outcome = if dispatch.cancelled.load(Ordering::Relaxed)
+            || dispatch.started.elapsed() >= harness::TURN_TIME_MAX
+        {
+            "unknown"
+        } else {
+            outcome
+        };
+        turn.result(action, outcome, &text)?;
+        self.checkpoint(dispatch.job, dispatch.base, turn)?;
+        dispatch
+            .events
+            .send(Event::Tool(action.row(outcome)))
+            .map_err(io::Error::other)?;
         Ok(())
     }
 
@@ -695,6 +875,8 @@ mod tests {
         Action {
             name: "read_memory".into(),
             arguments: Arguments {
+                #[cfg(feature = "mcp")]
+                mcp: None,
                 id: "note".into(),
                 text: None,
             },
@@ -788,6 +970,8 @@ mod tests {
             tools: Some(ToolProtocol::Smollm2),
             redactor: Redactor::environment().unwrap(),
             uncertain: false,
+            #[cfg(feature = "mcp")]
+            mcp: None,
         };
         (state, job)
     }
@@ -895,5 +1079,95 @@ mod tests {
                 .unwrap()
                 .ends_with("original")
         );
+    }
+    #[cfg(feature = "mcp")]
+    fn dispatch_fixture(
+        approved: bool,
+        conflict: bool,
+        failed: bool,
+    ) -> (String, Vec<serde_json::Value>) {
+        use crate::mcp::tests::{connection_at, initialized};
+        let fixture = Fixture::new();
+        let (mut state, job) = state_and_job(&fixture);
+        let (connection, captured) = connection_at(
+            &fixture.0,
+            vec![
+                initialized(),
+                serde_json::json!({"content":[{"type":"text","text":"actual result"}],"isError":failed}),
+            ],
+        );
+        state.mcp = Some(connection);
+        if conflict {
+            Workspace::open(&fixture.0)
+                .unwrap()
+                .save_turn("chat", None, "editor", "keep", false)
+                .unwrap();
+        }
+        let mut turn = Turn::new(&job.prepared.prompt, true);
+        let action = turn.accept("<tool_call>[{\"name\":\"mcp_call\",\"arguments\":{\"id\":\"fixture\",\"mcp\":{\"tool\":\"echo\",\"arguments\":{\"text\":\"exact request\"}}}}]</tool_call>".into(), 1, true).unwrap().unwrap();
+        let (sender, incoming) = std::sync::mpsc::sync_channel(1);
+        sender
+            .send(if approved { "/approve" } else { "/deny" }.into())
+            .unwrap();
+        let (events, _received) = std::sync::mpsc::sync_channel(64);
+        let cancelled = AtomicBool::new(false);
+        let result = state.dispatch(
+            &mut turn,
+            &action,
+            &Dispatch {
+                job: &job,
+                base: None,
+                events: &events,
+                commands: &incoming,
+                cancelled: &cancelled,
+                started: Instant::now(),
+            },
+        );
+        assert_eq!(result.is_err(), conflict);
+        let audit = turn.audit.join("\n");
+        let requests = captured.lock().unwrap().clone();
+        (audit, requests)
+    }
+
+    #[cfg(feature = "mcp")]
+    #[test]
+    fn approved_mcp_dispatch_preserves_exact_arguments_and_outcome() {
+        let (audit, requests) = dispatch_fixture(true, false, false);
+        let call = requests
+            .iter()
+            .find(|request| request["method"] == "tools/call")
+            .unwrap();
+        assert_eq!(call["params"]["arguments"]["text"], "exact request");
+        assert!(audit.contains("\"outcome\":\"completed\""));
+    }
+
+    #[cfg(feature = "mcp")]
+    #[test]
+    fn denied_mcp_dispatch_sends_no_tool_request() {
+        let (audit, requests) = dispatch_fixture(false, false, false);
+        assert!(
+            !requests
+                .iter()
+                .any(|request| request["method"] == "tools/call")
+        );
+        assert!(audit.contains("\"outcome\":\"denied\""));
+    }
+
+    #[cfg(feature = "mcp")]
+    #[test]
+    fn checkpoint_conflict_prevents_mcp_dispatch() {
+        let (_, requests) = dispatch_fixture(true, true, false);
+        assert!(
+            !requests
+                .iter()
+                .any(|request| request["method"] == "tools/call")
+        );
+    }
+
+    #[cfg(feature = "mcp")]
+    #[test]
+    fn server_tool_error_is_a_failed_outcome() {
+        let (audit, _) = dispatch_fixture(true, false, true);
+        assert!(audit.contains("\"outcome\":\"failed\""));
     }
 }

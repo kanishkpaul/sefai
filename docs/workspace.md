@@ -82,7 +82,8 @@ Local model notes.
 ```
 
 MCP `transport` is either `{kind: stdio, command: PROGRAM, args: [], env: {SERVER_VARIABLE: LOCAL_VARIABLE}}` or `{kind: http, url: https://host/mcp, token_env: LOCAL_VARIABLE}`.
-Environment values are variable names to resolve when an MCP client exists, never inline secrets.
+Environment values are variable names resolved only by an explicitly approved optional MCP connection, never inline secrets.
+HTTP definitions can select `oauth` instead of `token_env`; see [mcp.md](mcp.md) for the pre-registered client schema and explicit loopback exception.
 HTTP URLs cannot contain credentials, query strings or fragments.
 At most 64 arguments/environment references and 4,096 bytes per argument/URL/command are allowed.
 Plaintext credentials must not be placed in notes, commands or arguments either; syntactic validation cannot identify every secret-looking string.

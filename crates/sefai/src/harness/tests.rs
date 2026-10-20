@@ -7,6 +7,8 @@ fn call() -> Action {
     Action {
         name: "read_memory".into(),
         arguments: Arguments {
+            #[cfg(feature = "mcp")]
+            mcp: None,
             id: "note".into(),
             text: None,
         },
@@ -315,6 +317,8 @@ fn known_credentials_cannot_be_written_as_memory_ids() {
     let action = Action {
         name: "remember_memory".into(),
         arguments: Arguments {
+            #[cfg(feature = "mcp")]
+            mcp: None,
             id: "secret-token".into(),
             text: Some("hello".into()),
         },
@@ -331,4 +335,19 @@ fn damaged_audit_keeps_recovery_uncertain() {
     assert!(uncertain_dispatch(
         "## harness\n> {broken json\n<!-- end -->\n"
     ));
+}
+
+#[test]
+fn later_success_does_not_erase_an_unknown_tool_outcome() {
+    assert!(uncertain_dispatch(
+        "## harness\n> {\"server\":\"fixture\",\"tool\":\"mcp_call\",\"id\":\"fixture\",\"outcome\":\"unknown\"}\n> {\"server\":\"fixture\",\"tool\":\"mcp_call\",\"id\":\"fixture\",\"outcome\":\"completed\"}\n"
+    ));
+}
+
+#[cfg(feature = "mcp")]
+#[test]
+fn mcp_proposal_preserves_arbitrary_json_arguments() {
+    let mut turn = Turn::new(&Prompt::default(), true);
+    let action = turn.accept("<tool_call>[{\"name\":\"mcp_call\",\"arguments\":{\"id\":\"fixture\",\"mcp\":{\"tool\":\"echo\",\"arguments\":{\"nested\":[true,4,\"text\"]}}}}]</tool_call>".into(), 1, true).unwrap().unwrap();
+    assert_eq!(action.arguments.mcp.unwrap().arguments["nested"][1], 4);
 }

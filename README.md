@@ -3,13 +3,13 @@
 A small Rust LLM runner and terminal harness, built around files you can read and edit.
 The goal is low RAM/VRAM use, a persistent TUI, Markdown-owned prompts/skills/preferences/memory, and explicit MCP connections.
 
-**Status: Phases 1–3 merged; Phase 4 harness is locally qualified; PR review and CI are pending.**
+**Status: Phases 1–4 merged; Phase 5 MCP is locally qualified; review and CI are pending.**
 Pinned-model CPU tests pass on Windows, macOS and Linux; local Metal tests and CUDA/Vulkan compilation also pass.
 CUDA/Vulkan execution and the full hardware matrix remain later qualification gates.
 Markdown schema validation and selected instruction/profile loading are implemented.
 Safe writes, explicit memory/session persistence and bounded session reads are implemented.
 The terminal conversation, model worker and automatic Markdown turn persistence are implemented locally.
-MCP connections remain planned.
+Optional [MCP connections](docs/mcp.md) add supervised local servers, Streamable HTTP and OAuth with exact per-call approval.
 See [the workspace guide](docs/workspace.md) for schema and selection controls.
 
 ## Direction

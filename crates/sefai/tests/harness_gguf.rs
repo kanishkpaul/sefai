@@ -178,3 +178,146 @@ fn real_gguf_denied_write_creates_no_memory() {
         "{text}"
     );
 }
+
+#[cfg(feature = "mcp")]
+impl Fixture {
+    fn request_mcp(&self, tool: &str, decision: &str, mode: &str) -> (String, String) {
+        let python = PathBuf::from(
+            std::env::var_os("SEFAI_MCP_TEST_PYTHON")
+                .expect("set SEFAI_MCP_TEST_PYTHON for MCP model qualification"),
+        )
+        .canonicalize()
+        .expect("required MCP model fixture operation succeeds");
+        let script = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tests/fixtures/mcp_server.py")
+            .canonicalize()
+            .expect("required MCP model fixture operation succeeds");
+        fs::create_dir(self.0.join("mcp")).expect("required MCP model fixture operation succeeds");
+        fs::write(self.0.join("mcp/fixture.md"), format!("---\nschema: 1\nid: fixture\ntransport:\n  kind: stdio\n  command: {}\n  args: {}\n---\n", serde_json::json!(python), serde_json::json!([script, "--mode", mode]))).expect("required MCP model fixture operation succeeds");
+        let profile = self.0.join("models/tools.md");
+        fs::write(
+            &profile,
+            fs::read_to_string(&profile)
+                .expect("required MCP model fixture operation succeeds")
+                .replace("context: 2048", "context: 4096"),
+        )
+        .expect("required MCP model fixture operation succeeds");
+        let mut child = Command::new(env!("CARGO_BIN_EXE_sefai"))
+            .arg("--workspace")
+            .arg(&self.0)
+            .args([
+                "--profile",
+                "tools",
+                "chat",
+                "--plain",
+                "--tool-protocol",
+                "smollm2",
+                "--mcp",
+                "fixture",
+            ])
+            .env("NO_COLOR", "1")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("required MCP model fixture operation succeeds");
+        let query = format!(
+            "Use the mcp_call function with id fixture and mcp {{\"tool\":\"{tool}\",\"arguments\":{{\"text\":\"cobalt\"}}}}. Then tell me the returned marker."
+        );
+        child
+            .stdin
+            .take()
+            .expect("required MCP model fixture operation succeeds")
+            .write_all(format!("y\n{query}\n{decision}\n/quit\n").as_bytes())
+            .expect("required MCP model fixture operation succeeds");
+        let output = child
+            .wait_with_output()
+            .expect("required MCP model fixture operation succeeds");
+        let text = String::from_utf8(output.stdout)
+            .expect("required MCP model fixture operation succeeds");
+        assert!(
+            output.status.success(),
+            "{text}\n{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let session = fs::read_dir(self.0.join("sessions"))
+            .expect("required MCP model fixture operation succeeds")
+            .next()
+            .expect("required MCP model fixture operation succeeds")
+            .expect("required MCP model fixture operation succeeds")
+            .path();
+        let saved =
+            fs::read_to_string(session).expect("required MCP model fixture operation succeeds");
+        println!("{text}\n{saved}");
+        (text, saved)
+    }
+}
+
+#[cfg(feature = "mcp")]
+#[test]
+fn real_gguf_uses_an_approved_mcp_result() {
+    let _model = MODEL
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    let fixture = Fixture::new();
+    let (text, saved) = fixture.request_mcp("echo", "y", "normal");
+    assert!(text.contains("fixture/echo · completed"), "{text}");
+    assert!(
+        text.rsplit("[assistant]")
+            .next()
+            .unwrap()
+            .contains("cobalt"),
+        "{text}"
+    );
+    assert_eq!(saved.matches("\"outcome\":\"dispatching\"").count(), 1);
+    assert!(!text.contains("error:"), "{text}");
+}
+
+#[cfg(feature = "mcp")]
+#[test]
+fn real_gguf_denied_mcp_write_has_no_side_effect() {
+    let _model = MODEL
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    let fixture = Fixture::new();
+    let (text, saved) = fixture.request_mcp("remember", "n", "normal");
+    assert!(text.contains("fixture/remember · denied"), "{text}");
+    assert!(!fixture.0.join("fixture-write.txt").exists());
+    assert!(!saved.contains("\"outcome\":\"dispatching\""));
+}
+
+#[cfg(feature = "mcp")]
+#[test]
+fn real_gguf_mcp_write_matches_approved_arguments() {
+    let _model = MODEL
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    let fixture = Fixture::new();
+    let (text, saved) = fixture.request_mcp("remember", "y", "normal");
+    assert!(text.contains("fixture/remember · completed"), "{text}");
+    let preview: serde_json::Value = serde_json::from_str(
+        text.lines()
+            .find_map(|line| line.strip_prefix("arguments (Unicode escaped): "))
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        fs::read_to_string(fixture.0.join("fixture-write.txt")).unwrap(),
+        preview["text"].as_str().unwrap()
+    );
+    assert_eq!(saved.matches("\"outcome\":\"dispatching\"").count(), 1);
+}
+
+#[cfg(feature = "mcp")]
+#[test]
+fn real_gguf_mcp_disconnect_after_write_is_uncertain_and_not_replayed() {
+    let _model = MODEL
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    let fixture = Fixture::new();
+    let (text, saved) = fixture.request_mcp("remember", "y", "disconnect");
+    assert!(text.contains("fixture/remember · unknown"), "{text}");
+    assert!(fixture.0.join("fixture-write.txt").exists());
+    assert!(saved.contains("\"outcome\":\"unknown\""));
+    assert_eq!(saved.matches("\"outcome\":\"dispatching\"").count(), 1);
+}

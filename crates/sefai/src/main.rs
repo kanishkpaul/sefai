@@ -1,5 +1,7 @@
 #[cfg(feature = "gguf")]
 mod harness;
+#[cfg(feature = "mcp")]
+mod mcp;
 #[cfg(feature = "gguf")]
 mod runner;
 mod term;
@@ -29,6 +31,9 @@ enum Command {
         #[command(subcommand)]
         action: WorkspaceCommand,
     },
+    /// Inspect an explicitly approved MCP server without loading a model.
+    #[cfg(feature = "mcp")]
+    Mcp(mcp::Options),
     /// Print a prompt without loading a model.
     Prompt { message: String },
     /// List available local inference devices.
@@ -157,6 +162,8 @@ fn execute(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
         }
+        #[cfg(feature = "mcp")]
+        Command::Mcp(options) => mcp::run(&cli.selection.root()?, options)?,
         Command::Prompt { message } => {
             print_messages(cli.selection.prepare(message)?.prompt.to_messages())?;
         }

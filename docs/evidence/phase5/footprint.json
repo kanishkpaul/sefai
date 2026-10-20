@@ -1,0 +1,41 @@
+{
+  "platform": "macOS aarch64",
+  "build": "release, --no-default-features, workspace release profile",
+  "binaries": [
+    {
+      "features": "minimal",
+      "bytes": 1912224
+    },
+    {
+      "features": "stdio",
+      "bytes": 3990336
+    },
+    {
+      "features": "http",
+      "bytes": 8135696
+    },
+    {
+      "features": "oauth",
+      "bytes": 8523792
+    }
+  ],
+  "normal_dependency_packages": [
+    {
+      "features": "minimal",
+      "normal_packages": 35
+    },
+    {
+      "features": "stdio",
+      "normal_packages": 74
+    },
+    {
+      "features": "http",
+      "normal_packages": 136
+    },
+    {
+      "features": "oauth",
+      "normal_packages": 156
+    }
+  ],
+  "limits": "headless client executables; excludes GGUF/TUI/native inference and model/server residency; not idle or process-tree memory measurements"
+}

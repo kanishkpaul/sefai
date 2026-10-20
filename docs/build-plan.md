@@ -159,7 +159,7 @@ Diagnostics and one-shot output stay usable without a terminal and never contain
 
 ### Phase 4 — Harness behavior
 
-**Current:** implementation and local acceptance are complete on `codex/phase4-harness`; PR review and CI remain pending.
+**Merged:** PR #13 publishes the bounded harness with passing CI.
 See [harness.md](harness.md) for the explicit protocol, local tool scope and qualification limits.
 
 Implement a small request → generation → optional tool proposal → permission decision → tool result → generation loop.
@@ -183,6 +183,10 @@ One real tool-capable GGUF passes the same end-to-end turn path.
 No keyword-based persona refusals or synthetic success fallbacks are carried forward.
 
 ### Phase 5 — MCP
+
+**Current:** implementation and local qualification are complete on `codex/phase5-mcp`; review and CI remain pending.
+See [mcp.md](mcp.md) for optional builds, first-launch trust, per-call authority, bounds and OAuth limits.
+The maintainer selected local/dummy authenticated servers for this phase; production-service interoperability remains unqualified.
 
 Use the official Rust SDK `rmcp` with only required client/transport features after a size/dependency review.
 Negotiate a pinned supported protocol revision; test version rejection rather than declaring every future revision compatible.

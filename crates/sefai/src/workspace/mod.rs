@@ -8,8 +8,12 @@ mod session;
 
 #[cfg(feature = "gguf")]
 pub use schema::Backend;
+#[cfg(feature = "mcp-oauth")]
+pub use schema::OAuth;
 pub use schema::Runner;
 use schema::{Config, Format, Memory, Model, Skill, Text, invalid};
+#[cfg(feature = "mcp")]
+pub use schema::{Mcp, Transport};
 use sefai_core::{Message, Prompt};
 use std::{
     fs,
@@ -293,6 +297,16 @@ impl Workspace {
         Ok(())
     }
 
+    #[cfg(feature = "mcp")]
+    pub fn mcp(&self, id: &str) -> io::Result<(schema::Mcp, String)> {
+        schema::id(id)?;
+        let path = PathBuf::from(format!("mcp/{id}.md"));
+        let text = self.read(&path)?;
+        self.validate_document(&path, &text)?;
+        let (config, _) = schema::parse(&text)?;
+        Ok((config, text))
+    }
+
     pub fn check(&self) -> io::Result<usize> {
         let text = self.read(Path::new("config.md"))?;
         let (config, _) = schema::parse::<Config>(&text).map_err(|error| at("config.md", error))?;
@@ -413,15 +427,38 @@ fn validate_transport(transport: &schema::Transport) -> io::Result<()> {
                 env_name(reference)?;
             }
         }
-        schema::Transport::Http { url, token_env } => {
+        schema::Transport::Http {
+            url,
+            token_env,
+            oauth,
+        } => {
             if url.len() > 4096
-                || !url.starts_with("https://")
+                || !(url.starts_with("https://")
+                    || url.starts_with("http://127.0.0.1:")
+                    || url.starts_with("http://[::1]:"))
                 || url.contains('@')
                 || url.contains(['?', '#'])
-                || url[8..].is_empty()
+                || url.len() <= 8
             {
                 return Err(invalid(
                     "transport.url: expected https URL without credentials, query or fragment",
+                ));
+            }
+            if let Some(oauth) = oauth
+                && (token_env.is_some()
+                    || oauth.issuer.len() > 4096
+                    || oauth.client_id.is_empty()
+                    || oauth.client_id.len() > 256
+                    || oauth.redirect_uri.len() > 4096
+                    || oauth.scopes.len() > 16
+                    || oauth.scopes.iter().any(|scope| {
+                        scope.len() > 256
+                            || scope.is_empty()
+                            || scope.bytes().any(|b| !b.is_ascii_graphic())
+                    }))
+            {
+                return Err(invalid(
+                    "transport.oauth: invalid identity, scopes or conflicting token reference",
                 ));
             }
             if let Some(name) = token_env {

@@ -376,3 +376,101 @@ The corrected test compares the complete Markdown file against the actual approv
 It retains the duplicate-call refusal checks and does not change runtime permissions, parsing or persistence.
 The [failed Linux job](https://github.com/kanishkpaul/sefai/actions/runs/39347063505/job/118382098742) preserves the original output.
 Local verification after the correction passed all three real-tool cases, dedicated-target Clippy, the four required Rust checks, 16 attribution tests and the plain diagnostic; the fresh remote CI result is pending.
+
+
+## Phase 5 — MCP (2026-10-20)
+
+Implementation and local qualification are complete on `codex/phase5-mcp`.
+Publication, PR review and hosted CI remain pending; no Phase 5 run has been monitored.
+Phases 1–4 are merged, including the PR #13 CI correction.
+The maintainer selected local/dummy authenticated servers for Phase 5 qualification.
+This evidence does not qualify an unrelated production endpoint or claim physical Windows/Linux testing on this Mac.
+
+### Changes
+
+The optional client uses exactly pinned `rmcp 3.6.0` with defaults disabled and a current-thread Tokio runtime.
+Supervised stdio runs an explicit canonical executable/argv, selected environment references, bounded stdout and discarded stderr.
+Unix process groups and Windows Job Objects own cleanup; no OS sandbox is claimed.
+Streamable HTTP uses bounded JSON/SSE POST reads, HTTPS or literal loopback HTTP, one ordinary POST at a time, no redirects/proxies and no expired-session replay or SSE resumption.
+The optional OAuth flow uses the SDK for pre-registered public-client authorization-code login, PKCE, resource binding and state/issuer verification; callbacks are bounded and tokens remain in memory.
+There is no automatic refresh, scope upgrade, dynamic registration or credential persistence.
+The client pins protocol `2025-11-25`, disables sampling/elicitation authority, freezes paginated discovery and revalidates exact Markdown definitions before each request.
+The harness retains one exact approval at a time, writes dispatch intent before sending, preserves structured/error results and marks failed/unknown external outcomes without replay.
+A later successful operation cannot erase an earlier unknown outcome.
+The TUI reports external MCP access, exposes disconnect and recovers visibly from a cancelled connection attempt.
+See [mcp.md](mcp.md) for commands, supported subsets and all limits.
+
+### Local checks
+
+All checks below passed after the production changes:
+
+| Check | Result |
+| --- | --- |
+| `cargo fmt --all --check` | pass |
+| `cargo clippy --locked --workspace --all-targets -- -D warnings` | pass |
+| `cargo clippy --locked -p sefai --no-default-features --all-targets -- -D warnings` | pass |
+| `cargo test --locked --workspace` | 152 tests: 108 binary, 3 chat CLI, 12 workspace CLI, 4 core, 25 engine |
+| `cargo test --locked -p sefai --no-default-features` | 53 tests |
+| `cargo test --locked -p sefai --features mcp-oauth --bin sefai` | 128 tests |
+| `cargo test --locked -p sefai --no-default-features --features mcp-oauth` | 68 tests |
+| `cargo clippy --locked -p sefai --features mcp-fixture-tests,harness-model-tests --all-targets -- -D warnings` | pass |
+| `cargo clippy --locked -p sefai --no-default-features --features mcp-oauth --all-targets -- -D warnings` | pass |
+| `cargo clippy --locked -p sefai --no-default-features --features mcp --all-targets -- -D warnings` | pass |
+| `python3 -m unittest discover -s tests -v` | 16 tests |
+| `cargo run --locked -- prompt hello` | plain `[user]` / `hello`, no banner |
+| `git diff --check` and attribution scan of changed/new files | pass |
+
+Ordinary unit tests use in-memory duplex protocol fixtures and injected request budgets; no model, child server or network is needed.
+Production dispatch tests verify exact arguments, denied calls, checkpoint conflicts and server-declared errors through the actual worker dispatch function.
+Transport-wrapper tests enforce incoming-message exhaustion and reject oversized outgoing messages.
+
+### Dedicated process and network qualification
+
+```sh
+export SEFAI_MCP_TEST_PYTHON="$(python3 -c 'import sys; print(sys.executable)')"
+cargo test --locked -p sefai --features mcp-fixture-tests --test mcp_transport
+```
+
+All 20 tests passed on macOS using Python 3.15.0 and the committed fixture `tests/fixtures/mcp_server.py`.
+The fixture is required, starts real stdio processes and authenticated loopback HTTP/OAuth servers, and does not contact production services.
+The suite covers pagination, duplicate identities, protocol rejection, malformed/oversize responses, denied startup, selected resource/prompt retrieval, JSON/SSE HTTP, missing/wrong credentials, redirect refusal, initial disconnect and owned-descendant cleanup on Unix.
+OAuth tests verify S256 PKCE and the resource parameter at the dummy token endpoint, reject forged callback state before token exchange, and reject changed issuer/unapproved metadata origins.
+Fixture startup must produce an actual loopback endpoint, so an unavailable bind cannot make negative cases pass spuriously.
+No test silently skips a missing Python executable.
+
+### Actual model and terminal paths
+
+```sh
+SEFAI_TOOL_TEST_MODEL=/absolute/path/to/smollm2-1.7b-instruct-q4_k_m.gguf \
+cargo test --locked -p sefai --features harness-model-tests,mcp --test harness_gguf
+```
+
+All seven real-GGUF tests passed on CPU with two threads.
+The pinned model identity/hash is the same [tool fixture](../tests/fixtures/tool-gguf.json) qualified in Phase 4; MCP cases use a 4,096-token context and 256-token per-step limit.
+The three original local-memory cases still pass.
+New cases verify an approved MCP echo used in the final answer, an approved write equal to its actual displayed arguments, a denied write with no dispatch, and a server that writes then disconnects.
+The latter leaves a durable unknown result, closes the connection and dispatches exactly once.
+No golden punctuation or synthetic success reply is used to mask model variation.
+This qualifies the explicit SmolLM2 protocol, not arbitrary models or general autonomous planning quality.
+
+Three actual 90 × 24 macOS PTYs with `NO_COLOR=1` cover Enter-denied connection, separately approved connection/tool/real-model continuation, and Ctrl+C cancellation during initialization.
+All exit zero and restore the original terminal attributes; cancellation returns a visible no-server state.
+The recorded [results](evidence/phase5/terminal-results.json) and [terminal transcripts](evidence/phase5/terminal-transcripts.md) retain the approval controls and observed output.
+
+### Dependency and binary cost
+
+All original locked package/version pairs are preserved; neither llama.cpp binding changes from `0.1.160`.
+The lockfile adds 159 platform-inclusive package/version pairs across optional features; they are not all installed into every build.
+Unique normal dependency package counts on this Mac, including sefai, are 35 minimal, 74 stdio MCP, 136 HTTP and 156 OAuth.
+The default GGUF dependency graph does not enable the MCP SDK, Tokio, HTTP or OAuth dependencies.
+The [footprint record](evidence/phase5/footprint.json) stores exploratory headless release measurements: 1,912,224 bytes minimal; 3,990,336 stdio; 8,135,696 HTTP; 8,523,792 OAuth.
+These use `--no-default-features`, the workspace release profile and aarch64 macOS; they exclude GGUF/TUI/native inference and model/server residency.
+They are not idle, peak process-tree or cross-platform memory measurements; those remain Phase 9 gates.
+
+### CI and limits
+
+The existing three-OS CI now adds optional-feature Clippy/unit checks and the dedicated authenticated loopback fixture suite.
+The Linux pinned real-model job adds the four MCP cases alongside the three memory cases.
+CUDA/Vulkan compilation gates are unchanged; no additional GPU execution is claimed.
+The only `AGENTS.md` change is the phase-status sentence; that and the added workflow gates require maintainer inspection before publication.
+Production-server interoperability, physical Windows/Linux terminal/process-tree behavior and the full RAM/VRAM matrix remain unqualified here.
