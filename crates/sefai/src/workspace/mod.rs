@@ -319,7 +319,7 @@ impl Workspace {
         Ok(count)
     }
 
-    fn validate_document(&self, path: &Path, text: &str) -> io::Result<()> {
+    pub(crate) fn validate_document(&self, path: &Path, text: &str) -> io::Result<()> {
         match kind(path)? {
             "config" => {
                 let (header, _) = schema::parse::<Config>(text)?;

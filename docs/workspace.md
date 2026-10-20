@@ -139,9 +139,10 @@ These checks and advisory locks protect cooperating writers and ordinary externa
 ## Session grammar and tail
 
 `workspace append ID --role user TEXT` creates a session; subsequent appends require `--expected snapshot.md`.
-The role is explicitly `user` or `assistant` and never inferred from message text.
+The CLI append role is explicitly `user` or `assistant` and never inferred from message text.
+Phase 4 also persists `tool` results and `harness` audit records using the same quoted grammar; audit records are excluded from model conversation tails.
 New files carry `outcome: completed`; import an explicitly edited `outcome: interrupted` file with `workspace put` when recording an interrupted transcript.
-This phase provides persistence commands; automatic turn recording and cancellation outcome updates belong to the later harness lifecycle.
+The TUI records turns and cancellation outcomes automatically; the [harness](harness.md) additionally checkpoints dispatch intent and tool outcomes.
 
 After schema-1 front matter, each record has a heading, quoted body lines and an explicit terminator:
 

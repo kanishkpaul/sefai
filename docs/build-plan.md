@@ -4,7 +4,7 @@ Build a small Rust LLM runner and terminal harness, with Markdown-owned customiz
 GGUF, ONNX, GPTQ, AWQ, and MLX are release targets.
 Phase 1 is complete: the published GGUF runner passes local CPU/Metal tests, Windows/macOS/Linux CPU-model CI and CUDA/Vulkan compile checks.
 Phase 2 is merged through PRs #8–#11 with passing Windows, macOS, Linux and attribution checks.
-Phase 3 terminal implementation is locally qualified; PR review/CI is pending.
+Phase 3 is merged through PR #12; the Phase 4 harness is locally qualified; PR review and CI are pending.
 See [phase2-closeout.md](phase2-closeout.md) for the acceptance matrix and stack order.
 Complete runner correctness before adding harness features.
 Every phase includes regression tests; the second-last phase is a complete product verification pass, and the last is repository organization, installation, and presentation.
@@ -137,7 +137,7 @@ Record schema fixtures and migration/rollback behavior.
 
 ### Phase 3 — Terminal home
 
-**Current:** local implementation and acceptance complete on `codex/phase3-terminal`; publication and cross-platform terminal qualification remain pending.
+**Merged:** PR #12 publishes the terminal implementation with passing CI; physical Windows/Linux terminal qualification remains a Phase 9 gate.
 See [tui.md](tui.md) for implemented controls and explicit limits.
 
 Use Ratatui with Crossterm, and `design/rust/theme.rs` as palette/identity authority.
@@ -158,6 +158,9 @@ Test narrow widths, long wrapped text, wide/combining characters, paste, `NO_COL
 Diagnostics and one-shot output stay usable without a terminal and never contain an interactive banner.
 
 ### Phase 4 — Harness behavior
+
+**Current:** implementation and local acceptance are complete on `codex/phase4-harness`; PR review and CI remain pending.
+See [harness.md](harness.md) for the explicit protocol, local tool scope and qualification limits.
 
 Implement a small request → generation → optional tool proposal → permission decision → tool result → generation loop.
 Use concrete types until the second backend needs a shared interface; the engine capability boundary then becomes a justified abstraction.

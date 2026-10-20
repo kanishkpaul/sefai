@@ -13,6 +13,7 @@ impl Workspace {
     }
 
     /// Saves both records and the outcome atomically, rejecting concurrent edits.
+    #[cfg(test)]
     pub fn save_turn(
         &self,
         id: &str,
@@ -21,19 +22,52 @@ impl Workspace {
         assistant: &str,
         interrupted: bool,
     ) -> io::Result<String> {
+        self.save_records(
+            id,
+            revision,
+            &[("user", user), ("assistant", assistant)],
+            if interrupted {
+                "interrupted"
+            } else {
+                "completed"
+            },
+        )
+    }
+
+    /// Replaces a complete turn checkpoint; harness records never become model roles.
+    #[cfg(test)]
+    pub fn save_records(
+        &self,
+        id: &str,
+        revision: Option<&str>,
+        records: &[(&str, &str)],
+        outcome: &str,
+    ) -> io::Result<String> {
+        self.save_checkpoint(id, revision, revision, records, outcome)
+    }
+
+    /// Replaces records following `base`, checking exact current bytes against `expected`.
+    /// Callers retain the pre-turn base across checkpoints and dispatch only after success.
+    pub fn save_checkpoint(
+        &self,
+        id: &str,
+        base: Option<&str>,
+        expected: Option<&str>,
+        records: &[(&str, &str)],
+        outcome: &str,
+    ) -> io::Result<String> {
         schema::id(id)?;
-        let body = match revision {
+        let body = match base {
             Some(text) => schema::parse::<schema::Session>(text)?.1,
             None => "",
         };
-        let outcome = if interrupted {
-            "interrupted"
-        } else {
-            "completed"
-        };
+        if !matches!(outcome, "completed" | "interrupted") {
+            return Err(invalid("session.outcome: unsupported outcome"));
+        }
         let mut next = format!("---\nschema: 1\nid: {id}\noutcome: {outcome}\n---\n{body}");
-        next.push_str(&session::encode("user", user)?);
-        next.push_str(&session::encode("assistant", assistant)?);
+        for (role, text) in records {
+            next.push_str(&session::encode(role, text)?);
+        }
         if next.len() > schema::FILE_BYTES_MAX {
             return Err(invalid(
                 "session: interactive file exceeds 1048576 bytes; start a new session",
@@ -43,7 +77,7 @@ impl Workspace {
         let relative = Path::new(&relative);
         let _lock = self.lock()?;
         self.stage_checked(relative, next.as_bytes(), || {
-            match (self.root.join(relative).exists(), revision) {
+            match (self.root.join(relative).exists(), expected) {
                 (false, None) => Ok(()),
                 (true, Some(expected)) if self.read(relative)? == expected => Ok(()),
                 _ => Err(invalid(

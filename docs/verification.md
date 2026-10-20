@@ -4,7 +4,8 @@ Evidence recorded on 19 October 2026 on this Apple Silicon Mac and GitHub-hosted
 Phases 0 and 1 are complete and published.
 Phase 1 has local CPU/Metal evidence, passing Windows/macOS/Linux CPU-model CI and successful CUDA/Vulkan compilation.
 Phase 2 merged through PRs #8–#11 as `33f1a8d2172db93eb0b8cb1759fa63c84d62d6ee` after the three platform checks and attribution passed.
-Phase 3 local evidence is recorded at the end; its remote CI and cross-platform terminal qualification remain pending.
+Phase 3 is merged through PR #12 with passing CI; its local evidence and the subsequent Phase 4 acceptance records are below.
+Physical cross-platform terminal and GPU execution qualification remain Phase 9 gates.
 CUDA/Vulkan execution remains unverified.
 See the current Phase 1 results below; historical foundation results are retained separately.
 
@@ -262,7 +263,8 @@ No checks or workflow definitions were weakened or bypassed; the llama.cpp bindi
 The AGENTS.md edit changes only the phase-status sentence and remains subject to maintainer inspection before publication.
 No optional MLX/ONNX/GPTQ/AWQ runtime, MCP process, tool permission authority or automatic memory extraction was added.
 This work claims tested behavior and verified prefix identity, not a throughput or RAM/VRAM improvement.
-The Phase 3 gate remains open for review and cross-platform qualification; Phase 4 has not started.
+At that historical checkpoint the Phase 3 gate remained open and Phase 4 had not started.
+PR #12 subsequently merged; the Phase 4 checkpoint below supersedes that publication status.
 
 ## Phase 3 CI correction — feature-gated stop-token tests
 
@@ -291,3 +293,74 @@ PR #12 was closed during correction; new remote results remain unverified until 
 At the correction checkpoint, the original Vulkan build passed and CUDA was still running against the previous commit.
 Reopening PR #12 triggers fresh three-OS CPU checks and CUDA/Vulkan compilation against the correction; those remote results are not yet claimed.
 CUDA compilation requires the Linux CUDA toolchain from the existing workflow and cannot be qualified on this macOS host.
+
+
+## Phase 4 — bounded harness, local acceptance
+
+Implemented on `codex/phase4-harness`, based on the Phase 3 merge `9767732a9db9009d53098397dd57155669b9adb9`.
+Publication, PR review and GitHub Actions for this branch remain pending; no CI polling was performed.
+The [harness guide](harness.md) records the implemented contract and its limits.
+
+The binary now drives bounded generations, strict opt-in SmolLM2 proposals, one exact-action approval at a time, local memory read/create, untrusted tool results, and a generation follow-up.
+Scope is captured before composing untrusted instructions; model output cannot add a server/tool/path capability.
+Before dispatch, the worker revalidates the exact proposal and scope and atomically journals dispatch intent.
+Failed checkpoints block execution; dispatched write errors/cancellation remain uncertain and are never automatically retried.
+Session audit records remain separate from conversation roles, and known credential values are redacted before record serialization.
+MCP transport, arbitrary file tools, shell execution, implicit memory extraction and regenerate are absent.
+
+| Check | Result |
+| --- | --- |
+| `cargo fmt --all --check` | Passed |
+| `cargo clippy --locked --workspace --all-targets -- -D warnings` | Passed |
+| `cargo clippy --locked -p sefai --no-default-features --all-targets -- -D warnings` | Passed |
+| `cargo test --locked --workspace` | 151 passed: 107 binary unit, 3 chat CLI, 12 workspace CLI, 4 core, 25 engine |
+| `cargo test --locked -p sefai --no-default-features` | 53 passed: 43 binary unit and 10 workspace CLI |
+| `cargo clippy --locked -p sefai --features harness-model-tests --all-targets -- -D warnings` | Passed |
+| `python3 -m unittest discover -s tests -v` | 16 passed |
+| `cargo run --locked -- prompt hello` | Plain `[user]` / `hello`, no banner |
+| Native GGUF `--features model-tests --test gguf`, CPU | 13 passed |
+| Native GGUF `--features model-tests --lib gguf_`, CPU | 6 passed, including all forced fixture stop tokens |
+| `--features harness-model-tests --test harness_gguf`, CPU | 3 passed, required tool fixture present |
+| Real macOS terminal approval/cancellation cases | 5 passed; exit 0 and original terminal attributes restored |
+| Minimal dependency graph | No engine, TUI or JSON runtime dependency |
+| `git diff --check` | Passed |
+
+The native regressions use the unchanged 135M fixture and SHA256 from `tests/fixtures/gguf.json`.
+The new tool fixture is publisher-owned SmolLM2-1.7B-Instruct Q4_K_M, revision `2d4a76a30b4af41ecd395c35725ac11688d4cfe4`, 1,055,609,536 bytes, SHA256 `decd2598bc2c8ed08c19adc3c8fdd461ee19ed5708679d1c54ef54a5a30d4f33`.
+Both size and digest were verified against the downloaded file and the immutable Hugging Face LFS metadata.
+Its manifest includes the Apache-2.0 license references.
+Model weights stay in the ignored local archive; no weights are committed.
+The Linux CPU CI job now fetches, size/hash-verifies and runs this dedicated fixture target in addition to the existing runner gates.
+The JSON decoder is optional under `gguf`; it is the only new direct dependency, with its formatter dependency recorded in `Cargo.lock`.
+The native binding pin remains exactly `=0.1.160`.
+
+Deterministic fake generation uses the production turn driver with an injected clock.
+It covers ordinary replies, approved results, read errors, denied/stale/replayed approvals, repeated writes, step/time/token/tool/transcript/result/argument limits, cancellation and fresh-turn recovery.
+Production dispatcher tests additionally prove that a failed journal checkpoint performs no memory write, successful dispatch records the real outcome, and a dispatched write error is persisted as uncertain.
+Filesystem tests cover frozen read scope, create-only writes, malformed/oversize memory and exact checkpoint replacement.
+Session tests preserve quoted role framing and exclude audit records from model context.
+Terminal tests cover approval Enter-denial, paste isolation, one-shot approval consumption, timeout dismissal and the generated warning border.
+Known literal and JSON-escaped credential values are tested, including refusal of credentials in a proposed memory ID.
+Malformed audit JSON conservatively preserves uncertainty on recovery.
+
+### Real-model results and retained failures
+
+With CPU, 2,048 context tokens, 256 output tokens per step and two threads, the read case proposed `read_memory` with ID `note`, waited for approval, read the actual file and answered “The project marker is cobalt.”
+The source memory contained that marker; no answer was inserted by the harness.
+The approved write created only `memory/rule.md` with `Keep answers concise.`; the denied write created no memory.
+The write and denial cases then requested the same tool again; the runtime emitted `tool call already attempted; automatic retry refused` and recorded the incomplete turn instead of dispatching it.
+This model behavior remains a documented limitation, not a successful follow-up claim.
+The read case completes the full real-model tool/result/answer path; permission tests assert actual files and dispatch counts rather than trusting confirmation prose.
+
+Initial experiments framed results as ordinary user data and the model repeated the read.
+A distinct tool-result role plus an explicit answer-stage instruction completed the read path; write repetition still occurs and remains bounded.
+A dedicated-model Clippy pass also caught undiagnosed `unwrap` calls in fixture helpers; those now use operation-specific `expect` messages and the target passes strict Clippy.
+A final reporting review corrected stale statistics after a native error: unavailable failed-step token counts are labeled unknown rather than reported as exact zero.
+No performance or memory reduction is claimed from these acceptance runs.
+
+The [terminal transcripts](evidence/phase4/terminal-transcripts.md) and [results](evidence/phase4/terminal-results.json) record approved read/create, Enter denial, Esc denial and Ctrl+C during approval.
+All five cases kept the UI usable and restored terminal state on exit.
+Physical Windows/Linux terminal lifecycle, CUDA/Vulkan/Metal execution for this phase, crash/power-loss durability and the complete hardware/format matrix remain later qualification gates.
+Plain-mode stdin is line-blocking: runtime authority expires or cancels promptly, but consuming that status may require a newline/EOF.
+There is no sandbox claim against hostile local processes racing filesystem paths.
+Phase 4 is locally qualified; its publication/CI gate remains open and Phase 5 has not started.

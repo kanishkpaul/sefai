@@ -1,0 +1,11 @@
+{
+  "repository": "HuggingFaceTB/SmolLM2-1.7B-Instruct-GGUF",
+  "revision": "2d4a76a30b4af41ecd395c35725ac11688d4cfe4",
+  "file": "smollm2-1.7b-instruct-q4_k_m.gguf",
+  "bytes": 1055609536,
+  "sha256": "decd2598bc2c8ed08c19adc3c8fdd461ee19ed5708679d1c54ef54a5a30d4f33",
+  "license": "Apache-2.0",
+  "model_card": "https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct",
+  "license_url": "https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct-GGUF/blob/2d4a76a30b4af41ecd395c35725ac11688d4cfe4/README.md",
+  "license_text_url": "https://www.apache.org/licenses/LICENSE-2.0"
+}

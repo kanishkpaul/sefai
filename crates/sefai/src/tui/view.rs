@@ -71,6 +71,36 @@ fn draw_with_theme(frame: &mut Frame<'_>, app: &App, theme: &Term) -> u16 {
         ));
     }
     for message in &app.transcript {
+        if message.role == sefai_core::Role::Tool {
+            if let Some(row) = message.content.strip_prefix("┊ ") {
+                let (verb, detail) = row.split_at_checked(9).unwrap_or((row, ""));
+                let tone = if detail.ends_with("· failed") {
+                    palette.error
+                } else if detail.ends_with("· unknown") {
+                    palette.warn
+                } else {
+                    palette.label
+                };
+                lines.push(Line::from(vec![
+                    Span::styled("  ┊ ", style(palette.dim)),
+                    Span::styled(verb.to_owned(), style(tone)),
+                    Span::raw(detail.to_owned()),
+                ]));
+                continue;
+            }
+            lines.push(Line::styled(
+                "  ┊ result    local-memory · untrusted",
+                style(palette.dim),
+            ));
+            lines.extend(
+                message
+                    .content
+                    .lines()
+                    .map(|line| Line::from(line.to_owned())),
+            );
+            lines.push(Line::from(""));
+            continue;
+        }
         let user = message.role == sefai_core::Role::User;
         lines.push(Line::styled(
             if user {
@@ -162,8 +192,16 @@ fn draw_with_theme(frame: &mut Frame<'_>, app: &App, theme: &Term) -> u16 {
                 .wrap(Wrap { trim: false })
                 .block(
                     Block::bordered()
-                        .title(" Esc close ")
-                        .border_style(style(palette.border)),
+                        .title(if app.approval {
+                            " approve? · y once · Enter/Esc deny "
+                        } else {
+                            " Esc close "
+                        })
+                        .border_style(style(if app.approval {
+                            palette.warn
+                        } else {
+                            palette.border
+                        })),
                 ),
             overlay,
         );
@@ -355,5 +393,25 @@ mod tests {
                 })
                 .expect("draw");
         }
+    }
+    #[test]
+    fn approval_uses_the_warning_border_and_preserves_exact_arguments() {
+        let mut terminal = Terminal::new(TestBackend::new(90, 24)).expect("terminal");
+        let mut theme = Term::new(&CANDLE, &SEFAI, "SEFAI");
+        theme.level = ColorLevel::TrueColor;
+        let app = App { overlay: Some("server: local-memory\ntool: read_memory\narguments: {\"id\":\"note\"}\n[y] approve once · [n/Esc/Enter] deny".into()), approval: true, ..App::default() };
+        terminal
+            .draw(|frame| {
+                draw_with_theme(frame, &app, &theme);
+            })
+            .expect("draw");
+        let buffer = terminal.backend().buffer();
+        let text = buffer
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(text.contains("{\"id\":\"note\"}"));
+        assert_eq!(buffer[(7, 2)].fg, color(theme.level, theme.palette.warn));
     }
 }

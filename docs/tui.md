@@ -63,7 +63,9 @@ Idle input polling uses 250 ms without repainting unchanged frames.
 | `/stats` | Show token counts, timings, stop reason and reused prompt tokens |
 | `/help` | Show commands and shortcuts |
 
-Overlays close with Esc or Enter and scroll with arrow keys or PageUp/PageDown.
+Ordinary overlays close with Esc or Enter and scroll with arrow keys or PageUp/PageDown.
+Tool approvals use a warning border and show exact arguments: `y` approves once, while `n`, Enter and Esc deny.
+Enable them explicitly with `chat --tool-protocol smollm2`; see [the harness guide](harness.md).
 Lists show at most 128 paths; the underlying workspace still enforces its 1024-entry directory bound.
 Edit instructions, profiles, preferences, skills and memory with a text editor.
 Explicit memory creation/edit/deletion remains available through `sefai workspace` commands with revision checks.
@@ -82,6 +84,7 @@ Composed instructions/history and each reply stay within 1 MiB; an interactive s
 The display retains at most 128 records and 128 KiB, dropping its oldest content when necessary; the Markdown file retains saved records.
 The larger 64 MiB CLI session format remains valid, but an interactive resume rejects files above its smaller bound.
 After 126 conversation records, start a new session rather than silently discarding model context.
+Tool mode reserves intermediate-record capacity and requires a new session after 110 existing records.
 
 Weights remain loaded across requests with the same selected path and device.
 The engine retains one context and the preceding prompt tokens, comparing actual model-native rendered tokens before reuse.
@@ -96,7 +99,8 @@ The session header records `completed` or `interrupted`; native/callback failure
 Exact-byte revision checks preserve concurrent editor changes.
 A failed save keeps the turn in memory and blocks subsequent generation until an explicit `/new` or `/resume` resolves the state.
 Those commands can discard unsaved in-memory text, so resolve the reported filesystem conflict first when that text is needed.
-A process killed during generation can lose the active, not-yet-saved turn; previous saved files retain the Phase 2 atomic-write guarantees.
+A process killed during generation can lose text since the latest checkpoint; previous saved files retain the Phase 2 atomic-write guarantees.
+Tool dispatch intent and outcomes are checkpointed separately; resume warns about uncertain dispatches and never replays one.
 Native model-loading failures do not append a turn.
 
 ## Terminal behavior
