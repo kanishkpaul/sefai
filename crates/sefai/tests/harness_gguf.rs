@@ -129,7 +129,26 @@ fn real_gguf_creates_only_the_approved_memory() {
         "{text}"
     );
     let memory = fs::read_to_string(root.0.join("memory/rule.md")).unwrap();
-    assert!(memory.ends_with("Keep answers concise."), "{memory}");
+    let preview: serde_json::Value = serde_json::from_str(
+        text.lines()
+            .find_map(|line| line.strip_prefix("arguments (Unicode escaped): "))
+            .expect("write has an exact approval preview"),
+    )
+    .expect("ASCII fixture arguments are JSON");
+    assert_eq!(preview["id"], "rule");
+    let approved = preview["text"].as_str().expect("approved text is a string");
+    assert_eq!(
+        approved.strip_suffix('.').unwrap_or(approved),
+        "Keep answers concise"
+    );
+    assert_eq!(memory, format!("---\nschema: 1\nid: rule\n---\n{approved}"));
+    let dispatch = saved
+        .lines()
+        .filter_map(|line| serde_json::from_str::<serde_json::Value>(line.strip_prefix("> ")?).ok())
+        .find(|record| record["outcome"] == "dispatching")
+        .expect("write has a durable dispatch intent");
+    assert_eq!(dispatch["tool"], "remember_memory");
+    assert_eq!(dispatch["arguments"], preview);
     assert_eq!(fs::read_dir(root.0.join("memory")).unwrap().count(), 1);
     assert_eq!(saved.matches("\"outcome\":\"dispatching\"").count(), 1);
     assert!(

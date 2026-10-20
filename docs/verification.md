@@ -364,3 +364,15 @@ Physical Windows/Linux terminal lifecycle, CUDA/Vulkan/Metal execution for this 
 Plain-mode stdin is line-blocking: runtime authority expires or cancels promptly, but consuming that status may require a newline/EOF.
 There is no sandbox claim against hostile local processes racing filesystem paths.
 Phase 4 is locally qualified; its publication/CI gate remains open and Phase 5 has not started.
+
+
+## Phase 4 CI correction — approved content versus model punctuation
+
+PR #13's Linux job failed only in `real_gguf_creates_only_the_approved_memory`.
+All earlier Linux checks, both native-model targets, and the macOS/Windows/CUDA/Vulkan jobs passed at head `bccc6798f8f8afe05f537ac482a32759c9ca6b8d`.
+The model proposed and the user approved `Keep answers concise` without a final period; the file and dispatch audit preserved those exact bytes.
+The test incorrectly required the macOS model output's final period.
+The corrected test compares the complete Markdown file against the actual approval preview, checks the audit arguments match that preview, retains a narrow wording check permitting the observed optional period, and still requires one created file and one dispatch.
+It retains the duplicate-call refusal checks and does not change runtime permissions, parsing or persistence.
+The [failed Linux job](https://github.com/kanishkpaul/sefai/actions/runs/39347063505/job/118382098742) preserves the original output.
+Local verification after the correction passed all three real-tool cases, dedicated-target Clippy, the four required Rust checks, 16 attribution tests and the plain diagnostic; the fresh remote CI result is pending.
