@@ -3,7 +3,7 @@
 A small Rust LLM runner and terminal harness, built around files you can read and edit.
 The goal is low RAM/VRAM use, a persistent TUI, Markdown-owned prompts/skills/preferences/memory, and explicit MCP connections.
 
-**Status: Phases 1–4 merged; Phase 5 MCP is locally qualified; review and CI are pending.**
+**Status: Phases 1–5 merged; Phase 6 native MLX is locally qualified; PR review and CI are pending.**
 Pinned-model CPU tests pass on Windows, macOS and Linux; local Metal tests and CUDA/Vulkan compilation also pass.
 CUDA/Vulkan execution and the full hardware matrix remain later qualification gates.
 Markdown schema validation and selected instruction/profile loading are implemented.
@@ -16,7 +16,7 @@ See [the workspace guide](docs/workspace.md) for schema and selection controls.
 
 | Area | Planned support |
 | --- | --- |
-| Model runtimes | GGUF first; optional MLX, ONNX, GPTQ and AWQ adapters |
+| Model runtimes | GGUF and optional native MLX; ONNX, GPTQ and AWQ planned |
 | Systems | Windows, macOS and Linux |
 | GPUs | NVIDIA/CUDA, Apple/Metal, AMD/Vulkan; CPU fallback |
 | Customization | Markdown source of truth; binary models/caches and credential references are explicit exceptions |
@@ -35,7 +35,8 @@ cargo run --locked -- devices
 cargo run --locked -- run --model /path/to/model.gguf "hello"
 ```
 
-The runner loads the chosen local GGUF and streams a reply; CPU is the explicit default.
+The default runner loads the chosen local GGUF and streams a reply; CPU is the explicit default.
+The optional [native MLX adapter](docs/mlx.md) runs named Apple Silicon safetensors bundles through the same terminal harness.
 See the [runner guide](docs/runner.md) for GPU builds, limits, benchmarks and model tests.
 `cargo run --locked --no-default-features -- prompt hello` retains the diagnostic without native inference dependencies.
 There is no published installer yet.

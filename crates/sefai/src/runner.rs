@@ -1,7 +1,7 @@
+use crate::engine::{Device, Engine, GpuBackend, Settings, Stop};
 use crate::term::Output;
 use crate::workspace::{Backend, Runner, Selection};
 use clap::Args;
-use sefai_engine_llama::{Device, Engine, GpuBackend, Settings, Stop};
 use std::{
     io::{self, Read, Write},
     path::PathBuf,
@@ -44,15 +44,20 @@ pub enum Mode {
 }
 
 pub fn devices() -> Result<(), Box<dyn std::error::Error>> {
-    let engine = Engine::new()?;
-    let mut terminal = Output::default();
-    let mut output = io::stdout().lock();
-    for device in engine.devices() {
-        terminal.write(
-            &format!("{}\t{}\t{}\n", device.index, device.backend, device.name),
-            &mut output,
-        )?;
+    #[cfg(feature = "gguf")]
+    {
+        let engine = sefai_engine_llama::Engine::new()?;
+        let mut terminal = Output::default();
+        let mut output = io::stdout().lock();
+        for device in engine.devices() {
+            terminal.write(
+                &format!("{}\t{}\t{}\n", device.index, device.backend, device.name),
+                &mut output,
+            )?;
+        }
     }
+    #[cfg(all(feature = "mlx", target_os = "macos", target_arch = "aarch64"))]
+    println!("mlx\tMetal\tcompiled MLX target; availability checked on load");
     Ok(())
 }
 
@@ -78,10 +83,10 @@ pub fn run(
     if prompt == "-" {
         prompt.clear();
         io::stdin()
-            .take(sefai_engine_llama::PROMPT_BYTES_MAX as u64 + 1)
+            .take(crate::engine::PROMPT_BYTES_MAX as u64 + 1)
             .read_to_string(&mut prompt)?;
     }
-    if prompt.trim().is_empty() || prompt.len() > sefai_engine_llama::PROMPT_BYTES_MAX {
+    if prompt.trim().is_empty() || prompt.len() > crate::engine::PROMPT_BYTES_MAX {
         return Err("prompt must contain text within 1048576 bytes".into());
     }
     let prepared = selection.prepare(prompt)?;
@@ -143,6 +148,7 @@ pub fn run(
                 statistics.generation.as_secs_f64(),
                 statistics.stop
             )?;
+            eprintln!("{}", model.memory());
         } else {
             writeln!(output)?;
         }
@@ -162,6 +168,10 @@ pub(crate) fn resolve(
         configured.backend.unwrap_or(Backend::Cpu),
         configured.device,
     ) {
+        (Backend::Mlx, None) => Device::Mlx,
+        (Backend::Mlx, Some(_)) => {
+            return Err("mlx selects the Apple GPU and does not accept --device".into());
+        }
         (Backend::Cpu, None) => Device::Cpu,
         (Backend::Cpu, Some(_)) => return Err("cpu mode does not accept --device".into()),
         (backend, Some(index)) => Device::Gpu {
@@ -170,7 +180,7 @@ pub(crate) fn resolve(
                 Backend::Metal => GpuBackend::Metal,
                 Backend::Cuda => GpuBackend::Cuda,
                 Backend::Vulkan => GpuBackend::Vulkan,
-                Backend::Cpu => unreachable!(),
+                Backend::Cpu | Backend::Mlx => unreachable!(),
             },
         },
         (_, None) => return Err("gpu mode requires --device from `sefai devices`".into()),
@@ -181,7 +191,9 @@ pub(crate) fn resolve(
         batch_tokens: configured.batch.unwrap_or(defaults.batch_tokens),
         microbatch_tokens: configured.microbatch.unwrap_or(defaults.microbatch_tokens),
         output_tokens: configured.output.unwrap_or(defaults.output_tokens),
-        threads: configured.threads.unwrap_or(defaults.threads),
+        threads: configured.threads.unwrap_or_else(|| {
+            std::thread::available_parallelism().map_or(1, |count| count.get().min(256) as u32)
+        }),
     };
     settings.validate(1, u32::MAX)?;
     Ok((device, settings))

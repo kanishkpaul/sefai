@@ -12,7 +12,7 @@ cargo run --locked -- --workspace /path/to/workspace chat --plain
 
 The workspace is initialized if its directory does not exist.
 Existing files are never replaced during initialization.
-First run explains model selection; a selected profile must identify GGUF weights and valid runner limits.
+First run explains model selection; a selected profile must identify weights supported by its compiled backend and valid runner limits.
 The file path may contain spaces: everything following `/model ` is the path, without shell quoting or expansion.
 `~`, environment variables and shell commands are not expanded.
 A missing or unsupported model reports an error and leaves the conversation available for retry.
@@ -124,7 +124,7 @@ No child process is launched in this phase.
 Ratatui supplies cell layout, wrapping, diff rendering and a test backend; the standard library has no terminal widget system.
 Crossterm supplies Windows/macOS/Linux raw mode, key/resize events and bracketed paste.
 Unicode segmentation supplies grapheme deletion instead of splitting combining marks and emoji sequences.
-All three dependencies belong to the binary's optional `gguf` feature; the minimal diagnostic build does not install the TUI or an engine runtime.
+All three dependencies belong to the binary's optional `inference` feature, enabled by `gguf` or `mlx`; the minimal diagnostic build does not install the TUI or an engine runtime.
 Ratatui's rendered-line-count feature is used for wrapped transcript/composer scrolling and is checked by tests against the locked version.
 See [verification.md](verification.md) for local checks and qualification boundaries.
 

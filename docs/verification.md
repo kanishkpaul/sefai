@@ -474,3 +474,102 @@ The Linux pinned real-model job adds the four MCP cases alongside the three memo
 CUDA/Vulkan compilation gates are unchanged; no additional GPU execution is claimed.
 The only `AGENTS.md` change is the phase-status sentence; that and the added workflow gates require maintainer inspection before publication.
 Production-server interoperability, physical Windows/Linux terminal/process-tree behavior and the full RAM/VRAM matrix remain unqualified here.
+
+## Phase 6 — Native MLX
+
+Local qualification uses Apple M5 with 16 GiB unified memory, macOS 27.0.1, Rust 1.96.1, Xcode 27.1 (27A9275), and Metal toolchain 27A266a (compiler 32023.921).
+The public cache borrows its model until cache drop; a compile-fail contract rejects dropping the model first.
+The optional Rust MLX libraries are pinned to `579199b4bb5e39b35f33fc6a59cb90e2c031a6a7`; native MLX is 0.32.2.
+The product has no Python inference worker or model-download fallback.
+The isolated Python 3.14.8 reference uses MLX 0.32.2 and `mlx-lm` 0.31.3; its [complete dependency versions](evidence/phase6/reference-requirements.txt) are retained.
+PR review and hosted CI remain pending.
+The preceding Phase 5 publication-pending text records its historical local checkpoint; Phase 5 has since merged with passing CI.
+
+### Native-library coexistence
+
+The first combined build compiled but crashed while loading GGUF, including before any MLX model was loaded.
+Both native archives exported `gguf_get_key` with incompatible C signatures.
+The [small binding build patch](../vendor/mlx-sys/SEFAI-PATCH.md) disables MLX's unused GGUF reader and removes its `gguflib` link; safetensors loading remains enabled.
+The patched combined release loads real GGUF successfully and switches from real MLX generation to GGUF within one TUI session.
+The hosted macOS workflow now runs that combined-link GGUF smoke test on CPU.
+The [source comparison](evidence/phase6/binding-provenance.json) verifies all 78 retained upstream files outside the explicit build/metadata/documentation exceptions byte-for-byte; native FFI implementations are unchanged.
+The third-party binding remains outside the workspace's safe Rust crates; `unsafe_code = "forbid"` is unchanged.
+
+### Real-model and terminal evidence
+
+The generation fixtures are [Qwen3-0.6B 4-bit](../tests/fixtures/mlx.json) and [SmolLM2-135M 8-bit](../tests/fixtures/mlx-llama.json).
+The tool fixture is the producer-published [SmolLM2-1.7B Q8 MLX bundle](../tests/fixtures/mlx-tool.json).
+Their manifests retain immutable revisions, asset sizes and SHA256 hashes; weights are ignored local assets.
+The seven real MLX harness cases pass: three local memory cases plus approved MCP echo, exact approved write, denied write without dispatch, and a dispatched write followed by disconnect with an unknown outcome and no retry.
+They use the same reusable harness scenarios as GGUF, the existing explicit SmolLM2 protocol and the local/dummy MCP server requested by the maintainer.
+Qwen3-0.6B failed six of those seven tool scenarios because markup was absent or malformed; it remains qualified for generation, not reliable tool use.
+The parser and approval rules were not weakened to admit it.
+
+Four actual 90 × 24 macOS PTYs with `NO_COLOR=1` cover Unicode generation, native allocator statistics, switching MLX bundles, Ctrl+C cancellation, saved-session resume and MLX-to-GGUF profile switching.
+Every process exits zero and restores its original terminal attributes.
+The [terminal results](evidence/phase6/terminal-results.json) and [screen transcripts](evidence/phase6/terminal-transcripts.md) retain the observed behavior.
+These release-binary terminal runs preceded the final help-label shortening and model-bound cache lifetime restriction; the final Rust checks cover those changes.
+Physical terminal qualification across operating systems remains a Phase 9 gate.
+
+### Matched reference and footprint
+
+[Raw measurements and comparison](evidence/phase6/comparison.json) cover both small fixtures with short and longer prompts, three fresh-cache repetitions per process, identical full prompt token IDs, greedy 128-token output and 128-token prefill chunks.
+The native and reference processes use the same MLX version and 64 MiB allocator-retention target, with no concurrent sefai builds or inference during the recorded measurements.
+All 12 generated outputs match after stripping a leading-whitespace difference between the native and Python incremental detokenizers; raw bytes are not identical.
+The native path has lower host RSS but decodes 1.46–1.81× more slowly here.
+The longer Qwen case has about 8% higher macOS process peak footprint and 29% higher MLX peak-active allocation than the reference.
+This does not establish a consistent total-memory improvement.
+Full-cache capacity growth, transient allocation and decode throughput need profiling during Phase 9 before broader performance claims.
+Native allocator counters overlap OS accounting and must not be added to RSS or described as separate VRAM.
+The 64 MiB cached-allocation setting is a retention target, not a hard peak-memory cap; the measured cached counter can exceed it.
+
+The [exploratory footprint record](evidence/phase6/footprint.json) stores aarch64 macOS release sizes and hashes: 1,912,224 bytes minimal, 11,778,128 GGUF, 22,181,264 MLX-only, and 33,309,024 combined GGUF/MLX/OAuth.
+The generated MLX Metal library adds 1,473,912 bytes and must remain at the compiled `MLX_RS_METAL_PATH`; the executable alone is not relocatable.
+These builds preceded the final help/cache-lifetime edits and are not release artifacts.
+Normal dependency graphs including the binary contain 35, 104, 166 and 272 packages respectively on this target.
+The MLX-only graph excludes llama.cpp, and the default GGUF graph excludes MLX.
+All previous locked package/version pairs are preserved, including `llama-cpp-2 = 0.1.160`; 64 new platform-inclusive pairs belong to the optional adapter and are not all installed in the base build.
+The new direct dependencies are `serde_json` for bounded bundle metadata, optional pinned native `mlx-lm`/`mlx-rs` for model execution and allocator control, and optional existing-version `thiserror` for typed native/tokenizer/template/cache errors.
+The unpublished native language-model crate and maintained binding build patch are explicit dependency risks.
+
+### Final local checks
+
+Native commands set `MLX_RS_METAL_PATH="$PWD/target/mlx-metal"`.
+Model targets use the pinned local paths in the linked manifests; harness targets also set `SEFAI_MCP_TEST_PYTHON` to the local Python executable.
+
+| Command | Result |
+| --- | --- |
+| `cargo fmt --all --check` | pass |
+| `cargo clippy --locked --workspace --all-targets -- -D warnings` | pass |
+| `cargo clippy --locked -p sefai --no-default-features --all-targets -- -D warnings` | pass |
+| `cargo test --locked --workspace` | 160 tests: 109 binary, 3 chat CLI, 12 workspace CLI, 4 core, 25 GGUF adapter, 7 MLX bundle admission |
+| `cargo clippy --locked -p sefai --features mlx,mlx-model-tests,mcp-oauth --all-targets -- -D warnings` | pass |
+| `cargo clippy --locked -p sefai --no-default-features --features mlx,mlx-model-tests,mcp-oauth --all-targets -- -D warnings` | pass |
+| `cargo clippy --locked -p sefai-engine-mlx --features model-tests --all-targets -- -D warnings` | pass |
+| `cargo test --locked -p sefai --features mlx,mcp-oauth --bin sefai` | 130 tests |
+| `cargo test --locked -p sefai --no-default-features --features mlx,mcp-oauth` | 145 tests: 130 binary, 3 chat CLI, 12 workspace CLI |
+| `cargo test --locked -p sefai-engine-mlx --features runtime --lib` | 7 bundle admission tests |
+| `cargo test --locked -p sefai-engine-mlx --features runtime --doc` | 1 compile-fail cache lifetime contract |
+| `cargo test --locked -p sefai-engine-mlx --features model-tests --test mlx -- --test-threads=1` | 11 tests each on Qwen3-0.6B and SmolLM2-135M |
+| `cargo test --locked -p sefai --features harness-model-tests,mcp --test harness_gguf` | 7 actual GGUF harness tests |
+| `cargo test --locked -p sefai --no-default-features --features mlx-model-tests,mcp --test harness_mlx` | 7 actual MLX harness tests |
+| `cargo clippy --locked -p sefai --target x86_64-unknown-linux-gnu --no-default-features --features mlx --all-targets -- -D warnings` | pass; compile-only unsupported-platform path |
+| `python3 -m unittest discover -s tests -v` | 16 attribution tests |
+| `cargo run --locked -- prompt hello` | plain `[user]` / `hello`, no banner |
+| Actionlint 1.7.12 on both workflows, ShellCheck integration disabled | pass |
+| `git diff --check` and full-content attribution scan of changed/new files | pass |
+
+The Linux cross-Clippy attempt with `mlx,mcp-oauth` cannot build `aws-lc-sys` because `x86_64-linux-gnu-gcc` is absent on this Mac.
+The MLX-only Linux cross-check passes; Linux OAuth runtime checks remain the existing hosted CI gate.
+No hosted run was started or monitored during local qualification.
+
+### Remaining limits
+
+Floating weights and architectures beyond the named quantized fixtures are not locally qualified.
+Untrusted model templates are not sandboxed: upstream rendering has no execution-fuel limit, even though input/output sizes are bounded.
+Cancellation cannot interrupt a native load, shader compilation or GPU operation already in progress.
+The full KV cache has no quantization, rotation, snapshotting or serialization in this adapter.
+Hosted CI compiles native MLX combinations and tests pure contracts plus combined-library GGUF CPU inference; it does not claim hosted MLX GPU execution.
+Windows/Linux MLX selection is an explicit unsupported-platform error; GPU vendor coverage remains provided by the selected GGUF backends and requires the planned physical matrix.
+Asset packaging and clean-machine installation remain Phase 11 gates, following complete testing and essential red teaming in Phase 10.
+The changed workflow and status-only `AGENTS.md` edit require maintainer inspection before publication.

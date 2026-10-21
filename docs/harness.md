@@ -11,7 +11,8 @@ cargo run --locked -- --workspace /path/to/workspace --profile tools chat --tool
 The qualified model is SmolLM2-1.7B-Instruct Q4_K_M from the publisher's GGUF repository.
 Its immutable revision, byte count and SHA256 are in [the fixture manifest](../tests/fixtures/tool-gguf.json).
 The [publisher's function-calling example](https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct#function-calling) uses a prompted `<tool_call>` JSON array.
-This mode explicitly uses that text protocol, the GGUF's native chat template, and a distinct `tool` result role.
+This mode explicitly uses that text protocol, the model's native chat template, and a distinct `tool` result role.
+The optional [MLX adapter](mlx.md) qualifies the same harness with the producer's SmolLM2-1.7B Q8 bundle; the small Qwen fixture is qualified for generation only.
 It does not claim a native structured-tool API, arbitrary model compatibility or guaranteed tool reliability.
 Unsupported templates and malformed proposals fail visibly; there is no conversion, hosted fallback or synthetic answer.
 The 135M regression fixture is not qualified for tools.

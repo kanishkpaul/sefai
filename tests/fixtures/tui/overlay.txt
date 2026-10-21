@@ -7,7 +7,7 @@ mess│PageUp/PageDown scroll · End follow · │
 Mark│F2 error details                      │
 sess│Ctrl+K commands · Ctrl+C stop/quit ·  │
     │Ctrl+D quit                           │
-    │/model PATH  choose a local GGUF file │
+    │/model PATH  choose a local model     │
     │/profile ID  choose a Markdown model  │
     │profile                               │
     │/models  list profiles                │

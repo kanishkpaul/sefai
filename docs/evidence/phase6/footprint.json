@@ -1,0 +1,57 @@
+{
+  "target": "aarch64-apple-darwin",
+  "profile": "workspace release; thin LTO, stripped symbols, one codegen unit",
+  "builds": [
+    {
+      "build": "minimal",
+      "cargo_flags": [
+        "--no-default-features"
+      ],
+      "binary_bytes": 1912224,
+      "sha256": "59562f75122adef51ba8b761e2f979714684158e6640d2bd2b3e46455a1175f6",
+      "normal_dependency_packages_including_binary": 35,
+      "contains_llama": false,
+      "contains_mlx": false
+    },
+    {
+      "build": "gguf",
+      "cargo_flags": [],
+      "binary_bytes": 11778128,
+      "sha256": "1d4a5d0ad450c0b805353259fef9d982f04192496488b55f76ffa34f514feb0f",
+      "normal_dependency_packages_including_binary": 104,
+      "contains_llama": true,
+      "contains_mlx": false
+    },
+    {
+      "build": "mlx-only",
+      "cargo_flags": [
+        "--no-default-features",
+        "--features",
+        "mlx"
+      ],
+      "binary_bytes": 22181264,
+      "sha256": "0c38a9fb653245a88f5ed00eff016cb2f3ea500a3062e74bcb5a3cd23da567f4",
+      "normal_dependency_packages_including_binary": 166,
+      "contains_llama": false,
+      "contains_mlx": true
+    },
+    {
+      "build": "combined-mcp",
+      "cargo_flags": [
+        "--features",
+        "mlx,mcp-oauth"
+      ],
+      "binary_bytes": 33309024,
+      "sha256": "7c70203a95dcbb3b90ef1359425a33fbc60b437a3c46ce5c95dd7916ae5f4937",
+      "normal_dependency_packages_including_binary": 272,
+      "contains_llama": true,
+      "contains_mlx": true
+    }
+  ],
+  "mlx_asset": {
+    "bytes": 1473912,
+    "sha256": "f6d6de3d16df13e127b849934bc0cd6e78a464d1c7b7b1bdf5ac8481e2d83120",
+    "location": "compiled MLX_RS_METAL_PATH; required separately from executable"
+  },
+  "limits": "executable and generated asset sizes only; excludes weights and all process memory; exploratory builds precede the final help-text and cache-lifetime checks and are not release artifacts"
+}

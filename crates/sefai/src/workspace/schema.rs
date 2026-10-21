@@ -28,6 +28,7 @@ pub struct Runner {
 #[derive(Clone, Copy, Debug, Deserialize, clap::ValueEnum)]
 #[serde(rename_all = "lowercase")]
 pub enum Backend {
+    Mlx,
     Cpu,
     Metal,
     Cuda,
@@ -187,7 +188,7 @@ pub fn id(value: &str) -> io::Result<()> {
 impl Runner {
     pub fn overlay(&mut self, other: &Self) {
         self.backend = other.backend.or(self.backend);
-        if matches!(other.backend, Some(Backend::Cpu)) {
+        if matches!(other.backend, Some(Backend::Cpu | Backend::Mlx)) {
             self.device = None;
         }
         self.device = other.device.or(self.device);

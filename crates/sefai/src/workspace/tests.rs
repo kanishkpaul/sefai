@@ -526,7 +526,7 @@ fn unsupported_engine_profiles_never_fall_back_to_gguf() {
     let fixture = Fixture::new();
     fixture.write(
         "models/one.md",
-        "---\nschema: 1\nid: one\npath: weights\nformat: mlx\n---\n",
+        "---\nschema: 1\nid: one\npath: weights\nformat: onnx\n---\n",
     );
     let mut selection = fixture.selection();
     selection.profile = Some("one".into());
@@ -536,7 +536,7 @@ fn unsupported_engine_profiles_never_fall_back_to_gguf() {
             .err()
             .expect("unsupported engine")
             .to_string()
-            .contains("only gguf")
+            .contains("engine is not enabled")
     );
 }
 
@@ -572,7 +572,7 @@ fn full_size_crlf_record_has_the_same_decoded_limit() {
     assert_eq!(messages[0].content, body);
 }
 
-#[cfg(feature = "gguf")]
+#[cfg(feature = "inference")]
 #[test]
 fn interactive_turn_saves_both_records_and_interrupted_outcome() {
     let fixture = Fixture::new();
@@ -587,7 +587,7 @@ fn interactive_turn_saves_both_records_and_interrupted_outcome() {
     );
 }
 
-#[cfg(feature = "gguf")]
+#[cfg(feature = "inference")]
 #[test]
 fn interactive_save_preserves_a_concurrent_editor_change() {
     let fixture = Fixture::new();
@@ -608,7 +608,7 @@ fn interactive_save_preserves_a_concurrent_editor_change() {
     );
 }
 
-#[cfg(feature = "gguf")]
+#[cfg(feature = "inference")]
 #[test]
 fn interactive_save_appends_to_an_exact_resumed_revision() {
     let fixture = Fixture::new();
@@ -625,7 +625,7 @@ fn interactive_save_appends_to_an_exact_resumed_revision() {
     assert_eq!(workspace.session("chat", 4).expect("session").len(), 4);
 }
 
-#[cfg(feature = "gguf")]
+#[cfg(feature = "inference")]
 #[test]
 fn harness_audit_is_not_a_conversation_role() {
     let fixture = Fixture::new();
@@ -648,7 +648,7 @@ fn harness_audit_is_not_a_conversation_role() {
     );
 }
 
-#[cfg(feature = "gguf")]
+#[cfg(feature = "inference")]
 #[test]
 fn tool_checkpoint_replaces_the_current_turn_without_duplication() {
     let fixture = Fixture::new();
@@ -677,4 +677,33 @@ fn tool_checkpoint_replaces_the_current_turn_without_duplication() {
         .unwrap();
     assert_eq!(completed.matches("## user\n").count(), 1);
     assert!(!completed.contains("dispatching"));
+}
+
+#[test]
+#[cfg(feature = "mlx")]
+fn mlx_profiles_select_the_native_engine() {
+    let fixture = Fixture::new();
+    fixture.write(
+        "models/one.md",
+        "---\nschema: 1\nid: one\npath: bundle\nformat: mlx\n---\n",
+    );
+    let mut selection = fixture.selection();
+    selection.profile = Some("one".into());
+    let prepared = selection.prepare("hi".into()).expect("mlx profile");
+    assert!(matches!(
+        prepared.runner.backend,
+        Some(schema::Backend::Mlx)
+    ));
+}
+
+#[test]
+fn gguf_profiles_reject_an_mlx_backend() {
+    let fixture = Fixture::new();
+    fixture.write(
+        "models/one.md",
+        "---\nschema: 1\nid: one\npath: model.gguf\nformat: gguf\nrunner:\n  backend: mlx\n---\n",
+    );
+    let mut selection = fixture.selection();
+    selection.profile = Some("one".into());
+    assert!(selection.prepare("hi".into()).is_err());
 }

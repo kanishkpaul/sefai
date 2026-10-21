@@ -46,3 +46,9 @@ impl From<io::Error> for Error {
         Self::operation("writing output", source)
     }
 }
+
+impl From<sefai_core::LimitsError> for Error {
+    fn from(source: sefai_core::LimitsError) -> Self {
+        Self::Invalid(source.to_string())
+    }
+}

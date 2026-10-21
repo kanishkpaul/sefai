@@ -59,6 +59,23 @@ jobs:
         run: |
           export SEFAI_MCP_TEST_PYTHON="$(python3 -c 'import sys; print(sys.executable)')"
           cargo test --locked -p sefai --features mcp-fixture-tests --test mcp_transport
+      - name: Install the optional Apple Metal compiler
+        if: runner.os == 'macOS'
+        run: |
+          if ! xcrun metal --version; then
+            xcodebuild -downloadComponent MetalToolchain
+          fi
+          xcrun metal --version
+      - name: Check native MLX without requiring a hosted GPU
+        if: runner.os == 'macOS'
+        env:
+          MLX_RS_METAL_PATH: ${{ github.workspace }}/target/mlx-metal
+        run: |
+          cargo clippy --locked -p sefai --no-default-features --features mlx,mlx-model-tests,mcp-oauth --all-targets -- -D warnings
+          cargo clippy --locked -p sefai --features mlx,mlx-model-tests,mcp-oauth --all-targets -- -D warnings
+          cargo clippy --locked -p sefai-engine-mlx --features model-tests --all-targets -- -D warnings
+          cargo test --locked -p sefai --features mlx,mcp-oauth --bin sefai
+          cargo test --locked -p sefai-engine-mlx --features runtime --lib
       - run: cargo test --locked -p sefai --no-default-features
       - run: cargo run --locked -- prompt hello
       - run: python3 -m unittest discover -s tests -v
@@ -91,6 +108,12 @@ jobs:
         run: |
           cargo test --locked -p sefai-engine-llama --features model-tests --test gguf
           cargo test --locked -p sefai-engine-llama --features model-tests --lib gguf_
+
+      - name: Verify GGUF loading with both native libraries linked
+        if: runner.os == 'macOS'
+        env:
+          MLX_RS_METAL_PATH: ${{ github.workspace }}/target/mlx-metal
+        run: cargo run --locked --features mlx -- run --model fixture.gguf --threads 2 --output 8 hello
 
       - name: Fetch the pinned tool-capable GGUF fixture
         if: runner.os == 'Linux'

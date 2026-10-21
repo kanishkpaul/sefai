@@ -2,7 +2,7 @@
 
 sefai is a small Rust local LLM runner and terminal harness.
 The runner embeds GGUF inference and a schema-1 Markdown workspace.
-Phases 1–4 are merged; Phase 5 MCP is locally qualified; PR review and CI are pending.
+Phases 1–5 are merged; Phase 6 native MLX is locally qualified; PR review and CI are pending.
 See `docs/runner.md` for controls and `docs/build-plan.md` for the remaining gates.
 Read `docs/style.md` in full, `ARCHITECTURE.md`, the relevant phase and `design/README.md` before the first edit.
 

@@ -1,4 +1,4 @@
-#![cfg(feature = "gguf")]
+#![cfg(feature = "inference")]
 use std::{
     fs,
     io::Write,

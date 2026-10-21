@@ -166,7 +166,7 @@ impl Definition {
         Ok(())
     }
 
-    #[cfg(feature = "gguf")]
+    #[cfg(feature = "inference")]
     pub fn credential_values(&self) -> io::Result<Vec<String>> {
         let references = match &self.config.transport {
             Transport::Stdio { env, .. } => env.values().collect::<Vec<_>>(),
@@ -382,7 +382,7 @@ impl Connection {
         Ok(())
     }
 
-    #[cfg(feature = "gguf")]
+    #[cfg(feature = "inference")]
     pub fn credential_values(&self) -> Vec<String> {
         #[cfg(feature = "mcp-http")]
         {
@@ -394,12 +394,12 @@ impl Connection {
         }
     }
 
-    #[cfg(feature = "gguf")]
+    #[cfg(feature = "inference")]
     pub fn tools(&self) -> &[Value] {
         &self.tools
     }
 
-    #[cfg(any(feature = "gguf", test))]
+    #[cfg(any(feature = "inference", test))]
     pub fn has_tool(&self, name: &str) -> bool {
         self.tools.iter().any(|tool| tool["name"] == name)
     }
@@ -514,7 +514,7 @@ impl Connection {
         Err(fail("mcp discovery exceeds 16 pages"))
     }
 
-    #[cfg(any(feature = "gguf", test))]
+    #[cfg(any(feature = "inference", test))]
     pub fn tool(
         &self,
         name: &str,

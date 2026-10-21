@@ -1,11 +1,11 @@
 use super::{Event, TEXT_BYTES_MAX, ToolProtocol};
+use crate::engine::{Cache, Device, Engine, Model, Settings, Stop};
 use crate::harness::{self, Action, Redactor, Turn};
 use crate::{
     runner,
     workspace::{Prepared, Runner, Selection, Workspace},
 };
 use sefai_core::{Message, Prompt};
-use sefai_engine_llama::{Cache, Device, Engine, Model, Settings, Stop};
 use std::{
     io,
     path::PathBuf,
@@ -488,7 +488,7 @@ impl State {
             &job.prepared.prompt,
             || (started.elapsed(), cancelled.load(Ordering::Relaxed)),
             |prompt, remaining, answer_budget| {
-                let input = first.take().map_or_else(|| model.prepare(prompt), Ok).map_err(io::Error::other)?;
+                let input = first.take().map_or_else(|| model.prepare(prompt), Ok).map_err(|error| io::Error::other(error.to_string()))?;
                 let settings = Settings {
                     output_tokens: job.settings.output_tokens.min(remaining),
                     ..job.settings
@@ -531,19 +531,20 @@ impl State {
                 };
                 context_used = statistics.prompt_tokens + statistics.generated_tokens as usize;
                 statistics_text = format!(
-                    "prompt {} tokens\ngenerated {} tokens\nprefill {:.3}s\ngeneration {:.3}s\nstop {:?}\nverified prefix reused {} tokens; weights retained\ntools: {} · context max {} · cancellation between native calls · memory reporting unavailable",
+                    "prompt {} tokens\ngenerated {} tokens\nprefill {:.3}s\ngeneration {:.3}s\nstop {:?}\nverified prefix reused {} tokens; weights retained\ntools: {} · context max {} · cancellation between native calls\n{}",
                     statistics.prompt_tokens,
                     statistics.generated_tokens,
                     statistics.prefill.as_secs_f64(),
                     statistics.generation.as_secs_f64(),
                     statistics.stop,
-                    cache.reused_tokens(),
+                    model.reused_tokens(cache),
                     if tools_enabled {
                         "explicit SmolLM2 protocol"
                     } else {
                         "disabled"
                     },
-                    model.context_tokens_max()
+                    model.context_tokens_max(),
+                    model.memory()
                 );
                 let complete = statistics.stop != Stop::Cancelled
                     && (statistics.stop == Stop::EndOfGeneration

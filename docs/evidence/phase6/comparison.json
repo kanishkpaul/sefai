@@ -1,0 +1,93 @@
+{
+  "hardware": "Apple M5, 16 GiB unified memory",
+  "os": "macOS 27.0.1",
+  "mlx": "0.32.2",
+  "python_mlx_lm": "0.31.3",
+  "decode_definition": "(sampled tokens - 1) / time after first sampled token; medians of repetitions 2 and 3",
+  "rows": [
+    {
+      "model": "qwen",
+      "workload": "short",
+      "prompt_tokens": 23,
+      "prompt_ids_match": true,
+      "text_matches_after_lstrip": true,
+      "native": {
+        "warm_decode_tokens_per_s": 195.08363036985344,
+        "warm_first_token_s": 0.023633374999999998,
+        "mlx_peak_active_bytes": 396322168,
+        "maximum_rss_bytes": 533086208,
+        "process_peak_footprint_bytes": 583189632
+      },
+      "reference": {
+        "warm_decode_tokens_per_s": 284.1784822282525,
+        "warm_first_token_s": 0.022999875000095926,
+        "mlx_peak_active_bytes": 384205160,
+        "maximum_rss_bytes": 690257920,
+        "process_peak_footprint_bytes": 710034656
+      }
+    },
+    {
+      "model": "qwen",
+      "workload": "long",
+      "prompt_tokens": 535,
+      "prompt_ids_match": true,
+      "text_matches_after_lstrip": true,
+      "native": {
+        "warm_decode_tokens_per_s": 134.54864683114982,
+        "warm_first_token_s": 0.2187399585,
+        "mlx_peak_active_bytes": 756125896,
+        "maximum_rss_bytes": 529498112,
+        "process_peak_footprint_bytes": 997491984
+      },
+      "reference": {
+        "warm_decode_tokens_per_s": 243.66137931862085,
+        "warm_first_token_s": 0.18000006250076694,
+        "mlx_peak_active_bytes": 587878560,
+        "maximum_rss_bytes": 690225152,
+        "process_peak_footprint_bytes": 924173632
+      }
+    },
+    {
+      "model": "llama",
+      "workload": "short",
+      "prompt_tokens": 23,
+      "prompt_ids_match": true,
+      "text_matches_after_lstrip": true,
+      "native": {
+        "warm_decode_tokens_per_s": 297.73940973300046,
+        "warm_first_token_s": 0.012296625,
+        "mlx_peak_active_bytes": 161837660,
+        "maximum_rss_bytes": 234242048,
+        "process_peak_footprint_bytes": 250839952
+      },
+      "reference": {
+        "warm_decode_tokens_per_s": 499.3920347055798,
+        "warm_first_token_s": 0.012496792001911672,
+        "mlx_peak_active_bytes": 160668030,
+        "maximum_rss_bytes": 329908224,
+        "process_peak_footprint_bytes": 341263272
+      }
+    },
+    {
+      "model": "llama",
+      "workload": "long",
+      "prompt_tokens": 567,
+      "prompt_ids_match": true,
+      "text_matches_after_lstrip": true,
+      "native": {
+        "warm_decode_tokens_per_s": 254.85331028817163,
+        "warm_first_token_s": 0.070646771,
+        "mlx_peak_active_bytes": 280159543,
+        "maximum_rss_bytes": 233701376,
+        "process_peak_footprint_bytes": 399901632
+      },
+      "reference": {
+        "warm_decode_tokens_per_s": 427.8334542573722,
+        "warm_first_token_s": 0.0667195210007776,
+        "mlx_peak_active_bytes": 240561144,
+        "maximum_rss_bytes": 329334784,
+        "process_peak_footprint_bytes": 429261832
+      }
+    }
+  ]
+}

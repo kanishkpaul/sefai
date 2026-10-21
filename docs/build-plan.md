@@ -4,7 +4,7 @@ Build a small Rust LLM runner and terminal harness, with Markdown-owned customiz
 GGUF, ONNX, GPTQ, AWQ, and MLX are release targets.
 Phase 1 is complete: the published GGUF runner passes local CPU/Metal tests, Windows/macOS/Linux CPU-model CI and CUDA/Vulkan compile checks.
 Phase 2 is merged through PRs #8–#11 with passing Windows, macOS, Linux and attribution checks.
-Phase 3 is merged through PR #12; the Phase 4 harness is locally qualified; PR review and CI are pending.
+Phases 3–5 are merged; Phase 6 native MLX is locally qualified with PR review and CI pending.
 See [phase2-closeout.md](phase2-closeout.md) for the acceptance matrix and stack order.
 Complete runner correctness before adding harness features.
 Every phase includes regression tests; the second-last phase is a complete product verification pass, and the last is repository organization, installation, and presentation.
@@ -184,7 +184,7 @@ No keyword-based persona refusals or synthetic success fallbacks are carried for
 
 ### Phase 5 — MCP
 
-**Current:** implementation and local qualification are complete on `codex/phase5-mcp`; review and CI remain pending.
+**Merged:** the MCP implementation is published with passing CI.
 See [mcp.md](mcp.md) for optional builds, first-launch trust, per-call authority, bounds and OAuth limits.
 The maintainer selected local/dummy authenticated servers for this phase; production-service interoperability remains unqualified.
 
@@ -205,6 +205,9 @@ An MCP connection makes external traffic possible; the UI must stop claiming tha
 A real local server and an authenticated remote server are tested with recorded software versions and redacted evidence.
 
 ### Phase 6 — MLX
+
+Locally qualified on `codex/phase6-mlx`; PR review and CI remain pending.
+See [the native MLX adapter, measurements and limits](mlx.md).
 
 Support MLX-compatible model bundles on Apple Silicon as a committed target.
 A model directory includes tokenizer/configuration, safetensors shards and MLX quantization metadata; a `.safetensors` suffix alone does not identify an MLX model.
