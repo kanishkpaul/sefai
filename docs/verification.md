@@ -5,7 +5,7 @@ Phases 0 and 1 are complete and published.
 Phase 1 has local CPU/Metal evidence, passing Windows/macOS/Linux CPU-model CI and successful CUDA/Vulkan compilation.
 Phase 2 merged through PRs #8–#11 as `33f1a8d2172db93eb0b8cb1759fa63c84d62d6ee` after the three platform checks and attribution passed.
 Phase 3 is merged through PR #12 with passing CI; its local evidence and the subsequent Phase 4 acceptance records are below.
-Physical cross-platform terminal and GPU execution qualification remain Phase 9 gates.
+Physical cross-platform terminal and GPU execution qualification remain Phase 10 gates.
 CUDA/Vulkan execution remains unverified.
 See the current Phase 1 results below; historical foundation results are retained separately.
 
@@ -129,7 +129,7 @@ The native CPU runtime also allocates a 47.54 MiB repack buffer alongside a 98.8
 Metal mode offloads 31/31 layers, allocates a 90 MiB Metal KV buffer, a 26.13 MiB Metal compute buffer and a 2.13 MiB CPU compute buffer.
 Linked Metal still initializes in CPU mode; zero graphics-driver allocation is not claimed.
 GPU/CPU mapped buffers can alias unified memory and must not be added as independent physical allocations.
-Disabling CPU repacking is a concrete Phase 9 memory/speed experiment, not an optimization claimed here.
+Disabling CPU repacking is a concrete Phase 10 memory/speed experiment, not an optimization claimed here.
 
 The raw three-repetition measurements are in [the benchmark record](benchmarks/2026-10-19-smollm2.json).
 Both runs use the same model, literal `" a"` repeated 512 times, context 4,096, batch 512, microbatch 128, 32 output tokens and four threads.
@@ -465,7 +465,7 @@ Unique normal dependency package counts on this Mac, including sefai, are 35 min
 The default GGUF dependency graph does not enable the MCP SDK, Tokio, HTTP or OAuth dependencies.
 The [footprint record](evidence/phase5/footprint.json) stores exploratory headless release measurements: 1,912,224 bytes minimal; 3,990,336 stdio; 8,135,696 HTTP; 8,523,792 OAuth.
 These use `--no-default-features`, the workspace release profile and aarch64 macOS; they exclude GGUF/TUI/native inference and model/server residency.
-They are not idle, peak process-tree or cross-platform memory measurements; those remain Phase 9 gates.
+They are not idle, peak process-tree or cross-platform memory measurements; those remain Phase 10 gates.
 
 ### CI and limits
 
@@ -476,6 +476,9 @@ The only `AGENTS.md` change is the phase-status sentence; that and the added wor
 Production-server interoperability, physical Windows/Linux terminal/process-tree behavior and the full RAM/VRAM matrix remain unqualified here.
 
 ## Phase 6 — Native MLX
+
+Published through merged PR #15 (`f41e395090a696aea3108d6481b7f21721ab0442`) after all checks passed, including macOS with its 60-minute cold-build allowance.
+The local qualification record below predates publication; its pending-status statements describe that earlier checkpoint.
 
 Local qualification uses Apple M5 with 16 GiB unified memory, macOS 27.0.1, Rust 1.96.1, Xcode 27.1 (27A9275), and Metal toolchain 27A266a (compiler 32023.921).
 The public cache borrows its model until cache drop; a compile-fail contract rejects dropping the model first.
@@ -509,7 +512,7 @@ Four actual 90 × 24 macOS PTYs with `NO_COLOR=1` cover Unicode generation, nati
 Every process exits zero and restores its original terminal attributes.
 The [terminal results](evidence/phase6/terminal-results.json) and [screen transcripts](evidence/phase6/terminal-transcripts.md) retain the observed behavior.
 These release-binary terminal runs preceded the final help-label shortening and model-bound cache lifetime restriction; the final Rust checks cover those changes.
-Physical terminal qualification across operating systems remains a Phase 9 gate.
+Physical terminal qualification across operating systems remains a Phase 10 gate.
 
 ### Matched reference and footprint
 
@@ -519,7 +522,7 @@ All 12 generated outputs match after stripping a leading-whitespace difference b
 The native path has lower host RSS but decodes 1.46–1.81× more slowly here.
 The longer Qwen case has about 8% higher macOS process peak footprint and 29% higher MLX peak-active allocation than the reference.
 This does not establish a consistent total-memory improvement.
-Full-cache capacity growth, transient allocation and decode throughput need profiling during Phase 9 before broader performance claims.
+Full-cache capacity growth, transient allocation and decode throughput need profiling during Phase 10 before broader performance claims.
 Native allocator counters overlap OS accounting and must not be added to RSS or described as separate VRAM.
 The 64 MiB cached-allocation setting is a retention target, not a hard peak-memory cap; the measured cached counter can exceed it.
 
@@ -571,5 +574,5 @@ Cancellation cannot interrupt a native load, shader compilation or GPU operation
 The full KV cache has no quantization, rotation, snapshotting or serialization in this adapter.
 Hosted CI compiles native MLX combinations and tests pure contracts plus combined-library GGUF CPU inference; it does not claim hosted MLX GPU execution.
 Windows/Linux MLX selection is an explicit unsupported-platform error; GPU vendor coverage remains provided by the selected GGUF backends and requires the planned physical matrix.
-Asset packaging and clean-machine installation remain Phase 11 gates, following complete testing and essential red teaming in Phase 10.
+Under the expanded build plan, asset packaging and clean-machine installation remain Phase 13 gates, following runtime unification in Phase 9, setup in Phase 11 and complete testing and essential red teaming in Phase 12.
 The changed workflow and status-only `AGENTS.md` edit require maintainer inspection before publication.
