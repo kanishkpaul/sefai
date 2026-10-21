@@ -46,7 +46,7 @@ target/release/sefai bench --model /absolute/path/to/bundle --backend mlx --outp
 ```
 
 The generated `mlx.metallib` must remain at the compiled path; copying the executable alone is not a relocatable installation.
-Asset packaging and installation are Phase 13 gates.
+Asset packaging and installation are Phase 14 gates.
 For both engines, use `--features mlx` with the default GGUF feature.
 Select MLX explicitly with `--backend mlx` or a Markdown model profile:
 

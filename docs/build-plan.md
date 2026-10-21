@@ -53,8 +53,9 @@ Do not build a compatibility layer for the retired desktop app.
 | 9 | Runtime unification | All five format targets share explicit profile, capability, lifecycle and reporting contracts |
 | 10 | Memory and platform qualification | OS/GPU matrix and footprint budgets have measured results |
 | 11 | Hardware-aware model selection and setup dashboard | A user can choose, acquire/import, configure and load a suitable model through the TUI |
-| 12, second-last | Full testing and essential red teaming | All features, parts and integrations, including setup, have release evidence |
-| 13, last | Repository structure, installation, README and release | Clean-machine install works and documentation matches the shipped product |
+| 12 | Safety and permission hardening | Authority, privacy, isolation limits and recovery controls have implementation evidence |
+| 13, second-last | Full testing and essential red teaming | All features, parts and integrations, including setup, have release evidence |
+| 14, last | Repository structure, installation, README and release | Clean-machine install works and documentation matches the shipped product |
 
 ### Phase 0 — Foundation and audit
 
@@ -294,11 +295,54 @@ Use explicit download actions, bounded optional calibration and honest measured/
 See [setup-plan.md](setup-plan.md) for the complete workflow, memory accounting, acquisition controls, proposed bounds and failure matrix.
 
 **Exit:** a new user can choose a suitable model for their task/hardware, understand its exact runtime/settings, acquire or import it, and generate through the existing TUI with recoverable failures and no hidden fallback.
-Re-measure footprint after both new phases; Phase 12 covers every added path before release.
+Re-measure footprint after unification and setup; Phase 12 hardens their safety boundaries and Phase 13 covers every added path before release.
 
-### Phase 12 — Full testing and essential red teaming (second-last)
+### Phase 12 — Safety and permission hardening
 
-Freeze feature scope and maintain a traceable table of every feature, module, backend, command, file schema and integration, its test, and its result.
+Consolidate safety across the completed runtimes, harness, MCP client and setup flow before the full Phase 13 verification pass.
+Safety controls and regression tests remain mandatory in every earlier phase; this phase closes cross-feature gaps rather than postponing basic protection.
+Build on existing approval, redaction, file validation and process supervision code; do not introduce a separate policy framework or an additional model to decide authority.
+
+Deliver this phase in three steps:
+
+1. Map assets, trust boundaries and authority for local inference, Markdown, native runtimes, optional workers, MCP and model acquisition.
+   Record each concrete abuse case, existing control, remaining gap, owning module and regression test in one safety checklist.
+   Prioritize unauthorized actions, secret disclosure, data loss and resource exhaustion; document residual risks explicitly.
+2. Implement the missing controls at their owning boundaries, using the smallest concrete changes.
+   Keep permissions in validated runtime configuration and explicit user actions; Markdown prose, recalled memory, model output, tool descriptions and remote metadata cannot grant or persist authority.
+   Bind each approval to the exact server/tool/arguments, destination and affected files; deny by default, revalidate immediately before dispatch and invalidate pending approvals after relevant configuration/catalog changes or disconnect.
+   Provide an explicit way to stop further dispatch and revoke a connection's authority; revocation does not undo completed actions or guarantee interruption of an in-flight native call.
+3. Qualify the controls with deterministic hostile fixtures and focused process/transport/file integration tests, record unsupported protections and hand the checklist to Phase 13.
+   Re-measure the safety additions against Phase 10 footprint results; no always-running safety service or unbounded audit store.
+
+Treat prompt injection and memory poisoning as attempts to cross these authority boundaries; a successful persuasion must still leave unauthorized actions blocked.
+Cover these boundaries:
+
+- **Privacy and outbound data:** show what prompt, tool arguments, selected files or other data can leave the machine and to which destination; an enabled connection is not blanket consent to export workspace content.
+  Keep credential references separate from Markdown content; restrict environment inheritance, scope credentials to their intended service and redact known secrets before display or persistence.
+  Do not promise detection of arbitrary or encoded secrets; raw native caches and crash dumps are not guaranteed to be scrubbed.
+- **Files and durable state:** preserve workspace boundaries, role grammar, atomic writes and revision checks; reject traversal, unsafe destinations and poisoned memory attempts that would alter authority.
+  Review path/symlink races where sefai owns writes; where a safe implementation cannot enforce containment, block the affected operation or disclose the remaining boundary before granting access.
+- **Processes and network:** constrain executable/arguments, inherited environment, lifetime, output and child cleanup; validate endpoints, redirects and credential forwarding, including local/private destinations that require deliberate trust.
+  Decide and record feasible OS isolation for optional workers and MCP servers on each supported platform; ship a tested narrow sandbox where practical, otherwise label the process as unsandboxed before launch.
+  Process supervision and MCP roots are not filesystem/network sandboxes; third-party processes may retain the user's OS privileges.
+- **Models, downloads and dependencies:** validate pinned artifact identity, manifest paths, sizes, hashes and supported format metadata before loading; stage incomplete downloads safely and never execute model-repository code or installers implicitly.
+  Review optional runtime/native parser dependencies, license notices and vulnerability findings; hashes prove identity/integrity relative to their source, not that a model or library is safe.
+  Keep native inference libraries an explicit trust boundary rather than claiming Rust makes malformed model files harmless.
+- **Terminal, resources and recovery:** sanitize untrusted display text, bound allocation/input/output/queues/retries and preserve terminal cleanup.
+  Denied, failed, cancelled and unknown-after-dispatch outcomes remain distinct; never replay a potentially completed write automatically.
+  Keep bounded, redacted Markdown action records separate from model-visible conversation; document retention/deletion controls without claiming tamper-proof logging against the same OS user.
+
+Use the [OWASP MCP security guidance](https://cheatsheetseries.owasp.org/cheatsheets/MCP_Security_Cheat_Sheet.html) and [least-privilege guidance for excessive agency](https://genai.owasp.org/llmrisk/llm062025-excessive-agency/) as review inputs, not as certification.
+Do not add keyword refusals, a model-opinion policy or generic jailbreak research to this runner phase.
+
+**Exit:** every checklist row has a verified control or an explicit blocked/unavailable capability; no known release-blocking unauthorized-action, secret-leak or data-loss gap is deferred to documentation alone.
+Record evidence for stale/revoked approvals, malicious Markdown/tool/model metadata, secret-bearing output, hostile paths/redirects, process exhaustion and interrupted writes across the affected configurations.
+Document isolation and native-runtime limits honestly; Phase 13 independently exercises these controls alongside every product feature.
+
+### Phase 13 — Full testing and essential red teaming (second-last)
+
+Freeze feature scope, exercise the Phase 12 safety checklist, and maintain a traceable table of every feature, module, backend, command, file schema and integration, its test, and its result.
 Unit tests remain model/network independent; integration jobs use pinned local fixtures and explicit hardware/model requirements.
 Run default/minimal feature combinations, supported backend builds, clean-session and long-session runs, replay, crash recovery, memory plateaus, dependency/license review and dependency vulnerability scanning.
 Measure load peak, long prefill, repeated turns, tool-heavy turns, cancellation, reset, model switching, unload and restart.
@@ -319,7 +363,7 @@ Success means runtime permissions and file/process/transport limits hold even wh
 **Exit:** no open release-blocking correctness, data-loss, secret-leak or unauthorized-action issue; all coverage rows have evidence; failed cases remain in the report.
 Use a deterministic core test suite plus separately recorded real-model/hardware results; model text is not a universal golden string across GPUs.
 
-### Phase 13 — Repository structure, installation and presentation (last)
+### Phase 14 — Repository structure, installation and presentation (last)
 
 Review the actual modules and ownership boundaries; remove unused code and organize only around responsibilities that now exist.
 Do not defer a buildable workspace until this phase: it is the final structural cleanup, not the first structure.
@@ -335,7 +379,7 @@ Sign/notarize where the distribution requires it and secrets are available; othe
 Make the README useful to three readers: a researcher inspecting reproducibility and model/backend constraints, an engineer installing/contributing, and a recruiter scanning the purpose, architecture and a real demo.
 Include a real TUI capture, concise quick start, tested support matrix, measured footprint/performance with reproduction commands, architecture links, limits, contribution guide and license.
 Avoid decorative badges that imply unsupported hardware or unmeasured performance.
-Keep release claims tied to Phase 12 evidence.
+Keep release claims tied to Phase 13 evidence.
 Any packaging fix that changes behavior reruns its affected tests before release.
 
 **Exit:** a fresh reader can install, run a supported local model, customize Markdown, connect an authorized MCP server, inspect memory and uninstall from the README alone.

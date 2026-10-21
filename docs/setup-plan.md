@@ -1,8 +1,9 @@
 # Runtime unification and model setup plan
 
-Planning only: implement runtime unification in Phase 9, qualify memory and platforms in Phase 10, then build the hardware-aware terminal setup dashboard in Phase 11 before Phase 12 full testing and essential red teaming.
+Planning only: implement runtime unification in Phase 9, qualify memory and platforms in Phase 10, then build the hardware-aware terminal setup dashboard in Phase 11.
+Phase 12 hardens safety and permissions before Phase 13 full testing and essential red teaming.
 GGUF, MLX, ONNX, GPTQ and AWQ remain supported-format targets; this plan does not add training, checkpoint conversion or arbitrary ONNX graph execution.
-Phase 13 remains repository organization, installation and presentation.
+Phase 14 remains repository organization, installation and presentation.
 
 ## Decisions from research
 
@@ -168,10 +169,10 @@ Exit when a new user can inspect hardware, compare a supported shortlist, acquir
 Verify all five format targets on their declared hardware, plus CPU-only, multiple/integrated GPUs, unavailable telemetry, unsupported packing/export, missing runtime, low RAM/disk, stale estimates, offline/gated downloads, interrupted acquisition, hash mismatch, profile conflict, failed load and switch/unload recovery.
 Test missing/stale metadata, malicious paths/redirects, deceptive model-card text, secret redaction, terminal sanitization, keyboard-only/narrow/plain modes and deny-default approvals.
 Track coverage by configuration, not a blanket cross-platform badge.
-Re-measure idle and active footprint after these phases; final Phase 12 testing includes both new phases and blocks unsupported release claims.
+Re-measure idle and active footprint after these phases; Phase 12 hardens their trust boundaries, and final Phase 13 testing includes unification, setup and safety controls and blocks unsupported release claims.
 
 ## Work deliberately outside these phases
 
 No new inference format, fine-tuning, quantization service, model conversion, general model marketplace, all-disk model crawl, multi-model scheduler, driver manager or arbitrary native-runtime plugin loader.
 Optional runtimes remain optional; the dashboard reports required packages rather than installing them behind the user's back.
-Phase 13 still owns final distributable artifacts and clean-machine installation, including optional runtime assets.
+Phase 14 still owns final distributable artifacts and clean-machine installation, including optional runtime assets.
