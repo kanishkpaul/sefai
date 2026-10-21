@@ -1,0 +1,28 @@
+{
+  "results": [
+    {
+      "case": "unicode-switch-stats",
+      "exit": 0,
+      "terminal_restored": true,
+      "bytes": 11367
+    },
+    {
+      "case": "cancel",
+      "exit": 0,
+      "terminal_restored": true,
+      "bytes": 5311
+    },
+    {
+      "case": "resume",
+      "exit": 0,
+      "terminal_restored": true,
+      "bytes": 4067
+    },
+    {
+      "case": "mlx-to-gguf",
+      "exit": 0,
+      "terminal_restored": true,
+      "bytes": 6171
+    }
+  ]
+}

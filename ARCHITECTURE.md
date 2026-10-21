@@ -6,9 +6,11 @@ The TUI is its permanent home.
 
 ## What exists
 
-`crates/core` contains dependency-free `Message`, `Role`, `Prompt` and `Section` types, including a distinct tool-result role.
+`crates/core` contains bounded inference settings and statistics alongside dependency-free `Message`, `Role`, `Prompt` and `Section` types, including a distinct tool-result role.
 `crates/engine-llama` owns the exactly pinned llama.cpp binding, GGUF model loading, native templates/tokenizer, bounded prefill, sampling and streaming.
 `crates/sefai` composes the `run`, `bench`, `devices` and minimal `prompt` commands, cancellation and terminal sanitization.
+The optional `crates/engine-mlx` adapter owns native MLX bundle validation, tokenization, streaming and cache state; its named-model qualification and limits are recorded in [the MLX guide](docs/mlx.md).
+The binary selects between concrete adapters, with no cross-adapter runtime dependency.
 An engine lends one model at a time; one-shot requests use a temporary context, while interactive callers may retain one model-bound prefix cache.
 The binary workspace module validates typed Markdown and composes selected instructions, model profiles and bounded literal memory recall.
 Workspace writes use same-directory atomic replacement, an OS file lock and exact revision snapshots.

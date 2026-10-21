@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
 members = ["crates/*"]
+exclude = ["vendor/mlx-sys"]
 default-members = ["crates/sefai"]
 
 [workspace.package]
@@ -28,3 +29,6 @@ unwrap_used = "warn"
 codegen-units = 1
 lto = "thin"
 strip = "symbols"
+
+[patch."https://github.com/oxiglade/mlx-rs"]
+mlx-sys = { path = "vendor/mlx-sys" }

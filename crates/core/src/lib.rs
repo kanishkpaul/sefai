@@ -9,3 +9,6 @@ mod prompt;
 
 pub use message::{Message, Role};
 pub use prompt::{Prompt, Section};
+
+mod inference;
+pub use inference::{LimitsError, PROMPT_BYTES_MAX, Settings, Statistics, Stop};

@@ -10,7 +10,10 @@ publish.workspace = true
 [features]
 default = ["gguf"]
 harness-model-tests = ["gguf"]
-gguf = ["dep:sefai-engine-llama", "dep:ctrlc", "dep:ratatui", "dep:crossterm", "dep:unicode-segmentation", "dep:serde_json"]
+gguf = ["inference", "dep:sefai-engine-llama"]
+mlx = ["inference", "dep:sefai-engine-mlx", "sefai-engine-mlx/runtime"]
+mlx-model-tests = ["mlx"]
+inference = ["dep:ctrlc", "dep:ratatui", "dep:crossterm", "dep:unicode-segmentation", "dep:serde_json"]
 mcp-fixture-tests = ["mcp-oauth"]
 mcp-oauth = ["mcp-http", "rmcp/auth"]
 mcp-http = ["mcp", "rmcp/transport-streamable-http-client", "dep:reqwest", "dep:futures-util", "dep:http", "dep:sse-stream"]
@@ -29,6 +32,7 @@ tokio = { version = "1", optional = true, features = ["rt", "time", "process", "
 process-wrap = { version = "10", optional = true, default-features = false, features = ["tokio1", "process-group", "job-object", "kill-on-drop"] }
 serde_json = { version = "1", optional = true }
 sefai-engine-llama = { path = "../engine-llama", optional = true, default-features = false }
+sefai-engine-mlx = { path = "../engine-mlx", optional = true }
 sefai-core.workspace = true
 
 clap.workspace = true
@@ -49,3 +53,7 @@ required-features = ["harness-model-tests"]
 [[test]]
 name = "mcp_transport"
 required-features = ["mcp-fixture-tests"]
+
+[[test]]
+name = "harness_mlx"
+required-features = ["mlx-model-tests"]

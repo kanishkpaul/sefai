@@ -1,11 +1,13 @@
-#[cfg(feature = "gguf")]
+#[cfg(feature = "inference")]
+mod engine;
+#[cfg(feature = "inference")]
 mod harness;
 #[cfg(feature = "mcp")]
 mod mcp;
-#[cfg(feature = "gguf")]
+#[cfg(feature = "inference")]
 mod runner;
 mod term;
-#[cfg(feature = "gguf")]
+#[cfg(feature = "inference")]
 mod tui;
 mod workspace;
 
@@ -24,7 +26,7 @@ struct Cli {
 #[derive(Subcommand)]
 enum Command {
     /// Open the persistent terminal conversation (use --plain for line input).
-    #[cfg(feature = "gguf")]
+    #[cfg(feature = "inference")]
     Chat(tui::Options),
     /// Validate Markdown workspace files without executing their contents.
     Workspace {
@@ -37,13 +39,13 @@ enum Command {
     /// Print a prompt without loading a model.
     Prompt { message: String },
     /// List available local inference devices.
-    #[cfg(feature = "gguf")]
+    #[cfg(feature = "inference")]
     Devices,
-    /// Stream a reply from a local GGUF model.
-    #[cfg(feature = "gguf")]
+    /// Stream a reply from a local model.
+    #[cfg(feature = "inference")]
     Run(runner::Options),
     /// Measure prefill and generation with one loaded model.
-    #[cfg(feature = "gguf")]
+    #[cfg(feature = "inference")]
     Bench {
         #[command(flatten)]
         options: runner::Options,
@@ -116,16 +118,16 @@ fn main() -> ExitCode {
 }
 
 fn execute(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
-    #[cfg(feature = "gguf")]
+    #[cfg(feature = "inference")]
     let command = cli
         .command
         .unwrap_or(Command::Chat(tui::Options::default()));
-    #[cfg(not(feature = "gguf"))]
+    #[cfg(not(feature = "inference"))]
     let command = cli
         .command
-        .ok_or("choose a command; chat requires the gguf feature")?;
+        .ok_or("choose a command; chat requires an inference feature")?;
     match command {
-        #[cfg(feature = "gguf")]
+        #[cfg(feature = "inference")]
         Command::Chat(options) => tui::run(cli.selection, options)?,
         Command::Workspace { action } => {
             let root = cli.selection.root()?;
@@ -167,11 +169,11 @@ fn execute(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
         Command::Prompt { message } => {
             print_messages(cli.selection.prepare(message)?.prompt.to_messages())?;
         }
-        #[cfg(feature = "gguf")]
+        #[cfg(feature = "inference")]
         Command::Devices => runner::devices()?,
-        #[cfg(feature = "gguf")]
+        #[cfg(feature = "inference")]
         Command::Run(options) => runner::run(options, runner::Mode::Reply, &cli.selection)?,
-        #[cfg(feature = "gguf")]
+        #[cfg(feature = "inference")]
         Command::Bench {
             options,
             repetitions,

@@ -123,23 +123,7 @@ impl Input<'_> {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Stop {
-    EndOfGeneration,
-    OutputLimit,
-    Cancelled,
-}
-
-#[derive(Debug)]
-pub struct Statistics {
-    pub prompt_tokens: usize,
-    /// Includes a sampled EOG token when generation ends with one.
-    pub generated_tokens: u32,
-    pub prefill: Duration,
-    /// Includes sampling and the caller's output callback, excluding prefill.
-    pub generation: Duration,
-    pub stop: Stop,
-}
+pub use sefai_core::{Statistics, Stop};
 
 impl Engine {
     /// Initializes the process-wide backend; only one engine may exist at a time.

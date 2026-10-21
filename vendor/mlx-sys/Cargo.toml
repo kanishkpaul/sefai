@@ -1,0 +1,35 @@
+[package]
+name = "mlx-sys"
+version = "0.6.0" # Follows the pinned mlx-c release (v0.6.0-7-gc74db53, MLX 0.32.2).
+authors = ["Minghua Wu <michael.wu1107@gmail.com>", "David Chavez <david@dcvz.io>"]
+edition = "2021"
+
+description = "Low-level interface and binding generation for the mlx library"
+repository = "https://github.com/oxiglade/mlx-rs"
+keywords = ["mlx", "deep-learning", "machine-learning"]
+categories = ["science"]
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+# Exposes build-script metadata to dependents as DEP_MLX_* (see README.md).
+links = "mlx"
+
+[package.metadata.docs.rs]
+targets = [
+  "aarch64-apple-darwin",
+  "aarch64-apple-ios",
+  "aarch64-apple-ios-sim",
+]
+
+[features]
+default = ["accelerate", "metal"]
+
+accelerate = []
+metal = []
+metal-jit = ["metal"]
+
+[dependencies]
+
+[build-dependencies]
+bindgen = "0.72.1"
+cmake = "0.1"
+cc = "1"

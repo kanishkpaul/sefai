@@ -362,7 +362,7 @@ fn windows_junction_cannot_escape_the_workspace() {
     assert!(String::from_utf8_lossy(&output.stderr).contains("escapes workspace"));
 }
 
-#[cfg(feature = "gguf")]
+#[cfg(feature = "inference")]
 #[test]
 fn raw_mode_rejects_history_before_loading_weights() {
     let workspace = Workspace::new();
@@ -380,7 +380,7 @@ fn raw_mode_rejects_history_before_loading_weights() {
     assert!(String::from_utf8_lossy(&output.stderr).contains("raw mode cannot discard"));
 }
 
-#[cfg(feature = "gguf")]
+#[cfg(feature = "inference")]
 #[test]
 fn raw_mode_rejects_instructions_before_loading_weights() {
     let workspace = Workspace::new();

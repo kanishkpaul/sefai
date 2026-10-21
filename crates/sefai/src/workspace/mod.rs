@@ -1,12 +1,12 @@
 //! Markdown is authoritative; loading instructions never grants tool authority.
 
-#[cfg(feature = "gguf")]
+#[cfg(feature = "inference")]
 mod conversation;
 mod files;
 mod schema;
 mod session;
 
-#[cfg(feature = "gguf")]
+#[cfg(feature = "inference")]
 pub use schema::Backend;
 #[cfg(feature = "mcp-oauth")]
 pub use schema::OAuth;
@@ -56,7 +56,7 @@ pub struct Prepared {
 }
 
 impl Selection {
-    #[cfg(feature = "gguf")]
+    #[cfg(feature = "inference")]
     pub fn validate_id(id: &str) -> io::Result<()> {
         schema::id(id)
     }
@@ -130,10 +130,12 @@ impl Selection {
             let text = workspace.read(&path)?;
             let (model, _) = schema::parse::<Model>(&text).map_err(|error| at(&path, error))?;
             workspace.validate_model(&path, &model)?;
-            if !matches!(model.format, Format::Gguf) {
+            if !(matches!(model.format, Format::Gguf)
+                || cfg!(feature = "mlx") && matches!(model.format, Format::Mlx))
+            {
                 return Err(at(
                     &path,
-                    "format: this build runs only gguf; no automatic conversion",
+                    "format: engine is not enabled in this build; no automatic conversion",
                 ));
             }
             result.model = Some(if model.path.is_absolute() {
@@ -142,6 +144,19 @@ impl Selection {
                 workspace.root.join(model.path)
             });
             result.runner.overlay(&model.runner);
+            if matches!(model.format, Format::Mlx) {
+                if !matches!(result.runner.backend, None | Some(schema::Backend::Mlx))
+                    || result.runner.device.is_some()
+                {
+                    return Err(at(
+                        &path,
+                        "mlx format requires backend mlx without a device index",
+                    ));
+                }
+                result.runner.backend = Some(schema::Backend::Mlx);
+            } else if matches!(result.runner.backend, Some(schema::Backend::Mlx)) {
+                return Err(at(&path, "gguf format cannot use backend mlx"));
+            }
         }
         workspace.instructions(&mut result.prompt)?;
         for id in &self.skill {
