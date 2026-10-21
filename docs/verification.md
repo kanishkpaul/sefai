@@ -574,5 +574,5 @@ Cancellation cannot interrupt a native load, shader compilation or GPU operation
 The full KV cache has no quantization, rotation, snapshotting or serialization in this adapter.
 Hosted CI compiles native MLX combinations and tests pure contracts plus combined-library GGUF CPU inference; it does not claim hosted MLX GPU execution.
 Windows/Linux MLX selection is an explicit unsupported-platform error; GPU vendor coverage remains provided by the selected GGUF backends and requires the planned physical matrix.
-Under the expanded build plan, asset packaging and clean-machine installation remain Phase 13 gates, following runtime unification in Phase 9, setup in Phase 11 and complete testing and essential red teaming in Phase 12.
+Under the expanded build plan, asset packaging and clean-machine installation remain Phase 14 gates, following runtime unification in Phase 9, setup in Phase 11, safety and permission hardening in Phase 12, and complete testing and essential red teaming in Phase 13.
 The changed workflow and status-only `AGENTS.md` edit require maintainer inspection before publication.

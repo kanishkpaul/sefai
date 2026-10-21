@@ -3,14 +3,21 @@
 A small Rust LLM runner and terminal harness, built around files you can read and edit.
 The goal is low RAM/VRAM use, a persistent TUI, Markdown-owned prompts/skills/preferences/memory, and explicit MCP connections.
 
-**Status: Phases 1–5 merged; Phase 6 native MLX is locally qualified; PR review and CI are pending.**
+## 🏗️ Under construction
+
+sefai is in active development and is not ready for a stable release.
+Phases 1–6 are merged: the GGUF runner, Markdown workspace, terminal TUI, bounded harness, MCP client and optional native MLX adapter are implemented.
+ONNX and GPTQ/AWQ support, runtime unification, hardware-aware setup and dedicated safety hardening remain planned.
+Follow the [build plan](docs/build-plan.md) for scope and acceptance gates.
+
 Pinned-model CPU tests pass on Windows, macOS and Linux; local Metal tests and CUDA/Vulkan compilation also pass.
-CUDA/Vulkan execution and the full hardware matrix remain later qualification gates.
-Markdown schema validation and selected instruction/profile loading are implemented.
-Safe writes, explicit memory/session persistence and bounded session reads are implemented.
-The terminal conversation, model worker and automatic Markdown turn persistence are implemented locally.
-Optional [MCP connections](docs/mcp.md) add supervised local servers, Streamable HTTP and OAuth with exact per-call approval.
-See [the workspace guide](docs/workspace.md) for schema and selection controls.
+GPU execution coverage depends on the backend and named model; compilation does not establish CUDA/Vulkan runtime support.
+The complete hardware matrix and full-product testing remain open gates; see [verification](docs/verification.md) for evidence and limits.
+There is no published installer yet; use the source-build instructions below.
+
+Models run locally, but explicitly enabled [MCP connections](docs/mcp.md) can launch third-party processes or send data to remote services.
+Tool calls require exact per-call approval; third-party servers are not automatically sandboxed.
+Keep credentials out of Markdown and review the documented limits before enabling connections.
 
 ## Direction
 
@@ -39,7 +46,6 @@ The default runner loads the chosen local GGUF and streams a reply; CPU is the e
 The optional [native MLX adapter](docs/mlx.md) runs named Apple Silicon safetensors bundles through the same terminal harness.
 See the [runner guide](docs/runner.md) for GPU builds, limits, benchmarks and model tests.
 `cargo run --locked --no-default-features -- prompt hello` retains the diagnostic without native inference dependencies.
-There is no published installer yet.
 
 ## Customize with Markdown
 
@@ -59,7 +65,8 @@ The [terminal guide](docs/tui.md) documents the interactive controls, limits and
 
 | Document | Purpose |
 | --- | --- |
-| [Build plan](docs/build-plan.md) | Phases, retained scope and acceptance gates |
+| [Build plan](docs/build-plan.md) | Phases, retained scope and acceptance gates, including Phase 12 safety hardening |
+| [Runtime and setup plan](docs/setup-plan.md) | Shared backend workflow, hardware-aware model selection and acquisition controls |
 | [Bug-fix plan](docs/bug-fix-plan.md) | Main-branch audit and ordered regression work |
 | [Research](docs/research/2026-10-19-inference-and-engineering.md) | Formats, memory arithmetic, Rust practice and sources |
 | [Bounded harness](docs/harness.md) | Tool protocol, exact approvals, budgets and recovery |
