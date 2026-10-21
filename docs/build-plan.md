@@ -4,7 +4,7 @@ Build a small Rust LLM runner and terminal harness, with Markdown-owned customiz
 GGUF, ONNX, GPTQ, AWQ, and MLX are release targets.
 Phase 1 is complete: the published GGUF runner passes local CPU/Metal tests, Windows/macOS/Linux CPU-model CI and CUDA/Vulkan compile checks.
 Phase 2 is merged through PRs #8–#11 with passing Windows, macOS, Linux and attribution checks.
-Phases 3–5 are merged; Phase 6 native MLX is locally qualified with PR review and CI pending.
+Phases 3–6 are merged; Phase 6 native MLX is published through PR #15 with passing CI.
 See [phase2-closeout.md](phase2-closeout.md) for the acceptance matrix and stack order.
 Complete runner correctness before adding harness features.
 Every phase includes regression tests; the second-last phase is a complete product verification pass, and the last is repository organization, installation, and presentation.
@@ -50,9 +50,11 @@ Do not build a compatibility layer for the retired desktop app.
 | 6 | MLX adapter | A declared Apple Silicon model set runs through the same harness |
 | 7 | ONNX adapter | A declared decoder-model set generates with explicit cache and provider control |
 | 8 | GPTQ and AWQ adapter | Real quantized checkpoints generate through a qualified runtime |
-| 9 | Memory and platform qualification | OS/GPU matrix and footprint budgets have measured results |
-| 10, second-last | Full testing and essential red teaming | All features, parts and integrations have release evidence |
-| 11, last | Repository structure, installation, README and release | Clean-machine install works and documentation matches the shipped product |
+| 9 | Runtime unification | All five format targets share explicit profile, capability, lifecycle and reporting contracts |
+| 10 | Memory and platform qualification | OS/GPU matrix and footprint budgets have measured results |
+| 11 | Hardware-aware model selection and setup dashboard | A user can choose, acquire/import, configure and load a suitable model through the TUI |
+| 12, second-last | Full testing and essential red teaming | All features, parts and integrations, including setup, have release evidence |
+| 13, last | Repository structure, installation, README and release | Clean-machine install works and documentation matches the shipped product |
 
 ### Phase 0 — Foundation and audit
 
@@ -73,7 +75,7 @@ Detailed evidence belongs in [verification.md](verification.md).
 
 **Complete:** the runner is published through merged PR #6; local CPU/Metal regressions, cross-platform CPU-model CI and CUDA/Vulkan compilation have passed.
 Merged PR #7 retains those passing checks with updated CI actions and the repaired attribution workflow.
-CUDA/Vulkan execution remains a Phase 9 hardware gate.
+CUDA/Vulkan execution remains a Phase 10 hardware gate.
 The [runner guide](runner.md) describes the implemented API and limits; [verification.md](verification.md) records results and failures.
 The Phase 1 gate is closed; Phase 2 implementation is recorded below.
 
@@ -137,7 +139,7 @@ Record schema fixtures and migration/rollback behavior.
 
 ### Phase 3 — Terminal home
 
-**Merged:** PR #12 publishes the terminal implementation with passing CI; physical Windows/Linux terminal qualification remains a Phase 9 gate.
+**Merged:** PR #12 publishes the terminal implementation with passing CI; physical Windows/Linux terminal qualification remains a Phase 10 gate.
 See [tui.md](tui.md) for implemented controls and explicit limits.
 
 Use Ratatui with Crossterm, and `design/rust/theme.rs` as palette/identity authority.
@@ -206,7 +208,7 @@ A real local server and an authenticated remote server are tested with recorded 
 
 ### Phase 6 — MLX
 
-Locally qualified on `codex/phase6-mlx`; PR review and CI remain pending.
+Merged through PR #15 with passing platform, attribution and CUDA/Vulkan compilation checks.
 See [the native MLX adapter, measurements and limits](mlx.md).
 
 Support MLX-compatible model bundles on Apple Silicon as a committed target.
@@ -253,8 +255,19 @@ Conversion to GGUF does not count as GPTQ/AWQ runtime support.
 Unsupported packing/hardware fails clearly.
 Compare against the selected runtime with equal context, cache dtype and single-request concurrency.
 
-### Phase 9 — Footprint and platform qualification
+### Phase 9 — Runtime unification
 
+Consolidate demonstrated adapter differences after the GGUF, MLX, ONNX and GPTQ/AWQ implementations exist.
+Keep baseline measurements during each adapter phase; run the full Phase 10 platform and memory matrix against the unified implementation.
+Keep one Markdown profile workflow, explicit runtime/device/provider selection, capability-aware settings, bounded model lifecycle and comparable statistics through the existing binary dispatch.
+Native formats/caches stay backend-owned; no implicit conversion, hidden fallback, mandatory runtimes or speculative plugin framework.
+See [setup-plan.md](setup-plan.md) for researched constraints, ownership, delivery steps and acceptance cases.
+
+**Exit:** the same terminal/harness lifecycle handles every qualified format, reports unsupported capabilities and missing requirements precisely, and passes switching/unload/recovery contracts on declared hardware.
+
+### Phase 10 — Footprint and platform qualification
+
+Qualify the unified Phase 9 implementation before using its results in the Phase 11 setup dashboard.
 Apply the experiments in [research/2026-10-19-inference-and-engineering.md](research/2026-10-19-inference-and-engineering.md).
 Use one active model, bounded context/output, microbatch tuning, supported Flash Attention, explicit KV precision, stable prompt ordering and bounded scrollback first.
 Do not add speculative decoding, eager embeddings, multi-model residency or persistent KV snapshots until their total memory benefit is demonstrated.
@@ -273,7 +286,17 @@ List exact devices, drivers and backend revisions.
 ROCm, ONNX providers and GPTQ/AWQ kernels are separately labeled qualified/experimental/unavailable.
 Hosted CI compilation is not proof that a GPU backend ran.
 
-### Phase 10 — Full testing and essential red teaming (second-last)
+### Phase 11 — Hardware-aware model selection and setup dashboard
+
+Build a focused terminal setup view on the unified contracts and measured Phase 10 data; the conversation remains the permanent home.
+Inspect hardware/runtime availability, import local models or use a small offline Markdown recommendation catalog, explain compatibility and memory fit, preview acquisition/settings, and save/load a chosen Markdown profile.
+Use explicit download actions, bounded optional calibration and honest measured/estimated/unknown labels; no invented compatibility percentage or universal best-model claim.
+See [setup-plan.md](setup-plan.md) for the complete workflow, memory accounting, acquisition controls, proposed bounds and failure matrix.
+
+**Exit:** a new user can choose a suitable model for their task/hardware, understand its exact runtime/settings, acquire or import it, and generate through the existing TUI with recoverable failures and no hidden fallback.
+Re-measure footprint after both new phases; Phase 12 covers every added path before release.
+
+### Phase 12 — Full testing and essential red teaming (second-last)
 
 Freeze feature scope and maintain a traceable table of every feature, module, backend, command, file schema and integration, its test, and its result.
 Unit tests remain model/network independent; integration jobs use pinned local fixtures and explicit hardware/model requirements.
@@ -296,7 +319,7 @@ Success means runtime permissions and file/process/transport limits hold even wh
 **Exit:** no open release-blocking correctness, data-loss, secret-leak or unauthorized-action issue; all coverage rows have evidence; failed cases remain in the report.
 Use a deterministic core test suite plus separately recorded real-model/hardware results; model text is not a universal golden string across GPUs.
 
-### Phase 11 — Repository structure, installation and presentation (last)
+### Phase 13 — Repository structure, installation and presentation (last)
 
 Review the actual modules and ownership boundaries; remove unused code and organize only around responsibilities that now exist.
 Do not defer a buildable workspace until this phase: it is the final structural cleanup, not the first structure.
@@ -312,7 +335,7 @@ Sign/notarize where the distribution requires it and secrets are available; othe
 Make the README useful to three readers: a researcher inspecting reproducibility and model/backend constraints, an engineer installing/contributing, and a recruiter scanning the purpose, architecture and a real demo.
 Include a real TUI capture, concise quick start, tested support matrix, measured footprint/performance with reproduction commands, architecture links, limits, contribution guide and license.
 Avoid decorative badges that imply unsupported hardware or unmeasured performance.
-Keep release claims tied to Phase 10 evidence.
+Keep release claims tied to Phase 12 evidence.
 Any packaging fix that changes behavior reruns its affected tests before release.
 
 **Exit:** a fresh reader can install, run a supported local model, customize Markdown, connect an authorized MCP server, inspect memory and uninstall from the README alone.

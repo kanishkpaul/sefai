@@ -183,6 +183,6 @@ The adapter also prevents response bodies and authentication challenges from bei
 
 Local process, authenticated HTTP/OAuth fixture, real-GGUF and terminal evidence is recorded in [verification.md](verification.md).
 The user's selected qualification target is local/dummy servers; this is not evidence of compatibility with an unrelated production service.
-Physical Windows/Linux process-tree behavior and the full footprint/hardware matrix retain their Phase 9 gates.
+Physical Windows/Linux process-tree behavior and the full footprint/hardware matrix retain their Phase 10 gates.
 
 Sources: [official Rust SDK](https://docs.rs/crate/rmcp/3.6.0), [pinned transport specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports), [lifecycle](https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle), [authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization).

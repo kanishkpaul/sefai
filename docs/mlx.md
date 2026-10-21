@@ -1,6 +1,6 @@
 # Native MLX adapter
 
-Native MLX is implemented and locally qualified on Apple Silicon; PR review and hosted CI remain pending.
+Native MLX is implemented, locally qualified on Apple Silicon and published through merged PR #15 with passing hosted CI.
 The implementation uses Rust throughout the product runtime.
 
 ## Decision and scope
@@ -46,7 +46,7 @@ target/release/sefai bench --model /absolute/path/to/bundle --backend mlx --outp
 ```
 
 The generated `mlx.metallib` must remain at the compiled path; copying the executable alone is not a relocatable installation.
-Asset packaging and installation are Phase 11 gates.
+Asset packaging and installation are Phase 13 gates.
 For both engines, use `--features mlx` with the default GGUF feature.
 Select MLX explicitly with `--backend mlx` or a Markdown model profile:
 
@@ -134,7 +134,7 @@ MLX peak-active counters are process-global; they overlap OS accounting and must
 
 Native host RSS is lower, but decode is 1.46–1.81× slower here.
 The longer Qwen case has about 8% higher process peak footprint and 29% higher MLX peak-active bytes than the reference.
-This is not a consistent total-memory win; longer-context KV storage and temporary allocations remain a Phase 9 profiling gate.
+This is not a consistent total-memory win; longer-context KV storage and temporary allocations remain a Phase 10 profiling gate.
 The selected upstream cache doubles full-cache capacity and can retain old buffers during transactional updates; the measurements do not attribute every byte of the gap to one mechanism.
 All 12 outputs match after removing a leading whitespace difference; raw output bytes are not identical because the incremental detokenizers handle initial whitespace differently.
 This small fixed workload on one Mac does not establish performance for other models, contexts or GPUs.
