@@ -58,6 +58,8 @@ pub fn devices() -> Result<(), Box<dyn std::error::Error>> {
     }
     #[cfg(all(feature = "mlx", target_os = "macos", target_arch = "aarch64"))]
     println!("mlx\tMetal\tcompiled MLX target; availability checked on load");
+    #[cfg(feature = "onnx")]
+    println!("onnx\tCPU\tcompiled ONNX Runtime CPU execution provider");
     Ok(())
 }
 
@@ -164,27 +166,6 @@ pub(crate) fn resolve(
     mut configured: Runner,
 ) -> Result<(Device, Settings), Box<dyn std::error::Error>> {
     configured.overlay(&overrides);
-    let device = match (
-        configured.backend.unwrap_or(Backend::Cpu),
-        configured.device,
-    ) {
-        (Backend::Mlx, None) => Device::Mlx,
-        (Backend::Mlx, Some(_)) => {
-            return Err("mlx selects the Apple GPU and does not accept --device".into());
-        }
-        (Backend::Cpu, None) => Device::Cpu,
-        (Backend::Cpu, Some(_)) => return Err("cpu mode does not accept --device".into()),
-        (backend, Some(index)) => Device::Gpu {
-            index,
-            backend: match backend {
-                Backend::Metal => GpuBackend::Metal,
-                Backend::Cuda => GpuBackend::Cuda,
-                Backend::Vulkan => GpuBackend::Vulkan,
-                Backend::Cpu | Backend::Mlx => unreachable!(),
-            },
-        },
-        (_, None) => return Err("gpu mode requires --device from `sefai devices`".into()),
-    };
     let defaults = Settings::default();
     let settings = Settings {
         context_tokens: configured.context.unwrap_or(defaults.context_tokens),
@@ -194,6 +175,35 @@ pub(crate) fn resolve(
         threads: configured.threads.unwrap_or_else(|| {
             std::thread::available_parallelism().map_or(1, |count| count.get().min(256) as u32)
         }),
+    };
+    let device = match (
+        configured.backend.unwrap_or(Backend::Cpu),
+        configured.device,
+    ) {
+        (Backend::Mlx, None) => Device::Mlx,
+        (Backend::Mlx, Some(_)) => {
+            return Err("mlx selects the Apple GPU and does not accept --device".into());
+        }
+        (Backend::Onnx, None) => Device::Onnx {
+            threads: settings.threads,
+        },
+        (Backend::Onnx, Some(_)) => {
+            return Err(
+                "onnx selects the cpu execution provider and does not accept --device".into(),
+            );
+        }
+        (Backend::Cpu, None) => Device::Cpu,
+        (Backend::Cpu, Some(_)) => return Err("cpu mode does not accept --device".into()),
+        (backend, Some(index)) => Device::Gpu {
+            index,
+            backend: match backend {
+                Backend::Metal => GpuBackend::Metal,
+                Backend::Cuda => GpuBackend::Cuda,
+                Backend::Vulkan => GpuBackend::Vulkan,
+                Backend::Cpu | Backend::Mlx | Backend::Onnx => unreachable!(),
+            },
+        },
+        (_, None) => return Err("gpu mode requires --device from `sefai devices`".into()),
     };
     settings.validate(1, u32::MAX)?;
     Ok((device, settings))
@@ -244,5 +254,18 @@ mod tests {
             ..Runner::default()
         };
         assert!(resolve(overrides, Runner::default()).is_err());
+    }
+
+    #[test]
+    fn onnx_binds_the_resolved_thread_count_at_load() {
+        let overrides = Runner {
+            backend: Some(Backend::Onnx),
+            threads: Some(3),
+            ..Runner::default()
+        };
+        assert_eq!(
+            resolve(overrides, Runner::default()).expect("resolve").0,
+            Device::Onnx { threads: 3 }
+        );
     }
 }

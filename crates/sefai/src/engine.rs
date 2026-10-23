@@ -20,6 +20,10 @@ pub enum Device {
         index: usize,
     },
     Mlx,
+    /// ONNX Runtime fixes intra-op threads when the session is created.
+    Onnx {
+        threads: u32,
+    },
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GpuBackend {
@@ -35,6 +39,7 @@ pub struct Engine {
 
 #[cfg(any(
     feature = "gguf",
+    feature = "onnx",
     all(feature = "mlx", target_os = "macos", target_arch = "aarch64")
 ))]
 pub enum Model<'engine> {
@@ -42,10 +47,13 @@ pub enum Model<'engine> {
     Llama(sefai_engine_llama::Model<'engine>),
     #[cfg(all(feature = "mlx", target_os = "macos", target_arch = "aarch64"))]
     Mlx(Box<sefai_engine_mlx::Model>, PhantomData<&'engine ()>),
+    #[cfg(feature = "onnx")]
+    Onnx(Box<sefai_engine_onnx::Model>, PhantomData<&'engine ()>),
 }
 
 #[cfg(any(
     feature = "gguf",
+    feature = "onnx",
     all(feature = "mlx", target_os = "macos", target_arch = "aarch64")
 ))]
 pub enum Input<'model> {
@@ -53,6 +61,8 @@ pub enum Input<'model> {
     Llama(sefai_engine_llama::Input<'model>),
     #[cfg(all(feature = "mlx", target_os = "macos", target_arch = "aarch64"))]
     Mlx(sefai_engine_mlx::Input<'model>),
+    #[cfg(feature = "onnx")]
+    Onnx(sefai_engine_onnx::Input<'model>),
 }
 
 #[derive(Default)]
@@ -61,6 +71,8 @@ pub struct Cache<'model> {
     llama: sefai_engine_llama::Cache<'model>,
     #[cfg(all(feature = "mlx", target_os = "macos", target_arch = "aarch64"))]
     mlx: sefai_engine_mlx::Cache<'model>,
+    #[cfg(feature = "onnx")]
+    onnx: sefai_engine_onnx::Cache<'model>,
     lifetime: PhantomData<&'model ()>,
 }
 impl Cache<'_> {
@@ -69,6 +81,8 @@ impl Cache<'_> {
         self.llama.clear();
         #[cfg(all(feature = "mlx", target_os = "macos", target_arch = "aarch64"))]
         self.mlx.clear();
+        #[cfg(feature = "onnx")]
+        self.onnx.clear();
     }
 }
 
@@ -85,6 +99,18 @@ impl Engine {
         device: Device,
         cancelled: Arc<AtomicBool>,
     ) -> Result<Model<'_>> {
+        if let Device::Onnx { threads } = device {
+            #[cfg(feature = "onnx")]
+            return Ok(Model::Onnx(
+                Box::new(sefai_engine_onnx::Model::load(path, threads, cancelled)?),
+                PhantomData,
+            ));
+            #[cfg(not(feature = "onnx"))]
+            {
+                let _ = threads;
+                return Err("onnx requires the optional onnx feature".into());
+            }
+        }
         if device == Device::Mlx {
             #[cfg(all(feature = "mlx", target_os = "macos", target_arch = "aarch64"))]
             return Ok(Model::Mlx(
@@ -106,7 +132,7 @@ impl Engine {
                         GpuBackend::Vulkan => sefai_engine_llama::GpuBackend::Vulkan,
                     },
                 },
-                Device::Mlx => unreachable!(),
+                Device::Mlx | Device::Onnx { .. } => unreachable!(),
             };
             if self.llama.is_none() {
                 self.llama = Some(sefai_engine_llama::Engine::new()?);
@@ -128,6 +154,7 @@ impl Engine {
 
 #[cfg(any(
     feature = "gguf",
+    feature = "onnx",
     all(feature = "mlx", target_os = "macos", target_arch = "aarch64")
 ))]
 impl Input<'_> {
@@ -137,11 +164,14 @@ impl Input<'_> {
             Self::Llama(input) => input.token_count(),
             #[cfg(all(feature = "mlx", target_os = "macos", target_arch = "aarch64"))]
             Self::Mlx(input) => input.token_count(),
+            #[cfg(feature = "onnx")]
+            Self::Onnx(input) => input.token_count(),
         }
     }
 }
 #[cfg(any(
     feature = "gguf",
+    feature = "onnx",
     all(feature = "mlx", target_os = "macos", target_arch = "aarch64")
 ))]
 impl Model<'_> {
@@ -161,6 +191,10 @@ impl Model<'_> {
             },
             #[cfg(all(feature = "mlx", target_os = "macos", target_arch = "aarch64"))]
             Self::Mlx(..) => Device::Mlx,
+            #[cfg(feature = "onnx")]
+            Self::Onnx(model, _) => Device::Onnx {
+                threads: model.threads(),
+            },
         }
     }
     pub fn context_tokens_max(&self) -> u32 {
@@ -169,6 +203,8 @@ impl Model<'_> {
             Self::Llama(model) => model.context_tokens_max(),
             #[cfg(all(feature = "mlx", target_os = "macos", target_arch = "aarch64"))]
             Self::Mlx(model, _) => model.context_tokens_max(),
+            #[cfg(feature = "onnx")]
+            Self::Onnx(model, _) => model.context_tokens_max(),
         }
     }
     pub fn prepare(&self, prompt: &Prompt) -> Result<Input<'_>> {
@@ -177,6 +213,8 @@ impl Model<'_> {
             Self::Llama(model) => Ok(Input::Llama(model.prepare(prompt)?)),
             #[cfg(all(feature = "mlx", target_os = "macos", target_arch = "aarch64"))]
             Self::Mlx(model, _) => Ok(Input::Mlx(model.prepare(prompt)?)),
+            #[cfg(feature = "onnx")]
+            Self::Onnx(model, _) => Ok(Input::Onnx(model.prepare(prompt)?)),
         }
     }
     pub fn prepare_raw(&self, text: &str) -> Result<Input<'_>> {
@@ -185,6 +223,8 @@ impl Model<'_> {
             Self::Llama(model) => Ok(Input::Llama(model.prepare_raw(text)?)),
             #[cfg(all(feature = "mlx", target_os = "macos", target_arch = "aarch64"))]
             Self::Mlx(model, _) => Ok(Input::Mlx(model.prepare_raw(text)?)),
+            #[cfg(feature = "onnx")]
+            Self::Onnx(model, _) => Ok(Input::Onnx(model.prepare_raw(text)?)),
         }
     }
     pub fn generate(
@@ -213,12 +253,12 @@ impl Model<'_> {
             (Self::Mlx(model, _), Input::Mlx(input)) => {
                 Ok(model.generate_cached(&mut cache.mlx, input, settings, cancelled, emit)?)
             }
-            #[cfg(all(
-                feature = "gguf",
-                feature = "mlx",
-                target_os = "macos",
-                target_arch = "aarch64"
-            ))]
+            #[cfg(feature = "onnx")]
+            (Self::Onnx(model, _), Input::Onnx(input)) => {
+                Ok(model.generate_cached(&mut cache.onnx, input, settings, cancelled, emit)?)
+            }
+            // Reachable only when the build compiles more than one engine.
+            #[allow(unreachable_patterns)]
             _ => {
                 let _ = (cache, settings, cancelled, emit);
                 Err("input belongs to a different engine".into())
@@ -236,6 +276,8 @@ impl Model<'_> {
                 ),
                 Err(error) => format!("mlx memory reporting unavailable: {error}"),
             },
+            #[cfg(feature = "onnx")]
+            Self::Onnx(..) => "onnx memory reporting unavailable".into(),
         }
     }
 
@@ -245,22 +287,27 @@ impl Model<'_> {
             Self::Llama(_) => cache.llama.reused_tokens(),
             #[cfg(all(feature = "mlx", target_os = "macos", target_arch = "aarch64"))]
             Self::Mlx(..) => cache.mlx.reused_tokens(),
+            #[cfg(feature = "onnx")]
+            Self::Onnx(..) => cache.onnx.reused_tokens(),
         }
     }
 }
 
 #[cfg(not(any(
     feature = "gguf",
+    feature = "onnx",
     all(feature = "mlx", target_os = "macos", target_arch = "aarch64")
 )))]
 pub struct Model<'engine>(&'engine std::convert::Infallible);
 #[cfg(not(any(
     feature = "gguf",
+    feature = "onnx",
     all(feature = "mlx", target_os = "macos", target_arch = "aarch64")
 )))]
 pub struct Input<'model>(&'model std::convert::Infallible);
 #[cfg(not(any(
     feature = "gguf",
+    feature = "onnx",
     all(feature = "mlx", target_os = "macos", target_arch = "aarch64")
 )))]
 impl Input<'_> {
@@ -270,6 +317,7 @@ impl Input<'_> {
 }
 #[cfg(not(any(
     feature = "gguf",
+    feature = "onnx",
     all(feature = "mlx", target_os = "macos", target_arch = "aarch64")
 )))]
 impl Model<'_> {

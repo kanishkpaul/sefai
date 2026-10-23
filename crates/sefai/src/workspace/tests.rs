@@ -526,7 +526,7 @@ fn unsupported_engine_profiles_never_fall_back_to_gguf() {
     let fixture = Fixture::new();
     fixture.write(
         "models/one.md",
-        "---\nschema: 1\nid: one\npath: weights\nformat: onnx\n---\n",
+        "---\nschema: 1\nid: one\npath: weights\nformat: gptq\n---\n",
     );
     let mut selection = fixture.selection();
     selection.profile = Some("one".into());
@@ -694,6 +694,45 @@ fn mlx_profiles_select_the_native_engine() {
         prepared.runner.backend,
         Some(schema::Backend::Mlx)
     ));
+}
+
+#[test]
+#[cfg(feature = "onnx")]
+fn onnx_profiles_select_the_onnx_engine() {
+    let fixture = Fixture::new();
+    fixture.write(
+        "models/one.md",
+        "---\nschema: 1\nid: one\npath: onnx/model.onnx\nformat: onnx\n---\n",
+    );
+    let mut selection = fixture.selection();
+    selection.profile = Some("one".into());
+    let prepared = selection.prepare("hi".into()).expect("onnx profile");
+    assert_eq!(prepared.runner.backend, Some(schema::Backend::Onnx));
+}
+
+#[test]
+#[cfg(feature = "onnx")]
+fn onnx_profiles_reject_a_device_index() {
+    let fixture = Fixture::new();
+    fixture.write(
+        "models/one.md",
+        "---\nschema: 1\nid: one\npath: model.onnx\nformat: onnx\nrunner:\n  device: 0\n---\n",
+    );
+    let mut selection = fixture.selection();
+    selection.profile = Some("one".into());
+    assert!(selection.prepare("hi".into()).is_err());
+}
+
+#[test]
+fn gguf_profiles_reject_an_onnx_backend() {
+    let fixture = Fixture::new();
+    fixture.write(
+        "models/one.md",
+        "---\nschema: 1\nid: one\npath: model.gguf\nformat: gguf\nrunner:\n  backend: onnx\n---\n",
+    );
+    let mut selection = fixture.selection();
+    selection.profile = Some("one".into());
+    assert!(selection.prepare("hi".into()).is_err());
 }
 
 #[test]

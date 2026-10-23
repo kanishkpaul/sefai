@@ -25,10 +25,11 @@ pub struct Runner {
     pub threads: Option<u32>,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, clap::ValueEnum)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, clap::ValueEnum)]
 #[serde(rename_all = "lowercase")]
 pub enum Backend {
     Mlx,
+    Onnx,
     Cpu,
     Metal,
     Cuda,
@@ -188,7 +189,10 @@ pub fn id(value: &str) -> io::Result<()> {
 impl Runner {
     pub fn overlay(&mut self, other: &Self) {
         self.backend = other.backend.or(self.backend);
-        if matches!(other.backend, Some(Backend::Cpu | Backend::Mlx)) {
+        if matches!(
+            other.backend,
+            Some(Backend::Cpu | Backend::Mlx | Backend::Onnx)
+        ) {
             self.device = None;
         }
         self.device = other.device.or(self.device);
