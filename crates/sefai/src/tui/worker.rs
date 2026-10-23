@@ -17,6 +17,12 @@ use std::{
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
+// A new turn must fit its records within the 128-message resume tail; tool turns also reserve intermediate records.
+const HISTORY_MESSAGES_MAX: usize = 125;
+const TOOL_HISTORY_MESSAGES_MAX: usize = 110;
+const MEMORY_PREVIEW_CHARS_MAX: usize = 8192;
+const OVERLAY_ENTRIES_MAX: usize = 128;
+
 struct Dispatch<'a> {
     job: &'a Job,
     base: Option<&'a str>,
@@ -272,114 +278,7 @@ impl State {
         events: &SyncSender<Event>,
     ) -> Result<Option<Job>, Box<dyn std::error::Error>> {
         if let Some(command) = text.strip_prefix('/') {
-            let (name, argument) = command.split_once(' ').unwrap_or((command, ""));
-            let argument = argument.trim();
-            let workspace = Workspace::open(&self.selection.root()?)?;
-            match name {
-                "help" => {
-                    events.send(Event::Overlay(super::HELP.into()))?;
-                }
-                "memory" if !argument.is_empty() => {
-                    Selection::validate_id(argument)?;
-                    let path = format!("memory/{argument}.md");
-                    let text = workspace.read(std::path::Path::new(&path))?;
-                    events.send(Event::Overlay(format!(
-                        "{path}\n{}",
-                        text.chars().take(8192).collect::<String>()
-                    )))?;
-                }
-                "models" | "skills" | "memory" | "mcp" | "sessions" => {
-                    let mut lines = vec![format!("{name} · Markdown files")];
-                    for path in workspace.entries(name)?.into_iter().take(128) {
-                        lines.push(path.display().to_string());
-                    }
-                    if name == "mcp" {
-                        #[cfg(feature = "mcp")]
-                        lines.push(self.mcp.as_ref().map_or_else(
-                            || {
-                                "no connection; restart with chat --mcp ID --tool-protocol smollm2"
-                                    .into()
-                            },
-                            |connection| {
-                                format!(
-                                    "connected {} · {}",
-                                    connection.id(),
-                                    connection.destination()
-                                )
-                            },
-                        ));
-                        #[cfg(not(feature = "mcp"))]
-                        lines.push("connections require the optional mcp feature".into());
-                    }
-                    events.send(Event::Overlay(lines.join("\n")))?;
-                }
-                #[cfg(feature = "mcp")]
-                "disconnect" => {
-                    self.mcp = None;
-                    events.send(Event::Overlay(
-                        "mcp disconnected; child process tree stopped".into(),
-                    ))?;
-                }
-                "model" if !argument.is_empty() => {
-                    self.model = Some(argument.into());
-                }
-                "profile" if !argument.is_empty() => {
-                    let mut candidate = self.selection.clone();
-                    candidate.profile = Some(argument.into());
-                    candidate.prepare("validate selection".into())?;
-                    self.selection = candidate;
-                    self.model = None;
-                }
-                "skill" if !argument.is_empty() => {
-                    let mut candidate = self.selection.clone();
-                    if candidate.skill.iter().any(|id| id == argument) {
-                        candidate.skill.retain(|id| id != argument);
-                    } else {
-                        candidate.skill.push(argument.into());
-                    }
-                    candidate.prepare("validate selection".into())?;
-                    self.selection = candidate;
-                }
-                "recall" => {
-                    self.selection.recall = (!argument.is_empty()).then(|| argument.into());
-                }
-                "settings" => {
-                    events.send(Event::Overlay(format!("workspace {}\nprofile {:?}\nskills {:?}\nrecall {:?}\nmodel {:?}\nedit config.md and profiles with your text editor; changes reload before each turn", self.selection.root()?.display(), self.selection.profile, self.selection.skill, self.selection.recall, self.model)))?;
-                }
-                "stats" => {
-                    events.send(Event::Overlay(self.statistics.clone()))?;
-                }
-                "resume" if !argument.is_empty() => {
-                    self.resume(argument)?;
-                    events.send(Event::History(self.history.clone()))?;
-                    if self.uncertain {
-                        events.send(Event::Error("prior tool dispatch has an unknown outcome; inspect the session; no call was replayed".into()))?;
-                    }
-                }
-                "new" | "reset" => {
-                    let id = if argument.is_empty() {
-                        fresh_id()
-                    } else {
-                        argument.into()
-                    };
-                    // Create-only validation prevents accidentally overwriting a saved session.
-                    super::valid_session_id(&id)?;
-                    if self
-                        .selection
-                        .root()?
-                        .join(format!("sessions/{id}.md"))
-                        .exists()
-                    {
-                        return Err("session exists; use /resume ID".into());
-                    }
-                    self.session = id;
-                    self.revision = None;
-                    self.history.clear();
-                    self.unsaved = false;
-                    events.send(Event::History(Vec::new()))?;
-                }
-                _ => return Err("unknown command or missing argument; use /help".into()),
-            }
+            self.run_command(command, events)?;
             return Ok(None);
         }
         if self.unsaved {
@@ -391,7 +290,12 @@ impl State {
         if text.trim().is_empty() {
             return Ok(None);
         }
-        if self.history.len() > if self.tools.is_some() { 110 } else { 125 } {
+        let history_messages_max = if self.tools.is_some() {
+            TOOL_HISTORY_MESSAGES_MAX
+        } else {
+            HISTORY_MESSAGES_MAX
+        };
+        if self.history.len() > history_messages_max {
             return Err(
                 "conversation needs room for a bounded tool turn; use /new to preserve it and start again".into(),
             );
@@ -423,7 +327,7 @@ impl State {
                 .map(|section| section.text.len())
                 .sum::<usize>();
         if bytes > TEXT_BYTES_MAX {
-            return Err("conversation exceeds 1048576 bytes; use /new".into());
+            return Err(format!("conversation exceeds {TEXT_BYTES_MAX} bytes; use /new").into());
         }
         let mut history = self.history.clone();
         history.push(Message::user(&text));
@@ -446,6 +350,128 @@ impl State {
             user: text,
             scope,
         }))
+    }
+
+    fn run_command(
+        &mut self,
+        command: &str,
+        events: &SyncSender<Event>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let (name, argument) = command.split_once(' ').unwrap_or((command, ""));
+        let argument = argument.trim();
+        let workspace = Workspace::open(&self.selection.root()?)?;
+        match name {
+            "help" => {
+                events.send(Event::Overlay(super::HELP.into()))?;
+            }
+            "memory" if !argument.is_empty() => {
+                Selection::validate_id(argument)?;
+                let path = format!("memory/{argument}.md");
+                let text = workspace.read(std::path::Path::new(&path))?;
+                events.send(Event::Overlay(format!(
+                    "{path}\n{}",
+                    text.chars()
+                        .take(MEMORY_PREVIEW_CHARS_MAX)
+                        .collect::<String>()
+                )))?;
+            }
+            "models" | "skills" | "memory" | "mcp" | "sessions" => {
+                let mut lines = vec![format!("{name} · Markdown files")];
+                for path in workspace
+                    .entries(name)?
+                    .into_iter()
+                    .take(OVERLAY_ENTRIES_MAX)
+                {
+                    lines.push(path.display().to_string());
+                }
+                if name == "mcp" {
+                    #[cfg(feature = "mcp")]
+                    lines.push(self.mcp.as_ref().map_or_else(
+                        || {
+                            "no connection; restart with chat --mcp ID --tool-protocol smollm2"
+                                .into()
+                        },
+                        |connection| {
+                            format!(
+                                "connected {} · {}",
+                                connection.id(),
+                                connection.destination()
+                            )
+                        },
+                    ));
+                    #[cfg(not(feature = "mcp"))]
+                    lines.push("connections require the optional mcp feature".into());
+                }
+                events.send(Event::Overlay(lines.join("\n")))?;
+            }
+            #[cfg(feature = "mcp")]
+            "disconnect" => {
+                self.mcp = None;
+                events.send(Event::Overlay(
+                    "mcp disconnected; child process tree stopped".into(),
+                ))?;
+            }
+            "model" if !argument.is_empty() => {
+                self.model = Some(argument.into());
+            }
+            "profile" if !argument.is_empty() => {
+                let mut candidate = self.selection.clone();
+                candidate.profile = Some(argument.into());
+                candidate.prepare("validate selection".into())?;
+                self.selection = candidate;
+                self.model = None;
+            }
+            "skill" if !argument.is_empty() => {
+                let mut candidate = self.selection.clone();
+                if candidate.skill.iter().any(|id| id == argument) {
+                    candidate.skill.retain(|id| id != argument);
+                } else {
+                    candidate.skill.push(argument.into());
+                }
+                candidate.prepare("validate selection".into())?;
+                self.selection = candidate;
+            }
+            "recall" => {
+                self.selection.recall = (!argument.is_empty()).then(|| argument.into());
+            }
+            "settings" => {
+                events.send(Event::Overlay(format!("workspace {}\nprofile {:?}\nskills {:?}\nrecall {:?}\nmodel {:?}\nedit config.md and profiles with your text editor; changes reload before each turn", self.selection.root()?.display(), self.selection.profile, self.selection.skill, self.selection.recall, self.model)))?;
+            }
+            "stats" => {
+                events.send(Event::Overlay(self.statistics.clone()))?;
+            }
+            "resume" if !argument.is_empty() => {
+                self.resume(argument)?;
+                events.send(Event::History(self.history.clone()))?;
+                if self.uncertain {
+                    events.send(Event::Error("prior tool dispatch has an unknown outcome; inspect the session; no call was replayed".into()))?;
+                }
+            }
+            "new" | "reset" => {
+                let id = if argument.is_empty() {
+                    fresh_id()
+                } else {
+                    argument.into()
+                };
+                // Create-only validation prevents accidentally overwriting a saved session.
+                super::valid_session_id(&id)?;
+                if self
+                    .selection
+                    .root()?
+                    .join(format!("sessions/{id}.md"))
+                    .exists()
+                {
+                    return Err("session exists; use /resume ID".into());
+                }
+                self.session = id;
+                self.revision = None;
+                self.history.clear();
+                self.unsaved = false;
+                events.send(Event::History(Vec::new()))?;
+            }
+            _ => return Err("unknown command or missing argument; use /help".into()),
+        }
+        Ok(())
     }
 
     fn generate<'model>(
