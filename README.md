@@ -6,8 +6,8 @@ The goal is low RAM/VRAM use, a persistent TUI, Markdown-owned prompts/skills/pr
 ## 🏗️ Under construction
 
 sefai is in active development and is not ready for a stable release.
-Phases 1–6 are merged: the GGUF runner, Markdown workspace, terminal TUI, bounded harness, MCP client and optional native MLX adapter are implemented.
-ONNX and GPTQ/AWQ support, runtime unification, hardware-aware setup and dedicated safety hardening remain planned.
+Phases 1–7 are merged: the GGUF runner, Markdown workspace, terminal TUI, bounded harness, MCP client and optional native MLX and ONNX adapters are implemented.
+GPTQ/AWQ support, runtime unification, hardware-aware setup and dedicated safety hardening remain planned.
 Follow the [build plan](docs/build-plan.md) for scope and acceptance gates.
 
 Pinned-model CPU tests pass on Windows, macOS and Linux; local Metal tests and CUDA/Vulkan compilation also pass.
@@ -23,7 +23,7 @@ Keep credentials out of Markdown and review the documented limits before enablin
 
 | Area | Planned support |
 | --- | --- |
-| Model runtimes | GGUF, optional native MLX and optional ONNX on CPU; ONNX acceleration, GPTQ and AWQ planned |
+| Model runtimes | GGUF, optional native MLX and optional ONNX on CPU and WebGPU; GPTQ and AWQ planned |
 | Systems | Windows, macOS and Linux |
 | GPUs | NVIDIA/CUDA, Apple/Metal, AMD/Vulkan; CPU fallback |
 | Customization | Markdown source of truth; binary models/caches and credential references are explicit exceptions |
@@ -44,7 +44,7 @@ cargo run --locked -- run --model /path/to/model.gguf "hello"
 
 The default runner loads the chosen local GGUF and streams a reply; CPU is the explicit default.
 The optional [native MLX adapter](docs/mlx.md) runs named Apple Silicon safetensors bundles through the same terminal harness.
-The optional [ONNX adapter](docs/onnx.md) runs named decoder exports on the ONNX Runtime CPU provider through the same harness.
+The optional [ONNX adapter](docs/onnx.md) runs named decoder exports on the ONNX Runtime CPU provider, or WebGPU in an `onnx-webgpu` build, through the same harness.
 See the [runner guide](docs/runner.md) for GPU builds, limits, benchmarks and model tests.
 `cargo run --locked --no-default-features -- prompt hello` retains the diagnostic without native inference dependencies.
 
