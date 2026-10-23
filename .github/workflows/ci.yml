@@ -76,6 +76,13 @@ jobs:
           cargo clippy --locked -p sefai-engine-mlx --features model-tests --all-targets -- -D warnings
           cargo test --locked -p sefai --features mlx,mcp-oauth --bin sefai
           cargo test --locked -p sefai-engine-mlx --features runtime --lib
+      - name: Check the optional ONNX Runtime adapter
+        run: |
+          cargo clippy --locked -p sefai --features onnx,onnx-model-tests,mcp-oauth --all-targets -- -D warnings
+          cargo clippy --locked -p sefai --no-default-features --features onnx --all-targets -- -D warnings
+          cargo clippy --locked -p sefai-engine-onnx --features model-tests --all-targets -- -D warnings
+          cargo test --locked -p sefai --features onnx,mcp-oauth --bin sefai
+          cargo test --locked -p sefai-engine-onnx --features runtime
       - run: cargo test --locked -p sefai --no-default-features
       - run: cargo run --locked -- prompt hello
       - run: python3 -m unittest discover -s tests -v
