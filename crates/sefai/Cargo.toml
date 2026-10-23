@@ -13,6 +13,8 @@ harness-model-tests = ["gguf"]
 gguf = ["inference", "dep:sefai-engine-llama"]
 mlx = ["inference", "dep:sefai-engine-mlx", "sefai-engine-mlx/runtime"]
 mlx-model-tests = ["mlx"]
+onnx = ["inference", "dep:sefai-engine-onnx", "sefai-engine-onnx/runtime"]
+onnx-model-tests = ["onnx"]
 inference = ["dep:ctrlc", "dep:ratatui", "dep:crossterm", "dep:unicode-segmentation", "dep:serde_json"]
 mcp-fixture-tests = ["mcp-oauth"]
 mcp-oauth = ["mcp-http", "rmcp/auth"]
@@ -33,6 +35,7 @@ process-wrap = { version = "10", optional = true, default-features = false, feat
 serde_json = { version = "1", optional = true }
 sefai-engine-llama = { path = "../engine-llama", optional = true, default-features = false }
 sefai-engine-mlx = { path = "../engine-mlx", optional = true }
+sefai-engine-onnx = { path = "../engine-onnx", optional = true }
 sefai-core.workspace = true
 
 clap.workspace = true
@@ -57,3 +60,7 @@ required-features = ["mcp-fixture-tests"]
 [[test]]
 name = "harness_mlx"
 required-features = ["mlx-model-tests"]
+
+[[test]]
+name = "harness_onnx"
+required-features = ["onnx-model-tests"]

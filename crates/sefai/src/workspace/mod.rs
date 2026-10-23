@@ -131,7 +131,8 @@ impl Selection {
             let (model, _) = schema::parse::<Model>(&text).map_err(|error| at(&path, error))?;
             workspace.validate_model(&path, &model)?;
             if !(matches!(model.format, Format::Gguf)
-                || cfg!(feature = "mlx") && matches!(model.format, Format::Mlx))
+                || cfg!(feature = "mlx") && matches!(model.format, Format::Mlx)
+                || cfg!(feature = "onnx") && matches!(model.format, Format::Onnx))
             {
                 return Err(at(
                     &path,
@@ -144,18 +145,17 @@ impl Selection {
                 workspace.root.join(model.path)
             });
             result.runner.overlay(&model.runner);
-            if matches!(model.format, Format::Mlx) {
-                if !matches!(result.runner.backend, None | Some(schema::Backend::Mlx))
-                    || result.runner.device.is_some()
+            match model.format {
+                Format::Mlx => native_backend(&path, &mut result.runner, schema::Backend::Mlx)?,
+                Format::Onnx => native_backend(&path, &mut result.runner, schema::Backend::Onnx)?,
+                _ if matches!(
+                    result.runner.backend,
+                    Some(schema::Backend::Mlx | schema::Backend::Onnx)
+                ) =>
                 {
-                    return Err(at(
-                        &path,
-                        "mlx format requires backend mlx without a device index",
-                    ));
+                    return Err(at(&path, "gguf format cannot use backend mlx or onnx"));
                 }
-                result.runner.backend = Some(schema::Backend::Mlx);
-            } else if matches!(result.runner.backend, Some(schema::Backend::Mlx)) {
-                return Err(at(&path, "gguf format cannot use backend mlx"));
+                _ => {}
             }
         }
         workspace.instructions(&mut result.prompt)?;
@@ -514,6 +514,19 @@ fn default_root() -> Option<PathBuf> {
 
 fn at(path: impl AsRef<Path>, error: impl std::fmt::Display) -> io::Error {
     invalid(format!("{}: {error}", path.as_ref().display()))
+}
+
+/// Formats owned by one adapter select that adapter and take no ggml device index.
+fn native_backend(path: &Path, runner: &mut Runner, backend: schema::Backend) -> io::Result<()> {
+    if runner.backend.is_some_and(|selected| selected != backend) || runner.device.is_some() {
+        let name = format!("{backend:?}").to_lowercase();
+        return Err(at(
+            path,
+            format!("{name} format requires backend {name} without a device index"),
+        ));
+    }
+    runner.backend = Some(backend);
+    Ok(())
 }
 
 #[cfg(test)]

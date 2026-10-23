@@ -1,7 +1,7 @@
 # GGUF runner
 
 This guide covers the default GGUF backend.
-The optional [native MLX adapter](mlx.md) uses the same commands and terminal harness with its own model, device and cache constraints.
+The optional [native MLX adapter](mlx.md) and [ONNX adapter](onnx.md) use the same commands and terminal harness with their own model, device and cache constraints.
 
 Phase 1 adds local GGUF inference with explicit CPU or GPU selection.
 Phase 1 passed local CPU/Metal model tests, Windows/macOS/Linux CPU-model CI and CUDA/Vulkan compilation.

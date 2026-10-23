@@ -10,6 +10,7 @@ The TUI is its permanent home.
 `crates/engine-llama` owns the exactly pinned llama.cpp binding, GGUF model loading, native templates/tokenizer, bounded prefill, sampling and streaming.
 `crates/sefai` composes the `run`, `bench`, `devices` and minimal `prompt` commands, cancellation and terminal sanitization.
 The optional `crates/engine-mlx` adapter owns native MLX bundle validation, tokenization, streaming and cache state; its named-model qualification and limits are recorded in [the MLX guide](docs/mlx.md).
+The optional `crates/engine-onnx` adapter owns ONNX bundle admission, graph-signature validation, tokenization and present-tensor cache state; its scope and open gates are in [the ONNX guide](docs/onnx.md).
 The binary selects between concrete adapters, with no cross-adapter runtime dependency.
 An engine lends one model at a time; one-shot requests use a temporary context, while interactive callers may retain one model-bound prefix cache.
 The binary workspace module validates typed Markdown and composes selected instructions, model profiles and bounded literal memory recall.
