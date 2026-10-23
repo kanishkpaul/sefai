@@ -20,7 +20,7 @@ Every phase includes regression tests; the second-last phase is a complete produ
 - Optional engine packages; choosing more formats must not install or load every runtime.
 
 The requirement covers the product across those operating systems and GPU vendors, not every model format on every GPU.
-MLX targets Apple Silicon; GPTQ/AWQ initially target a verified NVIDIA configuration.
+MLX targets Apple Silicon; GPTQ/AWQ are qualified first on Apple Silicon through MLX, and NVIDIA kernels are a follow-up gate.
 The format and hardware matrix is in [stack.md](stack.md).
 
 ## What to keep and remove first
@@ -242,12 +242,15 @@ Compare against ONNX Runtime/GenAI with the same graph/provider settings.
 
 ### Phase 8 — GPTQ and AWQ
 
+**Complete on Apple Silicon:** named GPTQ and AWQ checkpoints are repacked onto MLX affine groups in memory and run through the CLI, TUI and harness; see [GPTQ and AWQ on MLX](gptq-awq.md) for evidence and limits.
+NVIDIA kernels remain a follow-up gate for contributors with that hardware.
+
 Support both quantized checkpoint families as committed targets.
 They are quantization schemes, usually carried in safetensors plus a quantization config, not two universal file extensions.
 Validate method, bit width, group size, packing/kernel variant, architecture and tokenizer before loading.
-Begin with a qualified NVIDIA model set; other GPUs require their own kernel evidence.
+The qualification host is a Mac, so begin with an Apple Silicon model set on the existing MLX adapter; NVIDIA and other GPUs require their own kernel evidence.
 
-Run a compatibility spike against an established runtime that actually supports the selected packing, using vLLM's published matrix as one reference.
+Run a compatibility spike against an established runtime that actually supports the selected packing; for NVIDIA, use vLLM's published matrix as one reference.
 Prefer an existing safe Rust integration if it meets that gate; do not write a quantized GEMM engine to satisfy an extension list.
 If native coverage is inadequate, use an explicitly installed, persistent local worker behind a narrow adapter.
 That adds an optional runtime dependency and RAM/VRAM overhead; show both, and keep the GGUF package independent of it.

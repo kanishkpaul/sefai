@@ -1,0 +1,103 @@
+{
+  "method": "Each reference layer from Transformers with GPTQModel is applied to an identity matrix on CPU in float16 and compared with scripts/quantized_repack.py's float16 dequantization of the same checkpoint",
+  "versions": {
+    "mlx": "0.32.2",
+    "python_mlx_lm": "0.31.3",
+    "transformers": "5.20.2",
+    "torch": "2.14.1",
+    "gptqmodel": "7.6.0",
+    "optimum": "installed with transformers 5.20.2"
+  },
+  "checkpoints": {
+    "Qwen3-0.6B-GPTQ-Int4": [
+      {
+        "layer": "model.layers.0.self_attn.q_proj",
+        "kernel": "TorchAtenLinear",
+        "max_abs_diff": 0.00390625,
+        "max_abs_weight": 0.6015625,
+        "mean_abs_diff": 4.4877237087348476e-05
+      },
+      {
+        "layer": "model.layers.0.mlp.down_proj",
+        "kernel": "TorchAtenLinear",
+        "max_abs_diff": 0.001953125,
+        "max_abs_weight": 0.40771484375,
+        "mean_abs_diff": 3.926749195670709e-05
+      },
+      {
+        "layer": "model.layers.13.self_attn.k_proj",
+        "kernel": "TorchAtenLinear",
+        "max_abs_diff": 0.001220703125,
+        "max_abs_weight": 0.31640625,
+        "mean_abs_diff": 3.4621840313775465e-05
+      },
+      {
+        "layer": "model.layers.27.mlp.gate_proj",
+        "kernel": "TorchAtenLinear",
+        "max_abs_diff": 0.00390625,
+        "max_abs_weight": 1.0703125,
+        "mean_abs_diff": 4.3605687096714973e-05
+      }
+    ],
+    "Qwen3-0.6B-AWQ": [
+      {
+        "layer": "model.layers.0.self_attn.q_proj",
+        "kernel": "TorchAtenAwqLinear",
+        "max_abs_diff": 0.00390625,
+        "max_abs_weight": 1.1455078125,
+        "mean_abs_diff": 2.911036972363945e-05
+      },
+      {
+        "layer": "model.layers.0.mlp.down_proj",
+        "kernel": "TorchAtenAwqLinear",
+        "max_abs_diff": 0.002197265625,
+        "max_abs_weight": 0.5205078125,
+        "mean_abs_diff": 2.405301529506687e-05
+      },
+      {
+        "layer": "model.layers.13.self_attn.k_proj",
+        "kernel": "TorchAtenAwqLinear",
+        "max_abs_diff": 0.001953125,
+        "max_abs_weight": 0.329345703125,
+        "mean_abs_diff": 2.295204649271909e-05
+      },
+      {
+        "layer": "model.layers.27.mlp.gate_proj",
+        "kernel": "TorchAtenAwqLinear",
+        "max_abs_diff": 0.0087890625,
+        "max_abs_weight": 1.5751953125,
+        "mean_abs_diff": 2.067208697553724e-05
+      }
+    ],
+    "Qwen3-0.6B-GPTQ-Int8": [
+      {
+        "layer": "model.layers.0.self_attn.q_proj",
+        "kernel": "TorchLinear",
+        "max_abs_diff": 0.0,
+        "max_abs_weight": 0.64208984375,
+        "mean_abs_diff": 0.0
+      },
+      {
+        "layer": "model.layers.0.mlp.down_proj",
+        "kernel": "TorchLinear",
+        "max_abs_diff": 0.0,
+        "max_abs_weight": 0.4169921875,
+        "mean_abs_diff": 0.0
+      },
+      {
+        "layer": "model.layers.13.self_attn.k_proj",
+        "kernel": "TorchLinear",
+        "max_abs_diff": 0.0,
+        "max_abs_weight": 0.300048828125,
+        "mean_abs_diff": 0.0
+      },
+      {
+        "layer": "model.layers.27.mlp.gate_proj",
+        "kernel": "TorchLinear",
+        "max_abs_diff": 0.0,
+        "max_abs_weight": 1.162109375,
+        "mean_abs_diff": 0.0
+      }
+    ]
+  }
+}

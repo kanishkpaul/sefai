@@ -18,12 +18,14 @@ The initial real fixture is Qwen3-0.6B-4bit; its revision, asset sizes and hashe
 The Llama-family fixture is [SmolLM2-135M-Instruct-8bit](../tests/fixtures/mlx-llama.json).
 The tool fixture is the model producer’s [SmolLM2-1.7B-Instruct-Q8-mlx](../tests/fixtures/mlx-tool.json).
 Floating weights remain upstream-supported but locally unqualified; measured support is these named affine-quantized bundles.
-MoE, multimodal, GPTQ/AWQ weights, speculative decoding, adapters and checkpoint conversion are outside this adapter.
+GPTQ and AWQ checkpoints whose packing maps exactly onto MLX affine groups are repacked in memory at load; see [GPTQ and AWQ on MLX](gptq-awq.md).
+MoE, multimodal, speculative decoding, adapters and checkpoint conversion are outside this adapter.
 A directory with safetensors is insufficient without compatible config, tokenizer, template and quantization metadata.
 GGUF files stay with the llama.cpp adapter.
 The [isolated binding build patch](../vendor/mlx-sys/SEFAI-PATCH.md) disables MLX’s unused GGUF reader because its `gguf_get_key` C symbol conflicts with llama.cpp’s incompatible signature.
 Only build configuration and standalone Cargo metadata differ from the retained upstream source; FFI code is unchanged.
 The patch removes the native crash found while qualifying a combined build.
+A second [in-memory weight patch](../vendor/mlx-lm/SEFAI-PATCH.md) vendors `mlx-lm` at the same revision and adds one loading entry point that accepts caller-built arrays, used only for GPTQ and AWQ.
 
 The [upstream API documentation at the pin](https://github.com/oxiglade/mlx-rs/blob/579199b4bb5e39b35f33fc6a59cb90e2c031a6a7/mlx-lm/src/lib.rs) reports a 3.3× decode-throughput gap relative to its Python reference on one Qwen3 benchmark.
 That is upstream evidence, not a measurement of sefai; native Rust alone does not establish better speed or memory use.

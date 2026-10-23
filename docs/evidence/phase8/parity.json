@@ -1,0 +1,224 @@
+{
+  "method": "The reference continues each prompt greedily for 64 tokens in float16 with Transformers and GPTQModel on CPU, then scores the whole sequence again in float16 and float32. scripts/quantized_parity.py scores the same sequence with Python mlx-lm on the MLX-layout bundle from scripts/quantized_repack.py, whose scales and biases use the checkpoint's activation dtype as sefai does, and compares next-token choices position by position.",
+  "versions": {
+    "mlx": "0.32.2",
+    "python_mlx_lm": "0.31.3",
+    "transformers": "5.20.2",
+    "torch": "2.14.1",
+    "gptqmodel": "7.6.0",
+    "optimum": "installed with transformers 5.20.2"
+  },
+  "host": "Apple M5, 16 GiB unified memory, macOS 27.0; not idle (desktop apps loaded the host), so runners alternate per fixture",
+  "teacher_forced": [
+    {
+      "checkpoint": "Qwen3-0.6B-GPTQ-Int4",
+      "prompt": "The three primary colors are",
+      "result": {
+        "positions": 64,
+        "mlx_vs_fp16_top1": 1.0,
+        "mlx_vs_fp32_top1": 1.0,
+        "fp16_vs_fp32_top1": 1.0,
+        "mlx_vs_fp32_max_abs_logit": 0.4982175827026367,
+        "fp16_vs_fp32_max_abs_logit": 0.28044939041137695,
+        "largest_fp32_margin_where_mlx_differs": 0.0
+      }
+    },
+    {
+      "checkpoint": "Qwen3-0.6B-GPTQ-Int4",
+      "prompt": "def fibonacci(n):",
+      "result": {
+        "positions": 64,
+        "mlx_vs_fp16_top1": 1.0,
+        "mlx_vs_fp32_top1": 1.0,
+        "fp16_vs_fp32_top1": 1.0,
+        "mlx_vs_fp32_max_abs_logit": 0.49188995361328125,
+        "fp16_vs_fp32_max_abs_logit": 0.3251075744628906,
+        "largest_fp32_margin_where_mlx_differs": 0.0
+      }
+    },
+    {
+      "checkpoint": "Qwen3-0.6B-GPTQ-Int4",
+      "prompt": "日本の首都は",
+      "result": {
+        "positions": 64,
+        "mlx_vs_fp16_top1": 0.984375,
+        "mlx_vs_fp32_top1": 0.984375,
+        "fp16_vs_fp32_top1": 1.0,
+        "mlx_vs_fp32_max_abs_logit": 0.5380430221557617,
+        "fp16_vs_fp32_max_abs_logit": 0.22056710720062256,
+        "largest_fp32_margin_where_mlx_differs": 0.023520469665527344
+      }
+    },
+    {
+      "checkpoint": "Qwen3-0.6B-AWQ",
+      "prompt": "The three primary colors are",
+      "result": {
+        "positions": 64,
+        "mlx_vs_fp16_top1": 1.0,
+        "mlx_vs_fp32_top1": 1.0,
+        "fp16_vs_fp32_top1": 1.0,
+        "mlx_vs_fp32_max_abs_logit": 0.639678955078125,
+        "fp16_vs_fp32_max_abs_logit": 0.2978956699371338,
+        "largest_fp32_margin_where_mlx_differs": 0.0
+      }
+    },
+    {
+      "checkpoint": "Qwen3-0.6B-AWQ",
+      "prompt": "def fibonacci(n):",
+      "result": {
+        "positions": 64,
+        "mlx_vs_fp16_top1": 0.96875,
+        "mlx_vs_fp32_top1": 0.96875,
+        "fp16_vs_fp32_top1": 1.0,
+        "mlx_vs_fp32_max_abs_logit": 0.5857071876525879,
+        "fp16_vs_fp32_max_abs_logit": 0.21347999572753906,
+        "largest_fp32_margin_where_mlx_differs": 0.0075893402099609375
+      }
+    },
+    {
+      "checkpoint": "Qwen3-0.6B-AWQ",
+      "prompt": "日本の首都は",
+      "result": {
+        "positions": 64,
+        "mlx_vs_fp16_top1": 1.0,
+        "mlx_vs_fp32_top1": 1.0,
+        "fp16_vs_fp32_top1": 1.0,
+        "mlx_vs_fp32_max_abs_logit": 0.9010286331176758,
+        "fp16_vs_fp32_max_abs_logit": 0.34359416365623474,
+        "largest_fp32_margin_where_mlx_differs": 0.0
+      }
+    },
+    {
+      "checkpoint": "Qwen3-0.6B-GPTQ-Int8",
+      "prompt": "The three primary colors are",
+      "result": {
+        "positions": 64,
+        "mlx_vs_fp16_top1": 1.0,
+        "mlx_vs_fp32_top1": 1.0,
+        "fp16_vs_fp32_top1": 1.0,
+        "mlx_vs_fp32_max_abs_logit": 0.07598590850830078,
+        "fp16_vs_fp32_max_abs_logit": 0.061686038970947266,
+        "largest_fp32_margin_where_mlx_differs": 0.0
+      }
+    },
+    {
+      "checkpoint": "Qwen3-0.6B-GPTQ-Int8",
+      "prompt": "def fibonacci(n):",
+      "result": {
+        "positions": 64,
+        "mlx_vs_fp16_top1": 1.0,
+        "mlx_vs_fp32_top1": 1.0,
+        "fp16_vs_fp32_top1": 1.0,
+        "mlx_vs_fp32_max_abs_logit": 0.04644966125488281,
+        "fp16_vs_fp32_max_abs_logit": 0.060103416442871094,
+        "largest_fp32_margin_where_mlx_differs": 0.0
+      }
+    },
+    {
+      "checkpoint": "Qwen3-0.6B-GPTQ-Int8",
+      "prompt": "日本の首都は",
+      "result": {
+        "positions": 64,
+        "mlx_vs_fp16_top1": 1.0,
+        "mlx_vs_fp32_top1": 1.0,
+        "fp16_vs_fp32_top1": 1.0,
+        "mlx_vs_fp32_max_abs_logit": 0.08268415927886963,
+        "fp16_vs_fp32_max_abs_logit": 0.05939769744873047,
+        "largest_fp32_margin_where_mlx_differs": 0.0
+      }
+    },
+    {
+      "checkpoint": "SmolLM2-1.7B-Instruct-AWQ-Int4",
+      "prompt": "The three primary colors are",
+      "result": {
+        "positions": 64,
+        "mlx_vs_fp16_top1": 1.0,
+        "mlx_vs_fp32_top1": 1.0,
+        "fp16_vs_fp32_top1": 1.0,
+        "mlx_vs_fp32_max_abs_logit": 0.3587055206298828,
+        "fp16_vs_fp32_max_abs_logit": 0.3196525573730469,
+        "largest_fp32_margin_where_mlx_differs": 0.0
+      }
+    },
+    {
+      "checkpoint": "SmolLM2-1.7B-Instruct-AWQ-Int4",
+      "prompt": "def fibonacci(n):",
+      "result": {
+        "positions": 64,
+        "mlx_vs_fp16_top1": 1.0,
+        "mlx_vs_fp32_top1": 1.0,
+        "fp16_vs_fp32_top1": 1.0,
+        "mlx_vs_fp32_max_abs_logit": 0.3704500198364258,
+        "fp16_vs_fp32_max_abs_logit": 0.28782305121421814,
+        "largest_fp32_margin_where_mlx_differs": 0.0
+      }
+    },
+    {
+      "checkpoint": "SmolLM2-1.7B-Instruct-AWQ-Int4",
+      "prompt": "日本の首都は",
+      "result": {
+        "positions": 64,
+        "mlx_vs_fp16_top1": 0.984375,
+        "mlx_vs_fp32_top1": 0.984375,
+        "fp16_vs_fp32_top1": 0.984375,
+        "mlx_vs_fp32_max_abs_logit": 0.4783287048339844,
+        "fp16_vs_fp32_max_abs_logit": 0.46469712257385254,
+        "largest_fp32_margin_where_mlx_differs": 0.0141143798828125
+      }
+    }
+  ],
+  "positions": 768,
+  "positions_agreeing_with_float32_reference": 764,
+  "largest_reference_margin_at_a_disagreement": 0.023520469665527344,
+  "smollm2_gptq": {
+    "why": "GPTQModel 7.6.0 cannot load this auto-round export: its torch_aten kernel fails while building g_idx, and its torch kernel reports missing parameters and aborts. Agreement is instead measured against the producer's SmolLM2-1.7B-Instruct-Q8-mlx greedy continuation, with the zero-point convention deliberately flipped as a control.",
+    "rows": [
+      {
+        "prompt": "The three primary colors are",
+        "candidate": "SmolLM2-1.7B-Instruct-GPTQ-Int4-mlx",
+        "top1_agreement": 0.84375
+      },
+      {
+        "prompt": "The three primary colors are",
+        "candidate": "flip-mlx",
+        "top1_agreement": 0.0
+      },
+      {
+        "prompt": "The three primary colors are",
+        "candidate": "SmolLM2-1.7B-Instruct-AWQ-Int4-mlx",
+        "top1_agreement": 0.859375
+      },
+      {
+        "prompt": "def fibonacci(n):",
+        "candidate": "SmolLM2-1.7B-Instruct-GPTQ-Int4-mlx",
+        "top1_agreement": 0.921875
+      },
+      {
+        "prompt": "def fibonacci(n):",
+        "candidate": "flip-mlx",
+        "top1_agreement": 0.0
+      },
+      {
+        "prompt": "def fibonacci(n):",
+        "candidate": "SmolLM2-1.7B-Instruct-AWQ-Int4-mlx",
+        "top1_agreement": 0.921875
+      },
+      {
+        "prompt": "日本の首都は",
+        "candidate": "SmolLM2-1.7B-Instruct-GPTQ-Int4-mlx",
+        "top1_agreement": 0.78125
+      },
+      {
+        "prompt": "日本の首都は",
+        "candidate": "flip-mlx",
+        "top1_agreement": 0.0
+      },
+      {
+        "prompt": "日本の首都は",
+        "candidate": "SmolLM2-1.7B-Instruct-AWQ-Int4-mlx",
+        "top1_agreement": 0.8125
+      }
+    ]
+  },
+  "activation_dtype": "Scales and biases follow the embedding dtype because MLX promotes mismatched quantized products to float32. On bf16 Qwen3-0.6B AWQ, Python mlx-lm decoded 65.0 tokens/s with float16 scales and 193.9 tokens/s with bfloat16 scales. With float16 scales, the same teacher-forced cases agreed at 575 of 576 Qwen3 positions; bfloat16 scales agree at 572 of 576, each disagreement at a reference margin of at most 0.0235."
+}
