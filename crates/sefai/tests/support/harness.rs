@@ -20,7 +20,7 @@ impl Fixture {
                 .expect("set the model environment variable to the pinned tool-capable fixture"),
         );
         assert!(
-            if FORMAT == "mlx" {
+            if BACKEND == "mlx" {
                 model.is_dir()
             } else {
                 model.is_file()

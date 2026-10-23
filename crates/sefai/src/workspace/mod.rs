@@ -131,7 +131,8 @@ impl Selection {
             let (model, _) = schema::parse::<Model>(&text).map_err(|error| at(&path, error))?;
             workspace.validate_model(&path, &model)?;
             if !(matches!(model.format, Format::Gguf)
-                || cfg!(feature = "mlx") && matches!(model.format, Format::Mlx)
+                || cfg!(feature = "mlx")
+                    && matches!(model.format, Format::Mlx | Format::Gptq | Format::Awq)
                 || cfg!(feature = "onnx") && matches!(model.format, Format::Onnx))
             {
                 return Err(at(
@@ -149,7 +150,10 @@ impl Selection {
                 return Err(at(&path, "provider requires format onnx"));
             }
             match model.format {
-                Format::Mlx => native_backend(&path, &mut result.runner, schema::Backend::Mlx)?,
+                // GPTQ and AWQ checkpoints are repacked onto MLX affine groups when loaded.
+                Format::Mlx | Format::Gptq | Format::Awq => {
+                    native_backend(&path, &mut result.runner, schema::Backend::Mlx)?
+                }
                 Format::Onnx => native_backend(&path, &mut result.runner, schema::Backend::Onnx)?,
                 _ if matches!(
                     result.runner.backend,

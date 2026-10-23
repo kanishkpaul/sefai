@@ -522,6 +522,7 @@ fn profile_selection_overrides_config_model() {
 }
 
 #[test]
+#[cfg(not(feature = "mlx"))]
 fn unsupported_engine_profiles_never_fall_back_to_gguf() {
     let fixture = Fixture::new();
     fixture.write(
@@ -677,6 +678,25 @@ fn tool_checkpoint_replaces_the_current_turn_without_duplication() {
         .unwrap();
     assert_eq!(completed.matches("## user\n").count(), 1);
     assert!(!completed.contains("dispatching"));
+}
+
+#[test]
+#[cfg(feature = "mlx")]
+fn gptq_and_awq_profiles_select_the_mlx_engine() {
+    for format in ["gptq", "awq"] {
+        let fixture = Fixture::new();
+        fixture.write(
+            "models/one.md",
+            &format!("---\nschema: 1\nid: one\npath: bundle\nformat: {format}\n---\n"),
+        );
+        let mut selection = fixture.selection();
+        selection.profile = Some("one".into());
+        let prepared = selection.prepare("hi".into()).expect("quantized profile");
+        assert!(matches!(
+            prepared.runner.backend,
+            Some(schema::Backend::Mlx)
+        ));
+    }
 }
 
 #[test]

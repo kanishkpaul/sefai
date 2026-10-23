@@ -2812,6 +2812,7 @@ dependencies = [
 name = "sefai-engine-mlx"
 version = "0.1.0"
 dependencies = [
+ "half",
  "mlx-lm",
  "mlx-rs",
  "sefai-core",

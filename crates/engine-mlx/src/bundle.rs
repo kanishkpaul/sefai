@@ -9,12 +9,36 @@ use std::{
 const METADATA_BYTES_MAX: u64 = 64 * 1024 * 1024;
 const MODEL_BYTES_MAX: u64 = 1024 * 1024 * 1024 * 1024;
 
+/// An admitted bundle's context limit and weight storage.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Bundle {
+    pub context: u32,
+    pub weights: Weights,
+}
+
+/// How a bundle stores its quantized linear weights.
+/// GPTQ and AWQ groups are repacked into MLX affine groups in memory at load; files are never rewritten.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Weights {
+    /// MLX floating or affine-quantized safetensors.
+    Mlx,
+    /// GPTQ int32 packing along the input dimension.
+    /// Version 1 checkpoints store each zero point minus one.
+    Gptq {
+        bits: u8,
+        group_size: u32,
+        zero_offset: bool,
+    },
+    /// AutoAWQ GEMM int32 packing along the output dimension, with zero points.
+    Awq { bits: u8, group_size: u32 },
+}
+
 /// Validates bounded, local bundle assets before native loading.
 /// Model files must remain unchanged until the model is unloaded.
 ///
 /// # Errors
-/// Rejects missing assets, unsupported architectures, escaping paths and limits.
-pub fn validate(path: &Path) -> io::Result<u32> {
+/// Rejects missing assets, unsupported architectures or quantization, escaping paths and limits.
+pub fn validate(path: &Path) -> io::Result<Bundle> {
     let root = path.canonicalize()?;
     if !root.is_dir() {
         return Err(invalid("mlx model must be a bundle directory"));
@@ -41,6 +65,7 @@ pub fn validate(path: &Path) -> io::Result<u32> {
         .filter(|n| *n > 0)
         .ok_or_else(|| invalid("mlx config requires max_position_embeddings"))?
         .min(131072) as u32;
+    let weights = weights(&config)?;
     json(&root, "tokenizer.json")?;
     json(&root, "tokenizer_config.json")?;
     if root.join("generation_config.json").exists() {
@@ -83,7 +108,89 @@ pub fn validate(path: &Path) -> io::Result<u32> {
             return Err(invalid("mlx weights must be 8 bytes..1 tib total"));
         }
     }
-    Ok(context)
+    Ok(Bundle { context, weights })
+}
+
+/// Admits only GPTQ and AWQ layouts that map exactly onto MLX affine groups.
+/// MLX's own `quantization` metadata is validated by the native loader.
+fn weights(config: &Value) -> io::Result<Weights> {
+    let declared = &config["quantization_config"];
+    let method = declared["quant_method"].as_str();
+    // MLX bundles may repeat their affine settings here without a method.
+    if declared.is_null() || method.is_none() && !config["quantization"].is_null() {
+        return Ok(Weights::Mlx);
+    }
+    if !config["quantization"].is_null() {
+        return Err(invalid(
+            "mlx config declares both mlx quantization and a quantization_config method",
+        ));
+    }
+    let group_size = match declared["group_size"].as_u64() {
+        Some(size @ (32 | 64 | 128)) => size as u32,
+        _ => {
+            return Err(invalid(
+                "quantization_config group_size must be 32, 64 or 128 to map onto mlx affine groups",
+            ));
+        }
+    };
+    let bits = declared["bits"].as_u64();
+    match method {
+        Some("gptq") => {
+            let bits = match bits {
+                Some(bits @ (4 | 8)) => bits as u8,
+                _ => return Err(invalid("gptq bits must be 4 or 8")),
+            };
+            if declared["desc_act"].as_bool() == Some(true) {
+                return Err(invalid(
+                    "gptq act-order (desc_act) reorders groups and cannot map onto mlx affine groups",
+                ));
+            }
+            if declared["lm_head"].as_bool() == Some(true) {
+                return Err(invalid("gptq quantized lm_head is not supported"));
+            }
+            if !matches!(declared["pack_dtype"].as_str(), None | Some("int32")) {
+                return Err(invalid("gptq pack_dtype must be int32"));
+            }
+            let zero_offset = match declared["checkpoint_format"].as_str() {
+                None | Some("gptq") => true,
+                Some("gptq_v2") => false,
+                Some(other) => {
+                    return Err(invalid(format!(
+                        "gptq checkpoint_format {other} is not supported; expected gptq or gptq_v2"
+                    )));
+                }
+            };
+            Ok(Weights::Gptq {
+                bits,
+                group_size,
+                zero_offset,
+            })
+        }
+        Some("awq") => {
+            if bits != Some(4) {
+                return Err(invalid("awq bits must be 4"));
+            }
+            if !declared["version"]
+                .as_str()
+                .is_some_and(|version| version.eq_ignore_ascii_case("gemm"))
+            {
+                return Err(invalid("awq version must be gemm"));
+            }
+            if declared["zero_point"].as_bool() != Some(true) {
+                return Err(invalid(
+                    "awq checkpoints without zero points are not supported",
+                ));
+            }
+            Ok(Weights::Awq {
+                bits: 4,
+                group_size,
+            })
+        }
+        Some(method) => Err(invalid(format!(
+            "quantization method {method} is not supported; expected gptq or awq"
+        ))),
+        None => Err(invalid("quantization_config requires quant_method")),
+    }
 }
 
 fn asset(root: &Path, name: &str) -> io::Result<File> {
@@ -168,7 +275,59 @@ mod tests {
     #[test]
     fn complete_local_bundle_passes_admission() {
         let fixture = Fixture::new();
-        assert_eq!(validate(&fixture.0).expect("bundle"), 2048);
+        assert_eq!(
+            validate(&fixture.0).expect("bundle"),
+            Bundle {
+                context: 2048,
+                weights: Weights::Mlx
+            }
+        );
+    }
+    fn quantized(declared: serde_json::Value) -> io::Result<Weights> {
+        weights(&serde_json::json!({ "quantization_config": declared }))
+    }
+    #[test]
+    fn gptq_and_awq_layouts_that_map_onto_mlx_are_admitted() {
+        assert_eq!(
+            quantized(serde_json::json!({"quant_method": "gptq", "bits": 4, "group_size": 128, "desc_act": false, "sym": true})).expect("gptq"),
+            Weights::Gptq { bits: 4, group_size: 128, zero_offset: true }
+        );
+        assert_eq!(
+            quantized(serde_json::json!({"quant_method": "gptq", "bits": 8, "group_size": 64, "checkpoint_format": "gptq_v2"})).expect("gptq v2"),
+            Weights::Gptq { bits: 8, group_size: 64, zero_offset: false }
+        );
+        assert_eq!(
+            quantized(serde_json::json!({"quant_method": "awq", "bits": 4, "group_size": 32, "version": "GEMM", "zero_point": true})).expect("awq"),
+            Weights::Awq { bits: 4, group_size: 32 }
+        );
+    }
+    #[test]
+    fn unmappable_quantization_is_rejected() {
+        for declared in [
+            serde_json::json!({"quant_method": "gptq", "bits": 4, "group_size": 128, "desc_act": true}),
+            serde_json::json!({"quant_method": "gptq", "bits": 3, "group_size": 128}),
+            serde_json::json!({"quant_method": "gptq", "bits": 4, "group_size": -1}),
+            serde_json::json!({"quant_method": "gptq", "bits": 4, "group_size": 128, "checkpoint_format": "marlin"}),
+            serde_json::json!({"quant_method": "gptq", "bits": 4, "group_size": 128, "lm_head": true}),
+            serde_json::json!({"quant_method": "awq", "bits": 4, "group_size": 128, "version": "gemv", "zero_point": true}),
+            serde_json::json!({"quant_method": "awq", "bits": 4, "group_size": 128, "version": "gemm", "zero_point": false}),
+            serde_json::json!({"quant_method": "fp8", "bits": 8, "group_size": 128}),
+            serde_json::json!({"bits": 4, "group_size": 128}),
+        ] {
+            assert!(quantized(declared.clone()).is_err(), "{declared}");
+        }
+        assert!(weights(&serde_json::json!({"quantization": {"bits": 4, "group_size": 64}, "quantization_config": {"quant_method": "gptq", "bits": 4, "group_size": 64}})).is_err());
+    }
+    #[test]
+    fn mlx_affine_settings_repeated_without_a_method_stay_mlx() {
+        let settings = serde_json::json!({"bits": 4, "group_size": 64});
+        assert_eq!(
+            weights(
+                &serde_json::json!({"quantization": settings, "quantization_config": settings})
+            )
+            .expect("mlx"),
+            Weights::Mlx
+        );
     }
     #[test]
     fn unsupported_architecture_is_rejected() {
