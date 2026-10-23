@@ -16,7 +16,7 @@ Runner settings resolve as explicit CLI flags, selected model profile, workspace
 `--profile ID` overrides the config's `model` selection.
 `--model PATH` overrides the selected profile's weights path, retaining its runner settings.
 A relative weights path resolves against the workspace; an absolute path may point outside it.
-The recognized format names are `gguf`, `onnx`, `gptq`, `awq` and `mlx`; the default runner executes `gguf`, and the optional native MLX build executes its [declared bundles](mlx.md).
+The recognized format names are `gguf`, `onnx`, `gptq`, `awq` and `mlx`; the default runner executes `gguf`, the optional native MLX build executes its [declared bundles](mlx.md), and the optional ONNX build executes its [declared decoder exports](onnx.md).
 Other selections fail without conversion or fallback.
 Profiles are metadata; weights are not read by `workspace check`.
 
@@ -54,7 +54,7 @@ Different kinds have separate namespaces.
 | `sessions/ID.md` | `schema: 1`, `id`, `outcome: completed` or `interrupted` | None | Quoted session records |
 | `mcp/ID.md` | `schema: 1`, `id`, `transport` | None | Notes; never approval |
 
-`runner` accepts optional `backend` (`cpu`, `metal`, `cuda`, `vulkan`), `device` (nonnegative ggml index), `context` (1–131072 tokens), `batch`/`microbatch` (1–4096 tokens), `output` (0–131072 tokens), and `threads` (1–256).
+`runner` accepts optional `backend` (`cpu`, `metal`, `cuda`, `vulkan`, `mlx`, `onnx`), `device` (nonnegative ggml index), `context` (1–131072 tokens), `batch`/`microbatch` (1–4096 tokens), `output` (0–131072 tokens), and `threads` (1–256).
 The runner additionally validates device compatibility, batch/context relationships and reserved output before inference.
 GPU selection still requires an explicit device; no automatic CPU fallback occurs.
 

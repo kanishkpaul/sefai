@@ -1,0 +1,9 @@
+{"graph": "SmolLM2-135M-Instruct-onnx/onnx/model_int8.onnx", "prompt": "The three primary colors are", "tokens": 64, "text_equal": true, "reference_smallest_top2_margin": 0.0029888153076171875, "onnxruntime": "1.31.0"}
+{"graph": "SmolLM2-135M-Instruct-onnx/onnx/model_int8.onnx", "prompt": "def fibonacci(n):", "tokens": 64, "text_equal": true, "reference_smallest_top2_margin": 0.013841629028320312, "onnxruntime": "1.31.0"}
+{"graph": "SmolLM2-135M-Instruct-onnx/onnx/model_int8.onnx", "prompt": "日本の首都は", "tokens": 64, "text_equal": true, "reference_smallest_top2_margin": 0.011491775512695312, "onnxruntime": "1.31.0"}
+{"graph": "SmolLM2-135M-Instruct-onnx/onnx/model.onnx", "prompt": "The three primary colors are", "tokens": 64, "text_equal": true, "reference_smallest_top2_margin": 0.03228950500488281, "onnxruntime": "1.31.0"}
+{"graph": "SmolLM2-135M-Instruct-onnx/onnx/model.onnx", "prompt": "def fibonacci(n):", "tokens": 64, "text_equal": true, "reference_smallest_top2_margin": 0.021366119384765625, "onnxruntime": "1.31.0"}
+{"graph": "SmolLM2-135M-Instruct-onnx/onnx/model.onnx", "prompt": "日本の首都は", "tokens": 64, "text_equal": true, "reference_smallest_top2_margin": 0.00247955322265625, "onnxruntime": "1.31.0"}
+{"graph": "Qwen3-0.6B-onnx/onnx/model.onnx", "prompt": "The three primary colors are", "tokens": 64, "text_equal": true, "reference_smallest_top2_margin": 0.03934478759765625, "onnxruntime": "1.31.0"}
+{"graph": "Qwen3-0.6B-onnx/onnx/model.onnx", "prompt": "def fibonacci(n):", "tokens": 64, "text_equal": true, "reference_smallest_top2_margin": 0.033123016357421875, "onnxruntime": "1.31.0"}
+{"graph": "Qwen3-0.6B-onnx/onnx/model.onnx", "prompt": "日本の首都は", "tokens": 64, "text_equal": true, "reference_smallest_top2_margin": 0.015329360961914062, "onnxruntime": "1.31.0"}

@@ -1,0 +1,20 @@
+{
+  "onnxruntime": "1.31.0",
+  "reference": "Python onnxruntime wheel, CoreMLExecutionProvider with ModelFormat MLProgram and MLComputeUnits ALL",
+  "host": "Apple M5, macOS 27.0",
+  "graphs": [
+    {
+      "graph": "HuggingFaceTB/SmolLM2-135M-Instruct onnx/model.onnx",
+      "nodes": 459,
+      "coreml_nodes": 308,
+      "coreml_partitions": 92
+    },
+    {
+      "graph": "HuggingFaceTB/SmolLM2-135M-Instruct onnx/model_int8.onnx",
+      "nodes": 1212,
+      "coreml_nodes": 727,
+      "coreml_partitions": 121
+    }
+  ],
+  "conclusion": "CoreML takes part of each graph in many partitions with CPU fallback between them, so it is not a qualified accelerated provider for these exports"
+}

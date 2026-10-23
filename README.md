@@ -23,7 +23,7 @@ Keep credentials out of Markdown and review the documented limits before enablin
 
 | Area | Planned support |
 | --- | --- |
-| Model runtimes | GGUF and optional native MLX; ONNX, GPTQ and AWQ planned |
+| Model runtimes | GGUF, optional native MLX and optional ONNX on CPU; ONNX acceleration, GPTQ and AWQ planned |
 | Systems | Windows, macOS and Linux |
 | GPUs | NVIDIA/CUDA, Apple/Metal, AMD/Vulkan; CPU fallback |
 | Customization | Markdown source of truth; binary models/caches and credential references are explicit exceptions |
@@ -44,6 +44,7 @@ cargo run --locked -- run --model /path/to/model.gguf "hello"
 
 The default runner loads the chosen local GGUF and streams a reply; CPU is the explicit default.
 The optional [native MLX adapter](docs/mlx.md) runs named Apple Silicon safetensors bundles through the same terminal harness.
+The optional [ONNX adapter](docs/onnx.md) runs named decoder exports on the ONNX Runtime CPU provider through the same harness.
 See the [runner guide](docs/runner.md) for GPU builds, limits, benchmarks and model tests.
 `cargo run --locked --no-default-features -- prompt hello` retains the diagnostic without native inference dependencies.
 
