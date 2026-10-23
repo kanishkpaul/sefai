@@ -1,0 +1,26 @@
+[package]
+name = "mlx-lm"
+version = "0.32.0"
+edition = "2021"
+rust-version = "1.88.0"
+repository = "https://github.com/oxiglade/mlx-rs"
+license = "MIT OR Apache-2.0"
+description = "Synchronous language model inference with MLX"
+publish = false
+
+[features]
+default = []
+
+[dependencies]
+mlx-rs = { git = "https://github.com/oxiglade/mlx-rs", rev = "579199b4bb5e39b35f33fc6a59cb90e2c031a6a7" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+safetensors = "0.8"
+tokenizers = { version = "0.22", default-features = false, features = ["onig"] }
+minijinja = { version = "2", features = ["loader"] }
+minijinja-contrib = { version = "2", features = ["pycompat"] }
+
+# Upstream's Hub and oracle-hook features are omitted; their cfg gates stay unchanged.
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("hf-hub", "oracle-hooks"))'] }

@@ -16,7 +16,7 @@ Runner settings resolve as explicit CLI flags, selected model profile, workspace
 `--profile ID` overrides the config's `model` selection.
 `--model PATH` overrides the selected profile's weights path, retaining its runner settings.
 A relative weights path resolves against the workspace; an absolute path may point outside it.
-The recognized format names are `gguf`, `onnx`, `gptq`, `awq` and `mlx`; the default runner executes `gguf`, the optional native MLX build executes its [declared bundles](mlx.md), and the optional ONNX build executes its [declared decoder exports](onnx.md).
+The recognized format names are `gguf`, `onnx`, `gptq`, `awq` and `mlx`; the default runner executes `gguf`, the optional native MLX build executes its [declared bundles](mlx.md) and [GPTQ and AWQ checkpoints](gptq-awq.md), and the optional ONNX build executes its [declared decoder exports](onnx.md).
 Other selections fail without conversion or fallback.
 Profiles are metadata; weights are not read by `workspace check`.
 

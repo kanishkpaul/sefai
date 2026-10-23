@@ -1,0 +1,280 @@
+{
+  "host": "Apple M5, 16 GiB unified memory, macOS 27.0; not idle (desktop apps loaded the host), so runners alternate per fixture",
+  "versions": {
+    "mlx": "0.32.2",
+    "python_mlx_lm": "0.31.3",
+    "transformers": "5.20.2",
+    "torch": "2.14.1",
+    "gptqmodel": "7.6.0",
+    "optimum": "installed with transformers 5.20.2"
+  },
+  "method": "crates/engine-mlx/examples/measure.rs on each original checkpoint and on its MLX-layout copy, and scripts/measure_mlx.py with Python mlx-lm on the copy: identical prompt ids, greedy sampling, 128 output tokens, 128-token prefill chunks, three fresh-cache repetitions per process, median of repetitions 2 and 3. Decode excludes the first sampled token. RSS and process peak footprint come from /usr/bin/time -l.",
+  "rows": [
+    {
+      "fixture": "Qwen3-0.6B-GPTQ-Int8",
+      "workload": "short",
+      "sefai_checkpoint": {
+        "prompt_tokens": 23,
+        "decode_tps": 96.9,
+        "prefill_tps": 578.6,
+        "mlx_peak_active_mib": 787.6,
+        "max_rss_mib": 919.9,
+        "peak_footprint_mib": 965.2,
+        "process_s": 5.39
+      },
+      "sefai_mlx_copy": {
+        "prompt_tokens": 23,
+        "decode_tps": 98.3,
+        "prefill_tps": 617.7,
+        "mlx_peak_active_mib": 787.7,
+        "max_rss_mib": 915.6,
+        "peak_footprint_mib": 974.9,
+        "process_s": 4.27
+      },
+      "python_mlx_copy": {
+        "prompt_tokens": 23,
+        "decode_tps": 138.0,
+        "prefill_tps": 732.4,
+        "mlx_peak_active_mib": 777.5,
+        "max_rss_mib": 1059.8,
+        "peak_footprint_mib": 1082.3,
+        "process_s": 4.47
+      },
+      "checkpoint_text_matches_mlx_copy": true,
+      "text_matches_python_after_strip": true
+    },
+    {
+      "fixture": "Qwen3-0.6B-GPTQ-Int8",
+      "workload": "long",
+      "sefai_checkpoint": {
+        "prompt_tokens": 535,
+        "decode_tps": 80.4,
+        "prefill_tps": 1916.4,
+        "mlx_peak_active_mib": 1130.0,
+        "max_rss_mib": 918.3,
+        "peak_footprint_mib": 1291.8,
+        "process_s": 6.2
+      },
+      "sefai_mlx_copy": {
+        "prompt_tokens": 535,
+        "decode_tps": 63.1,
+        "prefill_tps": 1782.7,
+        "mlx_peak_active_mib": 1130.0,
+        "max_rss_mib": 914.0,
+        "peak_footprint_mib": 1292.1,
+        "process_s": 6.73
+      },
+      "python_mlx_copy": {
+        "prompt_tokens": 535,
+        "decode_tps": 128.3,
+        "prefill_tps": 2672.8,
+        "mlx_peak_active_mib": 972.5,
+        "max_rss_mib": 1057.6,
+        "peak_footprint_mib": 1281.7,
+        "process_s": 4.83
+      },
+      "checkpoint_text_matches_mlx_copy": true,
+      "text_matches_python_after_strip": true
+    },
+    {
+      "fixture": "Qwen3-0.6B-AWQ",
+      "workload": "short",
+      "sefai_checkpoint": {
+        "prompt_tokens": 23,
+        "decode_tps": 127.2,
+        "prefill_tps": 783.7,
+        "mlx_peak_active_mib": 577.6,
+        "max_rss_mib": 706.6,
+        "peak_footprint_mib": 764.4,
+        "process_s": 4.65
+      },
+      "sefai_mlx_copy": {
+        "prompt_tokens": 23,
+        "decode_tps": 112.8,
+        "prefill_tps": 632.4,
+        "mlx_peak_active_mib": 577.6,
+        "max_rss_mib": 707.9,
+        "peak_footprint_mib": 757.4,
+        "process_s": 3.9
+      },
+      "python_mlx_copy": {
+        "prompt_tokens": 23,
+        "decode_tps": 167.6,
+        "prefill_tps": 777.6,
+        "mlx_peak_active_mib": 567.5,
+        "max_rss_mib": 847.9,
+        "peak_footprint_mib": 870.0,
+        "process_s": 3.76
+      },
+      "checkpoint_text_matches_mlx_copy": true,
+      "text_matches_python_after_strip": true
+    },
+    {
+      "fixture": "Qwen3-0.6B-AWQ",
+      "workload": "long",
+      "sefai_checkpoint": {
+        "prompt_tokens": 535,
+        "decode_tps": 96.3,
+        "prefill_tps": 2166.0,
+        "mlx_peak_active_mib": 920.0,
+        "max_rss_mib": 707.6,
+        "peak_footprint_mib": 1084.1,
+        "process_s": 5.91
+      },
+      "sefai_mlx_copy": {
+        "prompt_tokens": 535,
+        "decode_tps": 81.2,
+        "prefill_tps": 1988.9,
+        "mlx_peak_active_mib": 920.0,
+        "max_rss_mib": 708.0,
+        "peak_footprint_mib": 1082.1,
+        "process_s": 5.89
+      },
+      "python_mlx_copy": {
+        "prompt_tokens": 535,
+        "decode_tps": 147.9,
+        "prefill_tps": 2522.2,
+        "mlx_peak_active_mib": 762.5,
+        "max_rss_mib": 849.8,
+        "peak_footprint_mib": 1074.2,
+        "process_s": 4.61
+      },
+      "checkpoint_text_matches_mlx_copy": true,
+      "text_matches_python_after_strip": true
+    },
+    {
+      "fixture": "SmolLM2-1.7B-Instruct-GPTQ-Int4",
+      "workload": "short",
+      "sefai_checkpoint": {
+        "prompt_tokens": 23,
+        "decode_tps": 60.7,
+        "prefill_tps": 243.8,
+        "mlx_peak_active_mib": 1479.6,
+        "max_rss_mib": 1329.0,
+        "peak_footprint_mib": 1590.1,
+        "process_s": 7.55
+      },
+      "sefai_mlx_copy": {
+        "prompt_tokens": 23,
+        "decode_tps": 58.6,
+        "prefill_tps": 200.3,
+        "mlx_peak_active_mib": 1479.6,
+        "max_rss_mib": 1328.9,
+        "peak_footprint_mib": 1590.0,
+        "process_s": 7.2
+      },
+      "python_mlx_copy": {
+        "prompt_tokens": 23,
+        "decode_tps": 75.5,
+        "prefill_tps": 240.3,
+        "mlx_peak_active_mib": 1488.4,
+        "max_rss_mib": 1415.2,
+        "peak_footprint_mib": 1666.2,
+        "process_s": 6.44
+      },
+      "checkpoint_text_matches_mlx_copy": true,
+      "text_matches_python_after_strip": true
+    },
+    {
+      "fixture": "SmolLM2-1.7B-Instruct-GPTQ-Int4",
+      "workload": "long",
+      "sefai_checkpoint": {
+        "prompt_tokens": 567,
+        "decode_tps": 38.8,
+        "prefill_tps": 565.8,
+        "mlx_peak_active_mib": 2517.4,
+        "max_rss_mib": 1330.7,
+        "peak_footprint_mib": 2630.8,
+        "process_s": 14.52
+      },
+      "sefai_mlx_copy": {
+        "prompt_tokens": 567,
+        "decode_tps": 34.3,
+        "prefill_tps": 537.4,
+        "mlx_peak_active_mib": 2517.4,
+        "max_rss_mib": 1330.4,
+        "peak_footprint_mib": 2630.6,
+        "process_s": 15.33
+      },
+      "python_mlx_copy": {
+        "prompt_tokens": 567,
+        "decode_tps": 69.9,
+        "prefill_tps": 460.7,
+        "mlx_peak_active_mib": 2021.6,
+        "max_rss_mib": 1413.1,
+        "peak_footprint_mib": 2221.5,
+        "process_s": 10.14
+      },
+      "checkpoint_text_matches_mlx_copy": true,
+      "text_matches_python_after_strip": true
+    },
+    {
+      "fixture": "SmolLM2-1.7B-Instruct-AWQ-Int4",
+      "workload": "short",
+      "sefai_checkpoint": {
+        "prompt_tokens": 23,
+        "decode_tps": 51.0,
+        "prefill_tps": 236.7,
+        "mlx_peak_active_mib": 1479.6,
+        "max_rss_mib": 1329.0,
+        "peak_footprint_mib": 1602.1,
+        "process_s": 9.53
+      },
+      "sefai_mlx_copy": {
+        "prompt_tokens": 23,
+        "decode_tps": 55.7,
+        "prefill_tps": 221.3,
+        "mlx_peak_active_mib": 1479.6,
+        "max_rss_mib": 1328.4,
+        "peak_footprint_mib": 1581.3,
+        "process_s": 7.33
+      },
+      "python_mlx_copy": {
+        "prompt_tokens": 23,
+        "decode_tps": 67.0,
+        "prefill_tps": 226.4,
+        "mlx_peak_active_mib": 1488.4,
+        "max_rss_mib": 1414.7,
+        "peak_footprint_mib": 1663.5,
+        "process_s": 7.01
+      },
+      "checkpoint_text_matches_mlx_copy": true,
+      "text_matches_python_after_strip": true
+    },
+    {
+      "fixture": "SmolLM2-1.7B-Instruct-AWQ-Int4",
+      "workload": "long",
+      "sefai_checkpoint": {
+        "prompt_tokens": 512,
+        "decode_tps": 37.0,
+        "prefill_tps": 524.7,
+        "mlx_peak_active_mib": 2517.1,
+        "max_rss_mib": 1334.7,
+        "peak_footprint_mib": 2635.1,
+        "process_s": 15.43
+      },
+      "sefai_mlx_copy": {
+        "prompt_tokens": 512,
+        "decode_tps": 38.7,
+        "prefill_tps": 408.3,
+        "mlx_peak_active_mib": 2517.1,
+        "max_rss_mib": 1330.4,
+        "peak_footprint_mib": 2634.7,
+        "process_s": 13.67
+      },
+      "python_mlx_copy": null,
+      "checkpoint_text_matches_mlx_copy": true
+    }
+  ],
+  "load_seconds_median_of_three": {
+    "Qwen3-0.6B-GPTQ-Int8 checkpoint": 0.479993,
+    "Qwen3-0.6B-GPTQ-Int8 copy": 0.18429,
+    "Qwen3-0.6B-AWQ checkpoint": 0.53367,
+    "Qwen3-0.6B-AWQ copy": 0.192173,
+    "SmolLM2-1.7B-Instruct-GPTQ-Int4 checkpoint": 0.802318,
+    "SmolLM2-1.7B-Instruct-GPTQ-Int4 copy": 0.119713,
+    "SmolLM2-1.7B-Instruct-AWQ-Int4 checkpoint": 2.017238,
+    "SmolLM2-1.7B-Instruct-AWQ-Int4 copy": 0.131249
+  },
+  "excluded": "SmolLM2-1.7B-Instruct-AWQ-Int4 long: Python mlx-lm and the native tokenizer encode the 567-token prompt to different ids with this export's tokenizer.json, so measure_mlx.py refuses the comparison."
+}

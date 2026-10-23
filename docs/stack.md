@@ -12,7 +12,7 @@ Other runtime choices and the wider platform/model matrix still require qualific
 | GGUF | Embedded llama.cpp via exactly pinned `llama-cpp-2` | Only `engine-llama` touches llama.cpp; defaults off; API probe before version selection |
 | MLX | Optional Apple adapter, evaluate `mlx-rs` and model code | A tensor binding does not implement every architecture; explicit worker alternative if needed |
 | ONNX | Optional ONNX Runtime via `ort` | Model/export cache contract and provider compatibility tested separately |
-| GPTQ/AWQ | Optional quantized runtime adapter selected by a compatibility spike | Actual checkpoint/kernel support required; native Rust route preferred, explicit persistent worker fallback possible |
+| GPTQ/AWQ | In-memory repack onto MLX affine groups on Apple Silicon; NVIDIA runtime still to be selected | Only layouts that map exactly are admitted; actual checkpoint/kernel support required per GPU |
 | TUI | Ratatui/Crossterm and `design/rust/theme.rs` | Event-driven, bounded scrollback and terminal restoration |
 | Settings/data | Markdown with strict typed YAML front matter | YAML parser and Markdown parser introduced only when needed; no arbitrary code execution |
 | Memory | Markdown files, bounded text recall | No mandatory database/vector index or embedding model |
@@ -24,7 +24,7 @@ Other runtime choices and the wider platform/model matrix still require qualific
 
 | OS / hardware | GGUF baseline | Other planned routes | Release evidence required |
 | --- | --- | --- | --- |
-| macOS arm64 / Apple Silicon | Metal, CPU | MLX; ONNX CPU and qualified providers | Actual Metal and MLX runs |
+| macOS arm64 / Apple Silicon | Metal, CPU | MLX, GPTQ/AWQ on MLX; ONNX CPU and qualified providers | Actual Metal and MLX runs |
 | macOS x86_64 / Intel | CPU | ONNX CPU where runtime build supports it | Separate artifact/test; no Apple-GPU promise |
 | Windows x86_64 / NVIDIA | CUDA, CPU | Qualified ONNX and GPTQ/AWQ runtime | Windows GPU run and clean install |
 | Linux x86_64 / NVIDIA | CUDA, CPU | Qualified ONNX and GPTQ/AWQ runtime | Linux GPU run and clean install |

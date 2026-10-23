@@ -1,3 +1,4 @@
+use crate::{Bundle, Weights};
 use mlx_lm::{
     ChatContinuation, ChatTemplateOptions, FinishReason, GenerationEvent, GenerationOptions,
     TokenId,
@@ -15,7 +16,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-type Result<T> = std::result::Result<T, Error>;
+pub(crate) type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -48,6 +49,7 @@ impl From<&str> for Error {
 pub struct Model {
     model: RefCell<mlx_lm::Model>,
     context: u32,
+    weights: Weights,
     _lease: Lease,
 }
 
@@ -108,9 +110,10 @@ impl Drop for Cache<'_> {
 
 impl Model {
     /// Loads a validated local bundle onto the worker's default Metal device.
+    /// GPTQ and AWQ layers are repacked into MLX affine groups in memory first.
     /// Cancellation is checked around native loading, not inside it.
     pub fn load(path: &Path, cancelled: Arc<AtomicBool>) -> Result<Self> {
-        let context = super::validate(path)?;
+        let Bundle { context, weights } = super::validate(path)?;
         if cancelled.load(Ordering::Relaxed) {
             return Err("model loading cancelled".into());
         }
@@ -124,19 +127,34 @@ impl Model {
         mlx_rs::Device::set_default(&mlx_rs::Device::gpu());
         // Limit scratch retention independently of the live KV tensors.
         mlx_rs::memory::set_cache_limit(64 * 1024 * 1024)?;
-        let model = mlx_lm::Model::from_dir(path)?;
+        let model = match weights {
+            Weights::Mlx => mlx_lm::Model::from_dir(path)?,
+            Weights::Gptq { .. } | Weights::Awq { .. } => {
+                let (config, tensors) = crate::quantized::load(&path.canonicalize()?, weights)?;
+                if cancelled.load(Ordering::Relaxed) {
+                    return Err("model loading cancelled".into());
+                }
+                mlx_lm::Model::from_dir_with_tensors(path, &config, tensors)?
+            }
+        };
         if cancelled.load(Ordering::Relaxed) {
             return Err("model loading cancelled".into());
         }
         Ok(Self {
             model: RefCell::new(model),
             context,
+            weights,
             _lease: lease,
         })
     }
 
     pub fn context_tokens_max(&self) -> u32 {
         self.context
+    }
+
+    /// Reports how the loaded bundle stored its quantized weights.
+    pub fn weights(&self) -> Weights {
+        self.weights
     }
 
     pub fn prepare(&self, prompt: &Prompt) -> Result<Input<'_>> {

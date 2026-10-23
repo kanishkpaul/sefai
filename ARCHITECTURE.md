@@ -9,7 +9,7 @@ The TUI is its permanent home.
 `crates/core` contains bounded inference settings and statistics alongside dependency-free `Message`, `Role`, `Prompt` and `Section` types, including a distinct tool-result role.
 `crates/engine-llama` owns the exactly pinned llama.cpp binding, GGUF model loading, native templates/tokenizer, bounded prefill, sampling and streaming.
 `crates/sefai` composes the `run`, `bench`, `devices` and minimal `prompt` commands, cancellation and terminal sanitization.
-The optional `crates/engine-mlx` adapter owns native MLX bundle validation, tokenization, streaming and cache state; its named-model qualification and limits are recorded in [the MLX guide](docs/mlx.md).
+The optional `crates/engine-mlx` adapter owns native MLX bundle validation, GPTQ and AWQ admission and in-memory repacking, tokenization, streaming and cache state; its named-model qualification and limits are recorded in [the MLX guide](docs/mlx.md) and [the GPTQ and AWQ guide](docs/gptq-awq.md).
 The optional `crates/engine-onnx` adapter owns ONNX bundle admission, graph-signature validation, execution-provider selection, tokenization and device-resident cache state; its scope, providers and evidence are in [the ONNX guide](docs/onnx.md).
 The binary selects between concrete adapters, with no cross-adapter runtime dependency.
 An engine lends one model at a time; one-shot requests use a temporary context, while interactive callers may retain one model-bound prefix cache.

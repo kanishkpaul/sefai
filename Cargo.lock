@@ -1698,7 +1698,6 @@ dependencies = [
 [[package]]
 name = "mlx-lm"
 version = "0.32.0"
-source = "git+https://github.com/oxiglade/mlx-rs?rev=579199b4bb5e39b35f33fc6a59cb90e2c031a6a7#579199b4bb5e39b35f33fc6a59cb90e2c031a6a7"
 dependencies = [
  "minijinja",
  "minijinja-contrib",
@@ -2813,6 +2812,7 @@ dependencies = [
 name = "sefai-engine-mlx"
 version = "0.1.0"
 dependencies = [
+ "half",
  "mlx-lm",
  "mlx-rs",
  "sefai-core",

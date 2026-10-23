@@ -63,5 +63,13 @@ name = "harness_mlx"
 required-features = ["mlx-model-tests"]
 
 [[test]]
+name = "harness_gptq"
+required-features = ["mlx-model-tests"]
+
+[[test]]
+name = "harness_awq"
+required-features = ["mlx-model-tests"]
+
+[[test]]
 name = "harness_onnx"
 required-features = ["onnx-model-tests"]

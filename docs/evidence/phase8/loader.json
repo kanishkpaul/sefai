@@ -1,0 +1,95 @@
+{
+  "method": "sefai run --backend mlx --raw --output 64 on each original checkpoint, which the native loader repacks in memory, against the same command on scripts/quantized_repack.py's MLX-layout bundle",
+  "rows": [
+    {
+      "checkpoint": "Qwen3-0.6B-GPTQ-Int4",
+      "prompt": "The three primary colors are",
+      "identical": true,
+      "chars": 286
+    },
+    {
+      "checkpoint": "Qwen3-0.6B-GPTQ-Int4",
+      "prompt": "def fibonacci(n):",
+      "identical": true,
+      "chars": 175
+    },
+    {
+      "checkpoint": "Qwen3-0.6B-GPTQ-Int4",
+      "prompt": "日本の首都は",
+      "identical": true,
+      "chars": 101
+    },
+    {
+      "checkpoint": "Qwen3-0.6B-AWQ",
+      "prompt": "The three primary colors are",
+      "identical": true,
+      "chars": 296
+    },
+    {
+      "checkpoint": "Qwen3-0.6B-AWQ",
+      "prompt": "def fibonacci(n):",
+      "identical": true,
+      "chars": 216
+    },
+    {
+      "checkpoint": "Qwen3-0.6B-AWQ",
+      "prompt": "日本の首都は",
+      "identical": true,
+      "chars": 86
+    },
+    {
+      "checkpoint": "Qwen3-0.6B-GPTQ-Int8",
+      "prompt": "The three primary colors are",
+      "identical": true,
+      "chars": 286
+    },
+    {
+      "checkpoint": "Qwen3-0.6B-GPTQ-Int8",
+      "prompt": "def fibonacci(n):",
+      "identical": true,
+      "chars": 182
+    },
+    {
+      "checkpoint": "Qwen3-0.6B-GPTQ-Int8",
+      "prompt": "日本の首都は",
+      "identical": true,
+      "chars": 90
+    },
+    {
+      "checkpoint": "SmolLM2-1.7B-Instruct-GPTQ-Int4",
+      "prompt": "The three primary colors are",
+      "identical": true,
+      "chars": 312
+    },
+    {
+      "checkpoint": "SmolLM2-1.7B-Instruct-GPTQ-Int4",
+      "prompt": "def fibonacci(n):",
+      "identical": true,
+      "chars": 178
+    },
+    {
+      "checkpoint": "SmolLM2-1.7B-Instruct-GPTQ-Int4",
+      "prompt": "日本の首都は",
+      "identical": true,
+      "chars": 38
+    },
+    {
+      "checkpoint": "SmolLM2-1.7B-Instruct-AWQ-Int4",
+      "prompt": "The three primary colors are",
+      "identical": true,
+      "chars": 270
+    },
+    {
+      "checkpoint": "SmolLM2-1.7B-Instruct-AWQ-Int4",
+      "prompt": "def fibonacci(n):",
+      "identical": true,
+      "chars": 178
+    },
+    {
+      "checkpoint": "SmolLM2-1.7B-Instruct-AWQ-Int4",
+      "prompt": "日本の首都は",
+      "identical": true,
+      "chars": 38
+    }
+  ]
+}
