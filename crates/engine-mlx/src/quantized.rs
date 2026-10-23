@@ -182,8 +182,10 @@ impl Stored {
         }
         Ok(self
             .read()?
-            .chunks_exact(4)
-            .map(|word| u32::from_le_bytes([word[0], word[1], word[2], word[3]]))
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|word| u32::from_le_bytes(*word))
             .collect())
     }
     /// Reads an `F16`, `BF16` or `F32` tensor as `f32`.
@@ -191,16 +193,22 @@ impl Stored {
         let bytes = self.read()?;
         Ok(match self.dtype.as_str() {
             "F16" => bytes
-                .chunks_exact(2)
-                .map(|value| half::f16::from_le_bytes([value[0], value[1]]).to_f32())
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|value| half::f16::from_le_bytes(*value).to_f32())
                 .collect(),
             "BF16" => bytes
-                .chunks_exact(2)
-                .map(|value| half::bf16::from_le_bytes([value[0], value[1]]).to_f32())
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|value| half::bf16::from_le_bytes(*value).to_f32())
                 .collect(),
             "F32" => bytes
-                .chunks_exact(4)
-                .map(|value| f32::from_le_bytes([value[0], value[1], value[2], value[3]]))
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|value| f32::from_le_bytes(*value))
                 .collect(),
             other => {
                 return Err(Error::Invalid(format!(
