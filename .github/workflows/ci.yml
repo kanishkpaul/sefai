@@ -172,3 +172,8 @@ jobs:
           cargo clippy --locked -p sefai-engine-onnx --features model-tests --all-targets -- -D warnings
           cargo test --locked -p sefai --features onnx,mcp-oauth --bin sefai
           cargo test --locked -p sefai-engine-onnx --features runtime
+      - name: Check the optional ONNX WebGPU provider build
+        if: runner.os == 'macOS'
+        run: |
+          cargo clippy --locked -p sefai --features onnx-webgpu,onnx-model-tests,mcp-oauth --all-targets -- -D warnings
+          cargo clippy --locked -p sefai-engine-onnx --features model-tests,webgpu --all-targets -- -D warnings
