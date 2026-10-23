@@ -76,13 +76,6 @@ jobs:
           cargo clippy --locked -p sefai-engine-mlx --features model-tests --all-targets -- -D warnings
           cargo test --locked -p sefai --features mlx,mcp-oauth --bin sefai
           cargo test --locked -p sefai-engine-mlx --features runtime --lib
-      - name: Check the optional ONNX Runtime adapter
-        run: |
-          cargo clippy --locked -p sefai --features onnx,onnx-model-tests,mcp-oauth --all-targets -- -D warnings
-          cargo clippy --locked -p sefai --no-default-features --features onnx --all-targets -- -D warnings
-          cargo clippy --locked -p sefai-engine-onnx --features model-tests --all-targets -- -D warnings
-          cargo test --locked -p sefai --features onnx,mcp-oauth --bin sefai
-          cargo test --locked -p sefai-engine-onnx --features runtime
       - run: cargo test --locked -p sefai --no-default-features
       - run: cargo run --locked -- prompt hello
       - run: python3 -m unittest discover -s tests -v
@@ -144,3 +137,38 @@ jobs:
         run: |
           export SEFAI_MCP_TEST_PYTHON="$(python3 -c 'import sys; print(sys.executable)')"
           cargo test --locked -p sefai --features harness-model-tests,mcp --test harness_gguf
+
+  onnx:
+    name: onnx (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Install native CPU build tools
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y cmake clang libclang-dev
+      - name: Locate Windows libclang
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: '"LIBCLANG_PATH=C:\Program Files\LLVM\bin" >> $env:GITHUB_ENV'
+      - run: rustup component add clippy
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-rust-onnx-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock') }}
+      - name: Check the optional ONNX Runtime adapter
+        run: |
+          cargo clippy --locked -p sefai --features onnx,onnx-model-tests,mcp-oauth --all-targets -- -D warnings
+          cargo clippy --locked -p sefai --no-default-features --features onnx --all-targets -- -D warnings
+          cargo clippy --locked -p sefai-engine-onnx --features model-tests --all-targets -- -D warnings
+          cargo test --locked -p sefai --features onnx,mcp-oauth --bin sefai
+          cargo test --locked -p sefai-engine-onnx --features runtime
