@@ -6,12 +6,12 @@ use crate::{
 use ort::{
     environment::Environment,
     logging::LogLevel,
-    session::{Session, SessionInputValue, builder::GraphOptimizationLevel},
+    memory::{AllocationDevice, Allocator, AllocatorType, MemoryInfo, MemoryType},
+    session::{Session, builder::GraphOptimizationLevel},
     value::{DynValue, Tensor, TensorElementType},
 };
 use sefai_core::{Prompt, Role, Settings, Statistics, Stop};
 use std::{
-    borrow::Cow,
     cell::RefCell,
     io,
     path::Path,
@@ -58,8 +58,17 @@ impl<R> From<ort::Error<R>> for Error {
     }
 }
 
+/// The ONNX Runtime execution provider that owns the graph's compute and cache tensors.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Provider {
+    Cpu,
+    /// WebGPU through Dawn; on macOS Dawn runs on Metal.
+    WebGpu,
+}
+
 pub struct Model {
     session: RefCell<Session>,
+    provider: Provider,
     tokenizer: tokenizers::Tokenizer,
     chat: Chat,
     bundle: Bundle,
@@ -85,7 +94,9 @@ pub struct Model {
 pub struct Cache<'model> {
     model: Option<&'model Model>,
     /// Alternating key and value tensors per layer, covering every token in `tokens`.
+    /// A shared layout keeps `capacity`-token buffers that the graph writes in place.
     past: Vec<DynValue>,
+    capacity: usize,
     tokens: Vec<u32>,
     reused: usize,
 }
@@ -109,6 +120,7 @@ impl Cache<'_> {
     pub fn clear(&mut self) {
         self.model = None;
         self.past.clear();
+        self.capacity = 0;
         self.tokens.clear();
         self.reused = 0;
     }
@@ -124,10 +136,16 @@ impl Drop for Cache<'_> {
 }
 
 impl Model {
-    /// Loads a validated decoder graph on the CPU execution provider.
+    /// Loads a validated decoder graph on exactly the selected execution provider.
+    /// ONNX Runtime may still place small shape nodes on the CPU; a provider that cannot initialize fails the load.
     /// ONNX Runtime binds intra-op `threads` to the session, so every request must use the same count.
     /// Cancellation is checked around native loading, not inside it.
-    pub fn load(path: &Path, threads: u32, cancelled: Arc<AtomicBool>) -> Result<Self> {
+    pub fn load(
+        path: &Path,
+        provider: Provider,
+        threads: u32,
+        cancelled: Arc<AtomicBool>,
+    ) -> Result<Self> {
         if !(1..=sefai_core::THREADS_MAX).contains(&threads) {
             return Err(Error::Invalid(format!(
                 "threads must be 1..={}",
@@ -141,11 +159,21 @@ impl Model {
         let tokenizer = tokenizers::Tokenizer::from_bytes(read(&bundle.root, "tokenizer.json")?)
             .map_err(|error| Error::Tokenizer(error.to_string()))?;
         let config = json(&bundle.root, "tokenizer_config.json")?;
-        let chat = Chat::new(&config)?;
-        let session = Session::builder(environment()?)?
+        let chat = Chat::new(&config, &bundle.root)?;
+        let mut builder = Session::builder(environment()?)?
             .with_optimization_level(GraphOptimizationLevel::Level3)?
-            .with_intra_threads(threads as usize)?
-            .commit_from_file(&bundle.graph)?;
+            .with_intra_threads(threads as usize)?;
+        if provider == Provider::WebGpu {
+            #[cfg(feature = "webgpu")]
+            {
+                builder = builder.with_execution_providers([ort::ep::WebGPU::default()
+                    .build()
+                    .error_on_failure()])?;
+            }
+            #[cfg(not(feature = "webgpu"))]
+            return Err("onnx webgpu requires the optional onnx-webgpu feature".into());
+        }
+        let session = builder.commit_from_file(&bundle.graph)?;
         if cancelled.load(Ordering::Relaxed) {
             return Err("model loading cancelled".into());
         }
@@ -155,6 +183,7 @@ impl Model {
             signature::check(&ports(&inputs), &ports(&outputs), &bundle).map_err(Error::Invalid)?;
         Ok(Self {
             session: RefCell::new(session),
+            provider,
             tokenizer,
             chat,
             bundle,
@@ -165,6 +194,10 @@ impl Model {
 
     pub fn context_tokens_max(&self) -> u32 {
         self.bundle.context
+    }
+
+    pub fn provider(&self) -> Provider {
+        self.provider
     }
 
     /// Returns the intra-op thread count every request must use.
@@ -312,7 +345,11 @@ impl Model {
             .try_borrow_mut()
             .map_err(|_| "model is already generating")?;
         // Past tensors depend only on the tokens; a strict prefix leaves one token to produce logits.
+        // Shared buffers hold exactly the context reservation, so a different context reallocates.
         if cache.model.is_some_and(|model| !std::ptr::eq(model, self))
+            || (self.layout.shared
+                && !cache.past.is_empty()
+                && cache.capacity != settings.context_tokens as usize)
             || cache.tokens.len() >= input.tokens.len()
             || !input.tokens.starts_with(&cache.tokens)
         {
@@ -330,7 +367,7 @@ impl Model {
                 statistics.prefill = started.elapsed();
                 return Ok(statistics);
             }
-            logits = self.step(&mut session, cache, chunk)?;
+            logits = self.step(&mut session, cache, chunk, settings.context_tokens as usize)?;
         }
         statistics.prefill = started.elapsed();
         let started = Instant::now();
@@ -359,19 +396,28 @@ impl Model {
             }
             history.push(token);
             if statistics.generated_tokens < settings.output_tokens {
-                logits = self.step(&mut session, cache, &[token])?;
+                logits = self.step(
+                    &mut session,
+                    cache,
+                    &[token],
+                    settings.context_tokens as usize,
+                )?;
             }
         }
         statistics.generation = started.elapsed();
         Ok(statistics)
     }
 
-    /// Runs one chunk, replaces the cache with the graph's present tensors and returns the last row of logits.
+    /// Runs one chunk, advances the cache and returns the last row of logits.
+    /// Cache tensors stay on the provider's device: a shared layout binds one `capacity`-token buffer
+    /// per tensor as both past input and present output, and otherwise each step's present tensors
+    /// become the next step's past inputs. Only the logits are copied to the host.
     fn step(
         &self,
         session: &mut Session,
         cache: &mut Cache<'_>,
         tokens: &[u32],
+        capacity: usize,
     ) -> Result<Vec<f32>> {
         let past = cache.tokens.len();
         let total = past + tokens.len();
@@ -379,54 +425,122 @@ impl Model {
             .iter()
             .map(|token| i64::from(*token))
             .collect::<Vec<_>>();
-        let mut inputs: Vec<(Cow<'static, str>, SessionInputValue<'_>)> = vec![
-            (
-                "input_ids".into(),
-                Tensor::from_array(([1, tokens.len()], ids))?.into(),
-            ),
-            (
-                "attention_mask".into(),
-                Tensor::from_array(([1, total], vec![1i64; total]))?.into(),
-            ),
-        ];
+        let mut binding = session.create_binding()?;
+        binding.bind_input("input_ids", &Tensor::from_array(([1, tokens.len()], ids))?)?;
+        binding.bind_input(
+            "attention_mask",
+            &Tensor::from_array(([1, total], vec![1i64; total]))?,
+        )?;
         if self.layout.position_ids {
             let positions = (past as i64..total as i64).collect::<Vec<_>>();
-            inputs.push((
-                "position_ids".into(),
-                Tensor::from_array(([1, tokens.len()], positions))?.into(),
-            ));
+            binding.bind_input(
+                "position_ids",
+                &Tensor::from_array(([1, tokens.len()], positions))?,
+            )?;
         }
-        let shape = [1, self.bundle.kv_heads, 0, self.bundle.head_dim];
-        let mut previous = std::mem::take(&mut cache.past).into_iter();
-        for layer in 0..self.bundle.layers {
-            for part in ["key", "value"] {
-                let value = match previous.next() {
-                    Some(value) => SessionInputValue::from(value),
-                    None => Tensor::from_array((shape, Vec::<f32>::new()))?.into(),
+        let device = match self.provider {
+            Provider::Cpu => MemoryInfo::new(
+                AllocationDevice::CPU,
+                0,
+                AllocatorType::Device,
+                MemoryType::Default,
+            )?,
+            Provider::WebGpu => MemoryInfo::new(
+                AllocationDevice::WEBGPU_BUFFER,
+                0,
+                AllocatorType::Device,
+                MemoryType::Default,
+            )?,
+        };
+        let host = MemoryInfo::new(
+            AllocationDevice::CPU,
+            0,
+            AllocatorType::Device,
+            MemoryType::CPUOutput,
+        )?;
+        binding.bind_output_to_device("logits", &host)?;
+        let cache_shape = |length: usize| [1, self.bundle.kv_heads, length, self.bundle.head_dim];
+        if self.layout.shared {
+            if cache.past.is_empty() {
+                let allocator = match self.provider {
+                    Provider::Cpu => None,
+                    Provider::WebGpu => Some(Allocator::new(session, device)?),
                 };
-                inputs.push((format!("past_key_values.{layer}.{part}").into(), value));
+                let allocator = allocator.as_ref().unwrap_or_else(|| session.allocator());
+                let shape = cache_shape(capacity);
+                for _ in 0..self.bundle.layers * 2 {
+                    cache.past.push(match self.layout.cache {
+                        Element::F16 => Tensor::<half::f16>::new(allocator, shape)?.into_dyn(),
+                        _ => Tensor::<f32>::new(allocator, shape)?.into_dyn(),
+                    });
+                }
+                cache.capacity = capacity;
+            }
+            let mut buffers = cache.past.iter_mut();
+            for layer in 0..self.bundle.layers {
+                for part in ["key", "value"] {
+                    let buffer = buffers.next().ok_or("onnx cache buffer is missing")?;
+                    binding.bind_input(format!("past_key_values.{layer}.{part}"), &*buffer)?;
+                    binding.bind_output(format!("present.{layer}.{part}"), buffer)?;
+                }
+            }
+        } else {
+            let empty = match self.layout.cache {
+                Element::F16 => {
+                    Tensor::from_array((cache_shape(0), Vec::<half::f16>::new()))?.into_dyn()
+                }
+                _ => Tensor::from_array((cache_shape(0), Vec::<f32>::new()))?.into_dyn(),
+            };
+            let mut previous = cache.past.iter();
+            for layer in 0..self.bundle.layers {
+                for part in ["key", "value"] {
+                    let name = format!("past_key_values.{layer}.{part}");
+                    match previous.next() {
+                        Some(value) => binding.bind_input(name, value)?,
+                        None => binding.bind_input(name, &empty)?,
+                    }
+                    binding.bind_output_to_device(format!("present.{layer}.{part}"), &device)?;
+                }
             }
         }
-        let mut outputs = session.run(inputs)?;
-        let mut present = Vec::with_capacity(self.bundle.layers * 2);
-        for layer in 0..self.bundle.layers {
-            for part in ["key", "value"] {
-                present.push(
-                    outputs
-                        .remove(format!("present.{layer}.{part}"))
-                        .ok_or("onnx graph omitted a present tensor")?,
-                );
+        let mut outputs = session.run_binding(&binding)?;
+        if !self.layout.shared {
+            let mut present = Vec::with_capacity(self.bundle.layers * 2);
+            for layer in 0..self.bundle.layers {
+                for part in ["key", "value"] {
+                    present.push(
+                        outputs
+                            .remove(format!("present.{layer}.{part}"))
+                            .ok_or("onnx graph omitted a present tensor")?,
+                    );
+                }
             }
+            cache.past = present;
         }
-        let (shape, values) = outputs["logits"].try_extract_tensor::<f32>()?;
+        let logits = &outputs["logits"];
+        let (shape, row) = match self.layout.logits {
+            Element::F16 => {
+                let (shape, values) = logits.try_extract_tensor::<half::f16>()?;
+                let start = values.len().saturating_sub(self.bundle.vocab);
+                (
+                    shape,
+                    values[start..].iter().map(|value| value.to_f32()).collect(),
+                )
+            }
+            _ => {
+                let (shape, values) = logits.try_extract_tensor::<f32>()?;
+                (
+                    shape,
+                    values[values.len().saturating_sub(self.bundle.vocab)..].to_vec(),
+                )
+            }
+        };
         if shape.len() != 3
             || shape[1] != tokens.len() as i64
             || shape[2] != self.bundle.vocab as i64
         {
             return Err("onnx logits shape differs from the admitted signature".into());
         }
-        let row = values[values.len() - self.bundle.vocab..].to_vec();
-        cache.past = present;
         cache.tokens.extend_from_slice(tokens);
         Ok(row)
     }
@@ -487,7 +601,8 @@ struct Chat {
 }
 
 impl Chat {
-    fn new(config: &serde_json::Value) -> Result<Self> {
+    /// Uses `tokenizer_config.json`'s template, or a `chat_template.jinja` beside it.
+    fn new(config: &serde_json::Value, root: &Path) -> Result<Self> {
         let content = |value: &serde_json::Value| {
             value
                 .as_str()
@@ -501,9 +616,18 @@ impl Chat {
             }
         }
         let bos = content(&config["bos_token"]);
-        let environment = match &config["chat_template"] {
+        let source = match &config["chat_template"] {
+            serde_json::Value::Null if root.join("chat_template.jinja").exists() => Some(
+                String::from_utf8(read(root, "chat_template.jinja")?)
+                    .map_err(|_| "onnx chat_template.jinja must be UTF-8")?,
+            ),
             serde_json::Value::Null => None,
-            serde_json::Value::String(source) => {
+            serde_json::Value::String(source) => Some(source.clone()),
+            _ => return Err("onnx chat_template must be one template string".into()),
+        };
+        let environment = match source {
+            None => None,
+            Some(source) => {
                 let mut environment = minijinja::Environment::new();
                 environment.set_trim_blocks(true);
                 environment.set_lstrip_blocks(true);
@@ -519,10 +643,9 @@ impl Chat {
                         ))
                     },
                 );
-                environment.add_template_owned("chat", source.clone())?;
+                environment.add_template_owned("chat", source)?;
                 Some(environment)
             }
-            _ => return Err("onnx chat_template must be one template string".into()),
         };
         Ok(Self {
             environment,

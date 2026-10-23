@@ -1,0 +1,56 @@
+{
+  "repository": "onnx-community/Qwen3-0.6B-ONNX",
+  "revision": "58ca03a5e7b354b480b1a82b34bde8dc7b854cc0",
+  "files": {
+    "onnxruntime/cpu_and_mobile/cpu-int4-kld-block-128/chat_template.jinja": {
+      "bytes": 4168,
+      "sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8"
+    },
+    "onnxruntime/cpu_and_mobile/cpu-int4-kld-block-128/config.json": {
+      "bytes": 8957,
+      "sha256": "136fdc6ed4513075b60c40cd6e2ed6b302c7baee595c6fa82c46b1fbf72d6cf2"
+    },
+    "onnxruntime/cpu_and_mobile/cpu-int4-kld-block-128/genai_config.json": {
+      "bytes": 1520,
+      "sha256": "67348085a5b994a6b6d94e56e395e675d8ef4732c3c46ff75de30a541489fd3f"
+    },
+    "onnxruntime/cpu_and_mobile/cpu-int4-kld-block-128/model.onnx": {
+      "bytes": 524589133,
+      "sha256": "35fe34321ea9b1eaa43dfa648dd199903d01d93f97dc2b24fe1d16079ebea957"
+    },
+    "onnxruntime/cpu_and_mobile/cpu-int4-kld-block-128/tokenizer.json": {
+      "bytes": 11422648,
+      "sha256": "979d160e081df25a1bf7f4e2e8f4c441b5dfdc9a8e84aec9f32e80445e1b59b8"
+    },
+    "onnxruntime/cpu_and_mobile/cpu-int4-kld-block-128/tokenizer_config.json": {
+      "bytes": 663,
+      "sha256": "bfd13b57b2e0c2cb582f311c0895f077d16a868c0dc61e4dbbba544a835341d6"
+    },
+    "onnxruntime/webgpu/webgpu-int4-kld-block-32/chat_template.jinja": {
+      "bytes": 4168,
+      "sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8"
+    },
+    "onnxruntime/webgpu/webgpu-int4-kld-block-32/config.json": {
+      "bytes": 9033,
+      "sha256": "b7b2ac003e14aea8ea0e79c8f83a6033c9fb05e75baaf23661c7724afbf3e71b"
+    },
+    "onnxruntime/webgpu/webgpu-int4-kld-block-32/genai_config.json": {
+      "bytes": 1752,
+      "sha256": "5d6913e5bc4172ae1349e6f7fd36107fdee3bdded0e0ce48e85f90475f56cdb5"
+    },
+    "onnxruntime/webgpu/webgpu-int4-kld-block-32/model.onnx": {
+      "bytes": 543321042,
+      "sha256": "5e9fb386cb1a14009b02b43b0e0f0043e248ad5a6d3c3521c9a516062509909a"
+    },
+    "onnxruntime/webgpu/webgpu-int4-kld-block-32/tokenizer.json": {
+      "bytes": 11422648,
+      "sha256": "979d160e081df25a1bf7f4e2e8f4c441b5dfdc9a8e84aec9f32e80445e1b59b8"
+    },
+    "onnxruntime/webgpu/webgpu-int4-kld-block-32/tokenizer_config.json": {
+      "bytes": 663,
+      "sha256": "bfd13b57b2e0c2cb582f311c0895f077d16a868c0dc61e4dbbba544a835341d6"
+    }
+  },
+  "license": "Apache-2.0",
+  "license_url": "https://huggingface.co/Qwen/Qwen3-0.6B/blob/main/LICENSE"
+}

@@ -1,0 +1,38 @@
+{
+  "onnxruntime": "1.31.0",
+  "reference": "ort 2.0.0-rc.15 WebGPU execution provider (Dawn on Metal) with default options and CPU fallback; placement from ONNX Runtime verbose session logs",
+  "host": "Apple M5, macOS 27.0",
+  "graphs": [
+    {
+      "graph": "HuggingFaceTB/SmolLM2-135M-Instruct onnx/model.onnx",
+      "webgpu_nodes": 424,
+      "cpu_nodes": 6,
+      "cpu_ops": "attention-mask Shape, Gather, Cast, ReduceSum and Sub"
+    },
+    {
+      "graph": "onnx-community/Qwen3-0.6B-ONNX onnx/model.onnx",
+      "webgpu_nodes": 565,
+      "cpu_nodes": 7,
+      "cpu_ops": "attention-mask and position shape arithmetic"
+    },
+    {
+      "graph": "onnxruntime/Qwen3-0.6B-genai webgpu int4 kld block-32 model.onnx",
+      "webgpu_nodes": 340,
+      "cpu_nodes": 6,
+      "cpu_ops": "attention-mask Shape, Gather, Cast, ReduceSum and Sub"
+    },
+    {
+      "graph": "onnxruntime/Qwen3-0.6B-genai cpu int4 kld block-128 model.onnx",
+      "webgpu_nodes": 340,
+      "cpu_nodes": 6,
+      "cpu_ops": "attention-mask Shape, Gather, Cast, ReduceSum and Sub"
+    },
+    {
+      "graph": "HuggingFaceTB/SmolLM2-135M-Instruct onnx/model_int8.onnx",
+      "webgpu_nodes": 1297,
+      "cpu_nodes": 336,
+      "cpu_ops": "210 MatMulInteger, 120 DynamicQuantizeLinear and 6 attention-mask shape nodes"
+    }
+  ],
+  "conclusion": "WebGPU is qualified on this host for the float32 Optimum graphs and the WebGPU-targeted GenAI int4 export: every compute node runs on WebGPU and only mask shape arithmetic stays on CPU. The int8 Optimum export is not qualified because its quantized matrix products fall back to CPU. The CPU-targeted GenAI export places on WebGPU but does not reproduce the CPU reference there, so it is qualified for CPU only."
+}

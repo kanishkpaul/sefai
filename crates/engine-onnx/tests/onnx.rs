@@ -1,5 +1,5 @@
 use sefai_core::{Message, Prompt, Settings, Stop};
-use sefai_engine_onnx::{Cache, Input, Model};
+use sefai_engine_onnx::{Cache, Input, Model, Provider};
 use std::{
     fs,
     path::PathBuf,
@@ -12,8 +12,17 @@ fn path() -> PathBuf {
             .expect("set SEFAI_ONNX_TEST_MODEL to the pinned graph"),
     )
 }
+/// `SEFAI_ONNX_TEST_PROVIDER=webgpu` reruns the cases on WebGPU; the default is the CPU provider.
+fn provider() -> Provider {
+    match std::env::var("SEFAI_ONNX_TEST_PROVIDER").as_deref() {
+        Ok("webgpu") => Provider::WebGpu,
+        Err(_) | Ok("cpu") => Provider::Cpu,
+        Ok(other) => panic!("unknown SEFAI_ONNX_TEST_PROVIDER {other}"),
+    }
+}
 fn model() -> Model {
-    Model::load(&path(), 2, Arc::new(AtomicBool::new(false))).expect("load real ONNX graph")
+    Model::load(&path(), provider(), 2, Arc::new(AtomicBool::new(false)))
+        .expect("load real ONNX graph")
 }
 fn settings(model: &Model, output_tokens: u32) -> Settings {
     Settings {
@@ -109,6 +118,45 @@ fn an_extended_prompt_reuses_cache_and_matches_a_cold_rebuild() {
     let warm = generate(&model, &mut cache, &second, 8);
     assert!(cache.reused_tokens() > 0);
     assert_eq!(warm, cold);
+}
+
+#[test]
+fn changed_context_matches_a_cold_rebuild() {
+    let model = model();
+    let first = model
+        .prepare_raw("The capital of France is")
+        .expect("first input");
+    let second = model
+        .prepare_raw("The capital of France is Paris. The capital of Italy is")
+        .expect("extended input");
+    let mut smaller = settings(&model, 8);
+    smaller.context_tokens = 1024;
+    fn run<'model>(
+        model: &'model Model,
+        cache: &mut Cache<'model>,
+        input: &Input<'_>,
+        settings: Settings,
+    ) -> String {
+        let mut text = String::new();
+        model
+            .generate_cached(
+                cache,
+                input,
+                settings,
+                || false,
+                |s| {
+                    text.push_str(s);
+                    Ok(())
+                },
+            )
+            .expect("generate");
+        text
+    }
+    let cold = run(&model, &mut Cache::default(), &second, smaller);
+    let mut cache = Cache::default();
+    run(&model, &mut cache, &first, settings(&model, 1));
+    // Share-buffer graphs size their cache to the context, so the smaller reservation rebuilds it.
+    assert_eq!(run(&model, &mut cache, &second, smaller), cold);
 }
 
 #[test]
@@ -237,12 +285,17 @@ fn incompatible_graph_signature_is_rejected() {
             .expect("bundle")
             .to_path_buf()
     };
+    // Optimum bundles carry generation_config.json; GenAI bundles carry genai_config.json.
     for name in [
         "generation_config.json",
+        "genai_config.json",
+        "chat_template.jinja",
         "tokenizer.json",
         "tokenizer_config.json",
     ] {
-        fs::copy(metadata.join(name), root.join(name)).expect("metadata");
+        if metadata.join(name).exists() {
+            fs::copy(metadata.join(name), root.join(name)).expect("metadata");
+        }
     }
     let mut config: serde_json::Value =
         serde_json::from_slice(&fs::read(metadata.join("config.json")).expect("config"))
@@ -254,7 +307,7 @@ fn incompatible_graph_signature_is_rejected() {
     fs::hard_link(&source, &graph)
         .or_else(|_| fs::copy(&source, &graph).map(|_| ()))
         .expect("graph");
-    let result = Model::load(&graph, 2, Arc::new(AtomicBool::new(false)));
+    let result = Model::load(&graph, provider(), 2, Arc::new(AtomicBool::new(false)));
     fs::remove_dir_all(&root).expect("remove fixture");
     let error = result.err().expect("signature mismatch").to_string();
     assert!(error.contains("past_key_values"), "{error}");
@@ -297,7 +350,7 @@ fn missing_external_data_fails_at_load() {
     fs::hard_link(&source, &graph)
         .or_else(|_| fs::copy(&source, &graph).map(|_| ()))
         .expect("graph");
-    let result = Model::load(&graph, 2, Arc::new(AtomicBool::new(false)));
+    let result = Model::load(&graph, provider(), 2, Arc::new(AtomicBool::new(false)));
     fs::remove_dir_all(&root).expect("remove fixture");
     assert!(result.is_err());
 }

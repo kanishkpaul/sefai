@@ -54,7 +54,7 @@ Different kinds have separate namespaces.
 | `sessions/ID.md` | `schema: 1`, `id`, `outcome: completed` or `interrupted` | None | Quoted session records |
 | `mcp/ID.md` | `schema: 1`, `id`, `transport` | None | Notes; never approval |
 
-`runner` accepts optional `backend` (`cpu`, `metal`, `cuda`, `vulkan`, `mlx`, `onnx`), `device` (nonnegative ggml index), `context` (1–131072 tokens), `batch`/`microbatch` (1–4096 tokens), `output` (0–131072 tokens), and `threads` (1–256).
+`runner` accepts optional `backend` (`cpu`, `metal`, `cuda`, `vulkan`, `mlx`, `onnx`), `provider` (`cpu`, `webgpu`; ONNX profiles only), `device` (nonnegative ggml index), `context` (1–131072 tokens), `batch`/`microbatch` (1–4096 tokens), `output` (0–131072 tokens), and `threads` (1–256).
 The runner additionally validates device compatibility, batch/context relationships and reserved output before inference.
 GPU selection still requires an explicit device; no automatic CPU fallback occurs.
 

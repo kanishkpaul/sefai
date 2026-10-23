@@ -724,6 +724,32 @@ fn onnx_profiles_reject_a_device_index() {
 }
 
 #[test]
+#[cfg(feature = "onnx")]
+fn onnx_profiles_select_an_execution_provider() {
+    let fixture = Fixture::new();
+    fixture.write(
+        "models/one.md",
+        "---\nschema: 1\nid: one\npath: model.onnx\nformat: onnx\nrunner:\n  provider: webgpu\n---\n",
+    );
+    let mut selection = fixture.selection();
+    selection.profile = Some("one".into());
+    let prepared = selection.prepare("hi".into()).expect("onnx profile");
+    assert_eq!(prepared.runner.provider, Some(schema::Provider::Webgpu));
+}
+
+#[test]
+fn gguf_profiles_reject_an_execution_provider() {
+    let fixture = Fixture::new();
+    fixture.write(
+        "models/one.md",
+        "---\nschema: 1\nid: one\npath: model.gguf\nformat: gguf\nrunner:\n  provider: cpu\n---\n",
+    );
+    let mut selection = fixture.selection();
+    selection.profile = Some("one".into());
+    assert!(selection.prepare("hi".into()).is_err());
+}
+
+#[test]
 fn gguf_profiles_reject_an_onnx_backend() {
     let fixture = Fixture::new();
     fixture.write(

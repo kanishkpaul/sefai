@@ -1,0 +1,457 @@
+{
+  "onnxruntime": "1.31.0",
+  "host": "Apple M5, macOS 27.0; not idle: a 2 GB download ran throughout and load averages were 2.3 to 4.4, so runs alternate between runners",
+  "cases": {
+    "decode": "prompt '1, 2, 3, 4, 5,' and 512 generated tokens",
+    "prefill": "1,001-token prompt in one chunk and 16 generated tokens"
+  },
+  "cpu": {
+    "reference": "onnxruntime-genai 0.18.0 Python package, which loads onnxruntime 1.31.0; greedy search with min_length equal to max_length",
+    "graph": "onnx-community/Qwen3-0.6B-ONNX onnxruntime/cpu_and_mobile/cpu-int4-kld-block-128/model.onnx",
+    "provider": "cpu, four intra-op threads, one generation per process",
+    "sefai": "sefai bench --context 2048 --batch 2048 --microbatch 2048 --raw --repetitions 1",
+    "summary": [
+      {
+        "case": "decode",
+        "runner": "genai",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "median_prefill_tokens_per_second": 551.5,
+        "median_decode_tokens_per_second": 112.1
+      },
+      {
+        "case": "decode",
+        "runner": "sefai",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "median_prefill_tokens_per_second": 162.6,
+        "median_decode_tokens_per_second": 113.3
+      },
+      {
+        "case": "prefill",
+        "runner": "genai",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "median_prefill_tokens_per_second": 452.6,
+        "median_decode_tokens_per_second": 87.4
+      },
+      {
+        "case": "prefill",
+        "runner": "sefai",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "median_prefill_tokens_per_second": 451.4,
+        "median_decode_tokens_per_second": 80.7
+      }
+    ],
+    "rows": [
+      {
+        "case": "decode",
+        "round": 0,
+        "runner": "genai",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "prefill_s": 0.02794166700914502,
+        "generation_s": 4.519007957991562
+      },
+      {
+        "case": "decode",
+        "round": 0,
+        "runner": "sefai",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "prefill_s": 0.117331,
+        "generation_s": 4.503779
+      },
+      {
+        "case": "decode",
+        "round": 1,
+        "runner": "genai",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "prefill_s": 0.02544816599402111,
+        "generation_s": 4.525300041990704
+      },
+      {
+        "case": "decode",
+        "round": 1,
+        "runner": "sefai",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "prefill_s": 0.086114,
+        "generation_s": 4.52677
+      },
+      {
+        "case": "decode",
+        "round": 2,
+        "runner": "genai",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "prefill_s": 0.025383792002685368,
+        "generation_s": 4.568767667005886
+      },
+      {
+        "case": "decode",
+        "round": 2,
+        "runner": "sefai",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "prefill_s": 0.086634,
+        "generation_s": 4.497846
+      },
+      {
+        "case": "decode",
+        "round": 3,
+        "runner": "genai",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "prefill_s": 0.02451337499951478,
+        "generation_s": 4.597775708010886
+      },
+      {
+        "case": "decode",
+        "round": 3,
+        "runner": "sefai",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "prefill_s": 0.07105,
+        "generation_s": 4.519962
+      },
+      {
+        "case": "decode",
+        "round": 4,
+        "runner": "genai",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "prefill_s": 0.024606083999969997,
+        "generation_s": 4.63273416699667
+      },
+      {
+        "case": "decode",
+        "round": 4,
+        "runner": "sefai",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "prefill_s": 0.086112,
+        "generation_s": 4.554684
+      },
+      {
+        "case": "prefill",
+        "round": 0,
+        "runner": "genai",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "prefill_s": 2.249859874995309,
+        "generation_s": 0.19030999999085907
+      },
+      {
+        "case": "prefill",
+        "round": 0,
+        "runner": "sefai",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "prefill_s": 2.217566,
+        "generation_s": 0.194522
+      },
+      {
+        "case": "prefill",
+        "round": 1,
+        "runner": "genai",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "prefill_s": 2.2116022919944953,
+        "generation_s": 0.1839147909922758
+      },
+      {
+        "case": "prefill",
+        "round": 1,
+        "runner": "sefai",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "prefill_s": 2.218568,
+        "generation_s": 0.198365
+      },
+      {
+        "case": "prefill",
+        "round": 2,
+        "runner": "genai",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "prefill_s": 2.215043167001568,
+        "generation_s": 0.18156870800885372
+      },
+      {
+        "case": "prefill",
+        "round": 2,
+        "runner": "sefai",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "prefill_s": 2.342078,
+        "generation_s": 0.199116
+      },
+      {
+        "case": "prefill",
+        "round": 3,
+        "runner": "genai",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "prefill_s": 2.207498208998004,
+        "generation_s": 0.18311291698773857
+      },
+      {
+        "case": "prefill",
+        "round": 3,
+        "runner": "sefai",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "prefill_s": 2.164359,
+        "generation_s": 0.200549
+      },
+      {
+        "case": "prefill",
+        "round": 4,
+        "runner": "genai",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "prefill_s": 2.210641083001974,
+        "generation_s": 0.18293700000504032
+      },
+      {
+        "case": "prefill",
+        "round": 4,
+        "runner": "sefai",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "prefill_s": 2.157749,
+        "generation_s": 0.192385
+      }
+    ],
+    "follow_up": [
+      "The 14-token prefill gap is the first step reserving sefai's 2,048-token share buffer; GenAI sizes its buffer to max_length. With --context 528, sefai's prefill took 0.025 to 0.027 s, matching GenAI's 0.025 s.",
+      "The 1,001-token decode gap is the first generation in a fresh process; later repetitions in one sefai process took 0.179 and 0.182 s for 16 tokens against GenAI's 0.182 to 0.184 s."
+    ]
+  },
+  "webgpu": {
+    "reference": "onnxruntime-node 1.30.0 WebGPU provider: greedy decode with sefai's sampler, present tensors kept on the GPU with preferredOutputLocation and fed back as growing past inputs, float16 logits widened in JavaScript; onnxruntime-genai has no macOS WebGPU build",
+    "graph": "onnx-community/Qwen3-0.6B-ONNX onnxruntime/webgpu/webgpu-int4-kld-block-32/model.onnx",
+    "provider": "webgpu, one generation per process",
+    "sefai": "sefai bench --provider webgpu --context 2048 --batch 2048 --microbatch 2048 --raw --repetitions 1",
+    "summary": [
+      {
+        "case": "decode",
+        "runner": "onnxruntime-node",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "median_prefill_tokens_per_second": 273.3,
+        "median_decode_tokens_per_second": 94.8
+      },
+      {
+        "case": "decode",
+        "runner": "sefai",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "median_prefill_tokens_per_second": 287.3,
+        "median_decode_tokens_per_second": 120.3
+      },
+      {
+        "case": "prefill",
+        "runner": "onnxruntime-node",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "median_prefill_tokens_per_second": 1220.2,
+        "median_decode_tokens_per_second": 69.6
+      },
+      {
+        "case": "prefill",
+        "runner": "sefai",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "median_prefill_tokens_per_second": 1296.9,
+        "median_decode_tokens_per_second": 105.6
+      }
+    ],
+    "rows": [
+      {
+        "case": "decode",
+        "round": 0,
+        "runner": "onnxruntime-node",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "prefill_s": 0.05891229199999998,
+        "generation_s": 5.152549458
+      },
+      {
+        "case": "decode",
+        "round": 0,
+        "runner": "sefai",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "prefill_s": 0.052311,
+        "generation_s": 4.096666
+      },
+      {
+        "case": "decode",
+        "round": 1,
+        "runner": "onnxruntime-node",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "prefill_s": 0.05101108300000001,
+        "generation_s": 5.133465042
+      },
+      {
+        "case": "decode",
+        "round": 1,
+        "runner": "sefai",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "prefill_s": 0.049462,
+        "generation_s": 4.158942
+      },
+      {
+        "case": "decode",
+        "round": 2,
+        "runner": "onnxruntime-node",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "prefill_s": 0.051234874999999985,
+        "generation_s": 5.398119959000001
+      },
+      {
+        "case": "decode",
+        "round": 2,
+        "runner": "sefai",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "prefill_s": 0.048735,
+        "generation_s": 4.255492
+      },
+      {
+        "case": "decode",
+        "round": 3,
+        "runner": "onnxruntime-node",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "prefill_s": 0.05459975,
+        "generation_s": 5.405974875
+      },
+      {
+        "case": "decode",
+        "round": 3,
+        "runner": "sefai",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "prefill_s": 0.047064,
+        "generation_s": 4.435953
+      },
+      {
+        "case": "decode",
+        "round": 4,
+        "runner": "onnxruntime-node",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "prefill_s": 0.05102633299999999,
+        "generation_s": 5.452879707999999
+      },
+      {
+        "case": "decode",
+        "round": 4,
+        "runner": "sefai",
+        "prompt_tokens": 14,
+        "generated_tokens": 512,
+        "prefill_s": 0.047742,
+        "generation_s": 4.402144
+      },
+      {
+        "case": "prefill",
+        "round": 0,
+        "runner": "onnxruntime-node",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "prefill_s": 1.014645333,
+        "generation_s": 0.23291812499999992
+      },
+      {
+        "case": "prefill",
+        "round": 0,
+        "runner": "sefai",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "prefill_s": 0.880105,
+        "generation_s": 0.15826
+      },
+      {
+        "case": "prefill",
+        "round": 1,
+        "runner": "onnxruntime-node",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "prefill_s": 0.8708022500000001,
+        "generation_s": 0.22867870799999993
+      },
+      {
+        "case": "prefill",
+        "round": 1,
+        "runner": "sefai",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "prefill_s": 0.787349,
+        "generation_s": 0.152816
+      },
+      {
+        "case": "prefill",
+        "round": 2,
+        "runner": "onnxruntime-node",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "prefill_s": 0.8203809169999999,
+        "generation_s": 0.22710079199999997
+      },
+      {
+        "case": "prefill",
+        "round": 2,
+        "runner": "sefai",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "prefill_s": 0.771827,
+        "generation_s": 0.151525
+      },
+      {
+        "case": "prefill",
+        "round": 3,
+        "runner": "onnxruntime-node",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "prefill_s": 0.8122676670000001,
+        "generation_s": 0.23117991699999993
+      },
+      {
+        "case": "prefill",
+        "round": 3,
+        "runner": "sefai",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "prefill_s": 0.766496,
+        "generation_s": 0.151163
+      },
+      {
+        "case": "prefill",
+        "round": 4,
+        "runner": "onnxruntime-node",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "prefill_s": 0.806082625,
+        "generation_s": 0.22989245800000002
+      },
+      {
+        "case": "prefill",
+        "round": 4,
+        "runner": "sefai",
+        "prompt_tokens": 1001,
+        "generated_tokens": 16,
+        "prefill_s": 0.765017,
+        "generation_s": 0.15018
+      }
+    ],
+    "limits": "The reference runs ONNX Runtime 1.30.0 rather than 1.31.0, grows its cache instead of sharing one buffer and pays JavaScript logit conversion, so it bounds sefai's overhead from above rather than isolating it. Its text also differs from the 1.31.0 CPU reference after a few tokens, so it is not a parity reference."
+  }
+}

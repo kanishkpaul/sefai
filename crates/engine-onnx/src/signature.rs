@@ -16,10 +16,16 @@ pub struct Port<'graph> {
     pub shape: &'graph [i64],
 }
 
-/// The admitted Optimum decoder convention: full-sequence logits and per-layer past/present tensors.
+/// An admitted decoder convention: full-sequence logits and per-layer past/present tensors.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Layout {
     pub position_ids: bool,
+    /// One element type, `F32` or `F16`, shared by every past and present tensor.
+    pub cache: Element,
+    /// `F32` or `F16`.
+    pub logits: Element,
+    /// Present outputs are written in place into preallocated past buffers.
+    pub shared: bool,
 }
 
 /// Rejects graphs whose declared cache, dtype or dimensions differ from the bundle configuration.
@@ -30,6 +36,12 @@ pub struct Layout {
 pub fn check(inputs: &[Port<'_>], outputs: &[Port<'_>], bundle: &Bundle) -> Result<Layout, String> {
     let find = |ports: &[Port<'_>], name: &str| ports.iter().position(|port| port.name == name);
     let cache = [-1, bundle.kv_heads as i64, -1, bundle.head_dim as i64];
+    let element = inputs
+        .iter()
+        .find(|port| port.name == "past_key_values.0.key")
+        .map(|port| port.element)
+        .filter(|element| matches!(element, Element::F32 | Element::F16))
+        .ok_or("onnx past_key_values.0.key must be a float32 or float16 tensor")?;
     let mut seen = vec![false; inputs.len()];
     for name in ["input_ids", "attention_mask"] {
         let index = find(inputs, name).ok_or(format!("onnx graph requires input {name}"))?;
@@ -45,7 +57,7 @@ pub fn check(inputs: &[Port<'_>], outputs: &[Port<'_>], bundle: &Bundle) -> Resu
         for part in ["key", "value"] {
             let name = format!("past_key_values.{layer}.{part}");
             let index = find(inputs, &name).ok_or(format!("onnx graph requires input {name}"))?;
-            expect(&inputs[index], Element::F32, &cache)?;
+            expect(&inputs[index], element, &cache)?;
             seen[index] = true;
         }
     }
@@ -57,17 +69,17 @@ pub fn check(inputs: &[Port<'_>], outputs: &[Port<'_>], bundle: &Bundle) -> Resu
     }
     let mut seen = vec![false; outputs.len()];
     let index = find(outputs, "logits").ok_or("onnx graph requires output logits")?;
-    expect(
-        &outputs[index],
-        Element::F32,
-        &[-1, -1, bundle.vocab as i64],
-    )?;
+    let logits = outputs[index].element;
+    if !matches!(logits, Element::F32 | Element::F16) {
+        return Err("onnx logits must be a float32 or float16 tensor".into());
+    }
+    expect(&outputs[index], logits, &[-1, -1, bundle.vocab as i64])?;
     seen[index] = true;
     for layer in 0..bundle.layers {
         for part in ["key", "value"] {
             let name = format!("present.{layer}.{part}");
             let index = find(outputs, &name).ok_or(format!("onnx graph requires output {name}"))?;
-            expect(&outputs[index], Element::F32, &cache)?;
+            expect(&outputs[index], element, &cache)?;
             seen[index] = true;
         }
     }
@@ -79,6 +91,9 @@ pub fn check(inputs: &[Port<'_>], outputs: &[Port<'_>], bundle: &Bundle) -> Resu
     }
     Ok(Layout {
         position_ids: position_ids.is_some(),
+        cache: element,
+        logits,
+        shared: bundle.shared,
     })
 }
 
@@ -120,6 +135,7 @@ mod tests {
             head_dim: 64,
             vocab: 256,
             eos: vec![2],
+            shared: false,
         }
     }
     struct Graph {
@@ -165,18 +181,21 @@ mod tests {
     }
     #[test]
     fn optimum_decoder_signature_is_admitted() {
-        assert_eq!(Graph::new().check(), Ok(Layout { position_ids: true }));
+        assert_eq!(
+            Graph::new().check(),
+            Ok(Layout {
+                position_ids: true,
+                cache: Element::F32,
+                logits: Element::F32,
+                shared: false
+            })
+        );
     }
     #[test]
     fn position_ids_are_optional() {
         let mut graph = Graph::new();
         graph.inputs.retain(|(name, ..)| name != "position_ids");
-        assert_eq!(
-            graph.check(),
-            Ok(Layout {
-                position_ids: false
-            })
-        );
+        assert!(!graph.check().expect("layout").position_ids);
     }
     #[test]
     fn missing_layer_cache_is_rejected() {
@@ -191,9 +210,20 @@ mod tests {
         assert!(graph.check().is_err());
     }
     #[test]
-    fn half_precision_cache_is_rejected() {
+    fn half_precision_cache_and_logits_are_admitted() {
         let mut graph = Graph::new();
-        graph.inputs[3].1 = Element::F16;
+        for (name, element, _) in graph.inputs.iter_mut().chain(graph.outputs.iter_mut()) {
+            if name != "input_ids" && name != "attention_mask" && name != "position_ids" {
+                *element = Element::F16;
+            }
+        }
+        let layout = graph.check().expect("layout");
+        assert_eq!((layout.cache, layout.logits), (Element::F16, Element::F16));
+    }
+    #[test]
+    fn mixed_cache_precision_is_rejected() {
+        let mut graph = Graph::new();
+        graph.inputs[4].1 = Element::F16;
         assert!(graph.check().is_err());
     }
     #[test]

@@ -9,4 +9,4 @@ pub use signature::{Element, Layout, Port, check};
 #[cfg(feature = "runtime")]
 mod native;
 #[cfg(feature = "runtime")]
-pub use native::{Cache, Error, Input, Model};
+pub use native::{Cache, Error, Input, Model, Provider};

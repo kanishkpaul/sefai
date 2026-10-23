@@ -226,7 +226,7 @@ Document native versus worker support before this phase can close.
 
 ### Phase 7 — ONNX
 
-In progress: a CPU adapter for a named Optimum export runs through the CLI and harness; see [the ONNX adapter and remaining gate](onnx.md).
+**Complete:** named Optimum and GenAI share-buffer exports generate through the CLI and harness on the CPU and WebGPU providers; see [the ONNX adapter](onnx.md) for evidence and limits.
 
 Support ONNX decoder model bundles including external tensor data, tokenizer/config and generation metadata.
 Use the Rust `ort` interface to ONNX Runtime if its safe API covers the required execution-provider and I/O-binding controls.
