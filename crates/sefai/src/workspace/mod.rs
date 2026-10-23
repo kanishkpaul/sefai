@@ -6,11 +6,11 @@ mod files;
 mod schema;
 mod session;
 
-#[cfg(feature = "inference")]
-pub use schema::Backend;
 #[cfg(feature = "mcp-oauth")]
 pub use schema::OAuth;
 pub use schema::Runner;
+#[cfg(feature = "inference")]
+pub use schema::{Backend, Provider};
 use schema::{Config, Format, Memory, Model, Skill, Text, invalid};
 #[cfg(feature = "mcp")]
 pub use schema::{Mcp, Transport};
@@ -145,6 +145,9 @@ impl Selection {
                 workspace.root.join(model.path)
             });
             result.runner.overlay(&model.runner);
+            if result.runner.provider.is_some() && !matches!(model.format, Format::Onnx) {
+                return Err(at(&path, "provider requires format onnx"));
+            }
             match model.format {
                 Format::Mlx => native_backend(&path, &mut result.runner, schema::Backend::Mlx)?,
                 Format::Onnx => native_backend(&path, &mut result.runner, schema::Backend::Onnx)?,

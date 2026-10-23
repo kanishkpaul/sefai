@@ -17,6 +17,7 @@ pub struct Config {
 #[serde(deny_unknown_fields)]
 pub struct Runner {
     pub backend: Option<Backend>,
+    pub provider: Option<Provider>,
     pub device: Option<usize>,
     pub context: Option<u32>,
     pub batch: Option<u32>,
@@ -34,6 +35,14 @@ pub enum Backend {
     Metal,
     Cuda,
     Vulkan,
+}
+
+/// ONNX Runtime execution provider; valid only with backend onnx.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, clap::ValueEnum)]
+#[serde(rename_all = "lowercase")]
+pub enum Provider {
+    Cpu,
+    Webgpu,
 }
 
 #[derive(Debug, Deserialize)]
@@ -189,6 +198,7 @@ pub fn id(value: &str) -> io::Result<()> {
 impl Runner {
     pub fn overlay(&mut self, other: &Self) {
         self.backend = other.backend.or(self.backend);
+        self.provider = other.provider.or(self.provider);
         if matches!(
             other.backend,
             Some(Backend::Cpu | Backend::Mlx | Backend::Onnx)

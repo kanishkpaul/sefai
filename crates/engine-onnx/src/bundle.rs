@@ -23,10 +23,13 @@ pub struct Bundle {
     pub vocab: usize,
     /// Sorted, deduplicated end-of-generation token IDs.
     pub eos: Vec<u32>,
+    /// A GenAI export whose present outputs are written in place into the past inputs.
+    pub shared: bool,
 }
 
 /// Validates a local decoder graph and its bounded metadata.
 /// Metadata is read beside the graph, or from the parent of an `onnx` directory.
+/// A `genai_config.json` beside the graph selects the ONNX Runtime GenAI share-buffer layout.
 /// Model files must remain unchanged until the model is unloaded.
 ///
 /// # Errors
@@ -101,8 +104,51 @@ pub fn validate(path: &Path) -> io::Result<Bundle> {
         .filter(|n| *n > 0)
         .ok_or_else(|| invalid("onnx config requires max_position_embeddings"))?
         .min(sefai_core::CONTEXT_TOKENS_MAX.into()) as u32;
-    let generation = json(&root, "generation_config.json")?;
-    let mut eos = token_ids(&generation["eos_token_id"])?;
+    let shared = root.join("genai_config.json").exists();
+    let (context, mut eos) = if shared {
+        let genai = json(&root, "genai_config.json")?;
+        let decoder = &genai["model"]["decoder"];
+        if decoder["filename"].as_str() != graph.file_name().and_then(|name| name.to_str()) {
+            return Err(invalid(
+                "onnx genai_config.json names a different decoder graph",
+            ));
+        }
+        for (field, name) in [
+            ("input_ids", "input_ids"),
+            ("attention_mask", "attention_mask"),
+            ("past_key_names", "past_key_values.%d.key"),
+            ("past_value_names", "past_key_values.%d.value"),
+        ] {
+            if decoder["inputs"][field].as_str() != Some(name) {
+                return Err(invalid(format!("onnx genai input {field} must be {name}")));
+            }
+        }
+        for (field, name) in [
+            ("logits", "logits"),
+            ("present_key_names", "present.%d.key"),
+            ("present_value_names", "present.%d.value"),
+        ] {
+            if decoder["outputs"][field].as_str() != Some(name) {
+                return Err(invalid(format!("onnx genai output {field} must be {name}")));
+            }
+        }
+        if genai["search"]["past_present_share_buffer"].as_bool() != Some(true) {
+            return Err(invalid(
+                "onnx genai exports must declare past_present_share_buffer",
+            ));
+        }
+        let length = genai["model"]["context_length"]
+            .as_u64()
+            .filter(|n| *n > 0)
+            .ok_or_else(|| invalid("onnx genai_config.json requires context_length"))?;
+        (
+            context.min(length.min(u64::from(u32::MAX)) as u32),
+            token_ids(&genai["model"]["eos_token_id"])?,
+        )
+    } else {
+        let generation = json(&root, "generation_config.json")?;
+        (context, token_ids(&generation["eos_token_id"])?)
+    };
     if eos.is_empty() {
         eos = token_ids(&config["eos_token_id"])?;
     }
@@ -122,6 +168,7 @@ pub fn validate(path: &Path) -> io::Result<Bundle> {
         head_dim,
         vocab,
         eos,
+        shared,
     })
 }
 
@@ -239,12 +286,39 @@ mod tests {
             ),
             (2048, 2, 2, 16, vec![1, 2])
         );
+        assert!(!bundle.shared);
     }
     #[test]
     fn graph_beside_metadata_passes_admission() {
         let fixture = Fixture::new();
         fs::rename(fixture.graph(), fixture.0.join("model.onnx")).expect("move graph");
         assert!(validate(&fixture.0.join("model.onnx")).is_ok());
+    }
+    fn genai(fixture: &Fixture, share: bool) -> PathBuf {
+        let graph = fixture.0.join("model.onnx");
+        fs::rename(fixture.graph(), &graph).expect("move graph");
+        fs::remove_file(fixture.0.join("generation_config.json"))
+            .expect("remove generation config");
+        fs::write(
+            fixture.0.join("genai_config.json"),
+            format!(r#"{{"model":{{"context_length":1024,"eos_token_id":[3],"decoder":{{"filename":"model.onnx","inputs":{{"input_ids":"input_ids","attention_mask":"attention_mask","past_key_names":"past_key_values.%d.key","past_value_names":"past_key_values.%d.value"}},"outputs":{{"logits":"logits","present_key_names":"present.%d.key","present_value_names":"present.%d.value"}}}}}},"search":{{"past_present_share_buffer":{share}}}}}"#),
+        )
+        .expect("genai config");
+        graph
+    }
+    #[test]
+    fn genai_share_buffer_export_passes_admission() {
+        let fixture = Fixture::new();
+        let bundle = validate(&genai(&fixture, true)).expect("bundle");
+        assert_eq!(
+            (bundle.shared, bundle.context, bundle.eos),
+            (true, 1024, vec![3])
+        );
+    }
+    #[test]
+    fn genai_export_without_shared_buffer_is_rejected() {
+        let fixture = Fixture::new();
+        assert!(validate(&genai(&fixture, false)).is_err());
     }
     #[test]
     fn bundle_paths_cannot_escape() {

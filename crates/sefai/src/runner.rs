@@ -1,6 +1,6 @@
-use crate::engine::{Device, Engine, GpuBackend, Settings, Stop};
+use crate::engine::{Device, Engine, GpuBackend, OnnxProvider, Settings, Stop};
 use crate::term::Output;
-use crate::workspace::{Backend, Runner, Selection};
+use crate::workspace::{Backend, Provider, Runner, Selection};
 use clap::Args;
 use std::{
     io::{self, Read, Write},
@@ -23,6 +23,9 @@ pub struct Options {
     raw: bool,
     #[arg(long, value_enum)]
     backend: Option<Backend>,
+    /// ONNX Runtime execution provider; requires --backend onnx.
+    #[arg(long, value_enum)]
+    provider: Option<Provider>,
     /// ggml device index from `sefai devices`; required for a GPU backend.
     #[arg(long)]
     device: Option<usize>,
@@ -60,6 +63,10 @@ pub fn devices() -> Result<(), Box<dyn std::error::Error>> {
     println!("mlx\tMetal\tcompiled MLX target; availability checked on load");
     #[cfg(feature = "onnx")]
     println!("onnx\tCPU\tcompiled ONNX Runtime CPU execution provider");
+    #[cfg(feature = "onnx-webgpu")]
+    println!(
+        "onnx\tWebGPU\tcompiled ONNX Runtime WebGPU execution provider; availability checked on load"
+    );
     Ok(())
 }
 
@@ -74,6 +81,7 @@ pub fn run(
     };
     let overrides = Runner {
         backend: options.backend,
+        provider: options.provider,
         device: options.device,
         context: options.context,
         batch: options.batch,
@@ -166,6 +174,9 @@ pub(crate) fn resolve(
     mut configured: Runner,
 ) -> Result<(Device, Settings), Box<dyn std::error::Error>> {
     configured.overlay(&overrides);
+    if configured.provider.is_some() && configured.backend != Some(Backend::Onnx) {
+        return Err("provider requires backend onnx".into());
+    }
     let defaults = Settings::default();
     let settings = Settings {
         context_tokens: configured.context.unwrap_or(defaults.context_tokens),
@@ -185,12 +196,14 @@ pub(crate) fn resolve(
             return Err("mlx selects the Apple GPU and does not accept --device".into());
         }
         (Backend::Onnx, None) => Device::Onnx {
+            provider: match configured.provider.unwrap_or(Provider::Cpu) {
+                Provider::Cpu => OnnxProvider::Cpu,
+                Provider::Webgpu => OnnxProvider::WebGpu,
+            },
             threads: settings.threads,
         },
         (Backend::Onnx, Some(_)) => {
-            return Err(
-                "onnx selects the cpu execution provider and does not accept --device".into(),
-            );
+            return Err("onnx selects an execution provider and does not accept --device".into());
         }
         (Backend::Cpu, None) => Device::Cpu,
         (Backend::Cpu, Some(_)) => return Err("cpu mode does not accept --device".into()),
@@ -265,7 +278,36 @@ mod tests {
         };
         assert_eq!(
             resolve(overrides, Runner::default()).expect("resolve").0,
-            Device::Onnx { threads: 3 }
+            Device::Onnx {
+                provider: OnnxProvider::Cpu,
+                threads: 3
+            }
+        );
+    }
+
+    #[test]
+    fn provider_without_onnx_backend_is_rejected() {
+        let overrides = Runner {
+            provider: Some(Provider::Webgpu),
+            ..Runner::default()
+        };
+        assert!(resolve(overrides, Runner::default()).is_err());
+    }
+
+    #[test]
+    fn onnx_selects_the_requested_provider() {
+        let overrides = Runner {
+            backend: Some(Backend::Onnx),
+            provider: Some(Provider::Webgpu),
+            threads: Some(2),
+            ..Runner::default()
+        };
+        assert_eq!(
+            resolve(overrides, Runner::default()).expect("resolve").0,
+            Device::Onnx {
+                provider: OnnxProvider::WebGpu,
+                threads: 2
+            }
         );
     }
 }

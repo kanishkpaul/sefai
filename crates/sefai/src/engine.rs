@@ -20,10 +20,16 @@ pub enum Device {
         index: usize,
     },
     Mlx,
-    /// ONNX Runtime fixes intra-op threads when the session is created.
+    /// ONNX Runtime fixes the provider and intra-op threads when the session is created.
     Onnx {
+        provider: OnnxProvider,
         threads: u32,
     },
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum OnnxProvider {
+    Cpu,
+    WebGpu,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GpuBackend {
@@ -99,15 +105,23 @@ impl Engine {
         device: Device,
         cancelled: Arc<AtomicBool>,
     ) -> Result<Model<'_>> {
-        if let Device::Onnx { threads } = device {
+        if let Device::Onnx { provider, threads } = device {
             #[cfg(feature = "onnx")]
             return Ok(Model::Onnx(
-                Box::new(sefai_engine_onnx::Model::load(path, threads, cancelled)?),
+                Box::new(sefai_engine_onnx::Model::load(
+                    path,
+                    match provider {
+                        OnnxProvider::Cpu => sefai_engine_onnx::Provider::Cpu,
+                        OnnxProvider::WebGpu => sefai_engine_onnx::Provider::WebGpu,
+                    },
+                    threads,
+                    cancelled,
+                )?),
                 PhantomData,
             ));
             #[cfg(not(feature = "onnx"))]
             {
-                let _ = threads;
+                let _ = (provider, threads);
                 return Err("onnx requires the optional onnx feature".into());
             }
         }
@@ -193,6 +207,10 @@ impl Model<'_> {
             Self::Mlx(..) => Device::Mlx,
             #[cfg(feature = "onnx")]
             Self::Onnx(model, _) => Device::Onnx {
+                provider: match model.provider() {
+                    sefai_engine_onnx::Provider::Cpu => OnnxProvider::Cpu,
+                    sefai_engine_onnx::Provider::WebGpu => OnnxProvider::WebGpu,
+                },
                 threads: model.threads(),
             },
         }
