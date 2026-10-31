@@ -59,7 +59,7 @@ jobs:
           cp "target/release/sefai$extension" "footprint/sefai-minimal$extension"
           python3 scripts/measure_footprint.py idle "footprint/sefai-gguf$extension" > footprint/idle-gguf.json
           python3 scripts/measure_footprint.py idle "footprint/sefai-mcp$extension" > footprint/idle-mcp.json
-          python3 scripts/measure_footprint.py bench "footprint/sefai-gguf$extension" -- --model fixture.gguf --context 4096 --output 64 --repetitions 3 "$(python3 -c 'print(" a" * 512)')" > footprint/bench-gguf-cpu.json
+          python3 scripts/measure_footprint.py bench "footprint/sefai-gguf$extension" -- --raw --model fixture.gguf --context 4096 --output 64 --repetitions 3 "$(python3 -c 'print(" a" * 512)')" > footprint/bench-gguf-cpu.json
           python3 -c 'import os, json; print(json.dumps({"minimal_binary_bytes": os.path.getsize("footprint/sefai-minimal'"$extension"'")}))' > footprint/minimal.json
           cat footprint/*.json
       - name: Run the GGUF lifecycle contract on CPU
