@@ -1,0 +1,370 @@
+{
+ "date": "2026-10-31",
+ "host": "Apple M5 MacBook Air, 16 GB, macOS 27.0.1",
+ "binary": "release, features mlx,onnx",
+ "method": "chat --plain driven by a script; macOS physical footprint after each ready line",
+ "turns_gguf_new_session_every_10": [
+  {
+   "turn": 1,
+   "footprint_mib": 220.0
+  },
+  {
+   "turn": 2,
+   "footprint_mib": 220.0
+  },
+  {
+   "turn": 3,
+   "footprint_mib": 222.0
+  },
+  {
+   "turn": 4,
+   "footprint_mib": 222.0
+  },
+  {
+   "turn": 5,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 6,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 7,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 8,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 9,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 10,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 11,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 12,
+   "footprint_mib": 199.0
+  },
+  {
+   "turn": 13,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 14,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 15,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 16,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 17,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 18,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 19,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 20,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 21,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 22,
+   "footprint_mib": 199.0
+  },
+  {
+   "turn": 23,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 24,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 25,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 26,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 27,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 28,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 29,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 30,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 31,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 32,
+   "footprint_mib": 199.0
+  },
+  {
+   "turn": 33,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 34,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 35,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 36,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 37,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 38,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 39,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 40,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 41,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 42,
+   "footprint_mib": 199.0
+  },
+  {
+   "turn": 43,
+   "footprint_mib": 199.0
+  },
+  {
+   "turn": 44,
+   "footprint_mib": 199.0
+  },
+  {
+   "turn": 45,
+   "footprint_mib": 199.0
+  },
+  {
+   "turn": 46,
+   "footprint_mib": 199.0
+  },
+  {
+   "turn": 47,
+   "footprint_mib": 199.0
+  },
+  {
+   "turn": 48,
+   "footprint_mib": 199.0
+  },
+  {
+   "turn": 49,
+   "footprint_mib": 199.0
+  },
+  {
+   "turn": 50,
+   "footprint_mib": 199.0
+  },
+  {
+   "turn": 51,
+   "footprint_mib": 199.0
+  },
+  {
+   "turn": 52,
+   "footprint_mib": 199.0
+  },
+  {
+   "turn": 53,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 54,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 55,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 56,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 57,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 58,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 59,
+   "footprint_mib": 200.0
+  },
+  {
+   "turn": 60,
+   "footprint_mib": 200.0
+  }
+ ],
+ "switch_gguf_mlx_onnx": [
+  {
+   "switch": 1,
+   "profile": "gguf",
+   "footprint_mib": 219.0
+  },
+  {
+   "switch": 2,
+   "profile": "mlx",
+   "footprint_mib": 315.0
+  },
+  {
+   "switch": 3,
+   "profile": "onnx",
+   "footprint_mib": 640.0
+  },
+  {
+   "switch": 4,
+   "profile": "gguf",
+   "footprint_mib": 780.0
+  },
+  {
+   "switch": 5,
+   "profile": "mlx",
+   "footprint_mib": 848.0
+  },
+  {
+   "switch": 6,
+   "profile": "onnx",
+   "footprint_mib": 654.0
+  },
+  {
+   "switch": 7,
+   "profile": "gguf",
+   "footprint_mib": 796.0
+  },
+  {
+   "switch": 8,
+   "profile": "mlx",
+   "footprint_mib": 864.0
+  },
+  {
+   "switch": 9,
+   "profile": "onnx",
+   "footprint_mib": 659.0
+  },
+  {
+   "switch": 10,
+   "profile": "gguf",
+   "footprint_mib": 803.0
+  },
+  {
+   "switch": 11,
+   "profile": "mlx",
+   "footprint_mib": 876.0
+  },
+  {
+   "switch": 12,
+   "profile": "onnx",
+   "footprint_mib": 666.0
+  },
+  {
+   "switch": 13,
+   "profile": "gguf",
+   "footprint_mib": 811.0
+  },
+  {
+   "switch": 14,
+   "profile": "mlx",
+   "footprint_mib": 881.0
+  },
+  {
+   "switch": 15,
+   "profile": "onnx",
+   "footprint_mib": 671.0
+  },
+  {
+   "switch": 16,
+   "profile": "gguf",
+   "footprint_mib": 818.0
+  },
+  {
+   "switch": 17,
+   "profile": "mlx",
+   "footprint_mib": 886.0
+  },
+  {
+   "switch": 18,
+   "profile": "onnx",
+   "footprint_mib": 671.0
+  },
+  {
+   "switch": 19,
+   "profile": "gguf",
+   "footprint_mib": 820.0
+  },
+  {
+   "switch": 20,
+   "profile": "mlx",
+   "footprint_mib": 900.0
+  },
+  {
+   "switch": 21,
+   "profile": "onnx",
+   "footprint_mib": 671.0
+  },
+  {
+   "switch": 22,
+   "profile": "gguf",
+   "footprint_mib": 821.0
+  },
+  {
+   "switch": 23,
+   "profile": "mlx",
+   "footprint_mib": 902.0
+  },
+  {
+   "switch": 24,
+   "profile": "onnx",
+   "footprint_mib": 671.0
+  }
+ ]
+}

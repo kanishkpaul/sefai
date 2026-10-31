@@ -359,6 +359,8 @@ Document isolation and native-runtime limits honestly; Phase 13 independently ex
 
 ### Phase 13 — Full testing and essential red teaming (second-last)
 
+**Complete:** [testing.md](testing.md) traces every command, module, schema and integration to its tests, records the red-team results, the dependency audit and long-session memory, and lists the limits that block specific release claims.
+
 Freeze feature scope, exercise the Phase 12 safety checklist, and maintain a traceable table of every feature, module, backend, command, file schema and integration, its test, and its result.
 Unit tests remain model/network independent; integration jobs use pinned local fixtures and explicit hardware/model requirements.
 Run default/minimal feature combinations, supported backend builds, clean-session and long-session runs, replay, crash recovery, memory plateaus, dependency/license review and dependency vulnerability scanning.

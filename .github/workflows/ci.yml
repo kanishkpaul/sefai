@@ -115,7 +115,7 @@ jobs:
         shell: bash
         env:
           SEFAI_LIFECYCLE_GGUF: ${{ github.workspace }}/fixture.gguf
-        run: cargo test --locked -p sefai --features harness-model-tests --test lifecycle_gguf -- --test-threads=1
+        run: cargo test --locked -p sefai --features harness-model-tests --test lifecycle_gguf --test recovery -- --test-threads=1
 
       - name: Verify GGUF loading with both native libraries linked
         if: runner.os == 'macOS'
