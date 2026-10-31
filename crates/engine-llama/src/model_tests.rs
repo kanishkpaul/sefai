@@ -247,8 +247,12 @@ fn gguf_hostile_files_fail_cleanly() {
         let path =
             std::env::temp_dir().join(format!("sefai-hostile-{}-{name}.gguf", std::process::id()));
         std::fs::write(&path, bytes).expect("write case");
-        let result = engine.load(&path, Device::Cpu, Arc::new(AtomicBool::new(false)));
-        std::fs::remove_file(&path).expect("remove case");
-        assert!(result.is_err(), "{name} must be rejected");
+        let rejected = engine
+            .load(&path, Device::Cpu, Arc::new(AtomicBool::new(false)))
+            .is_err();
+        // Windows CI has observed the file still open after a rejected load, and Windows cannot
+        // delete an open file, so cleanup of this per-process temporary file is best effort.
+        let _ = std::fs::remove_file(&path);
+        assert!(rejected, "{name} must be rejected");
     }
 }
