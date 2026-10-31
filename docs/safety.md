@@ -18,7 +18,7 @@ Model output, recalled memory, skill prose, catalog prose, tool results, MCP met
 
 ## Checklist
 
-Status is **verified** when the control and its test exist, **Phase 12** when this phase adds them, and **residual** when sefai cannot enforce it.
+Status is **verified** when the control and its test exist and **residual** when sefai cannot enforce it; Phase 12 closed every row it had planned.
 
 ### Approvals and dispatch
 
@@ -65,7 +65,7 @@ Status is **verified** when the control and its test exist, **Phase 12** when th
 | Symlinked parent on write | Every destination component checked with `symlink_metadata` | `workspace` | `symlink_parent_is_rejected_for_writing` | verified |
 | Lost update from a concurrent editor | Create-only or exact-snapshot writes, staged and revalidated before rename | `workspace` | `stale_snapshot_cannot_overwrite_an_external_edit`, `edit_during_staging_is_detected_before_rename` | verified |
 | A swap between the last check and `rename` | No `openat` without unsafe code | `workspace` | none | residual |
-| A pre-placed symlink at a download's partial file | Partial files are created exclusively | `setup::acquire` | Phase 12 | Phase 12 |
+| A pre-placed symlink at a download's partial, staging or destination path | Partial files are removed if present and created exclusively; linked staging or destination directories are refused | `setup::acquire` | `a_linked_staging_directory_is_refused` | verified |
 | A reply with a bare carriage return blocks saving | Saving fails visibly and the session refuses further sends until resolved | `workspace` | none | residual: visible, never silent |
 
 ### Processes and network
@@ -74,13 +74,13 @@ Status is **verified** when the control and its test exist, **Phase 12** when th
 | --- | --- | --- | --- | --- |
 | Shell injection through MCP launch | Absolute canonical executable, argument array, `.bat`/`.cmd` refused | `mcp` | `stdio_denied_connection_does_not_start_server` | verified |
 | Inherited environment leaks to a child | Cleared environment plus named references | `mcp` | `stdio_discovers_paginated_catalog` | verified |
-| A child outlives sefai | Process group or job object, killed on drop; SIGTERM and SIGHUP now run that cleanup | `mcp`, `tui` | `stdio_cleanup_stops_a_server_descendant`; signal case Phase 12 | Phase 12 |
-| SIGKILL of sefai, or a descendant that calls `setsid` | Cannot be intercepted without unsafe code | `mcp` | none | residual |
+| A child outlives sefai | Process group or job object, killed on drop when sefai exits normally or after an error; on any exit the server's input reaches end-of-file, which the protocol treats as shutdown | `mcp` | `stdio_cleanup_stops_a_server_descendant` | verified for normal exit |
+| SIGKILL or SIGTERM of sefai with a server that ignores end-of-file, or a descendant that calls `setsid` | Cannot be intercepted without unsafe code or a supervisor process | `mcp` | none | residual |
 | A child exhausts CPU or memory | No resource limits are applied | `mcp` | none | residual: children are unsandboxed, as the connect preview states |
-| Redirect to an unapproved host | MCP HTTP follows no redirects; downloads follow at most five, only to Hugging Face hosts | `mcp`, `setup::acquire` | `http_does_not_follow_redirects`; download case Phase 12 | Phase 12 |
-| A proxy from the environment intercepts traffic | MCP clients disable proxies; downloads disable them too | `mcp`, `setup::acquire` | Phase 12 | Phase 12 |
-| A download server stalls headers or the body | Response and per-file body deadlines scale with file size; cancellation is checked between reads | `setup::acquire` | Phase 12 | Phase 12 |
-| A download cannot be stopped | Ctrl+C in the CLI and Esc in the terminal cancel between reads; verified files stay staged | `setup`, `tui` | `cancelled_acquisition_publishes_nothing` | Phase 12 |
+| Redirect to an unapproved host | MCP HTTP follows no redirects; downloads follow at most five by hand, only over HTTPS to `huggingface.co`, `hf.co` and their subdomains | `mcp`, `setup::acquire` | `http_does_not_follow_redirects`, `redirects_stay_on_hugging_face_hosts_over_https` | verified |
+| A proxy from the environment intercepts traffic | MCP clients and downloads disable environment proxies | `mcp`, `setup::acquire` | configuration in `mcp::http` and `setup::acquire` | verified by code review; no network test |
+| A download server stalls headers or the body | 30-second connect and response deadlines; each body gets 60 seconds plus its size at 256 KiB/s; cancellation is checked between reads | `setup::acquire` | `body_deadlines_grow_with_file_size` | verified |
+| A download cannot be stopped | Ctrl+C in the CLI and Esc in the terminal cancel between reads; the partial file is removed and verified files stay staged | `setup`, `tui` | `cancelled_acquisition_publishes_nothing`; a real 1 GB download stopped by SIGINT within 4 s | verified |
 
 ### Models and dependencies
 
@@ -106,7 +106,7 @@ Status is **verified** when the control and its test exist, **Phase 12** when th
 
 ## Residual risks
 
-- Third-party MCP servers and their descendants run with the user's privileges, can read the workspace they start in and are not sandboxed; SIGKILL of sefai or a `setsid` descendant can leave them running.
+- Third-party MCP servers and their descendants run with the user's privileges, can read the workspace they start in and are not sandboxed; a server that ignores end-of-file can outlive a killed sefai, and a `setsid` descendant can escape cleanup.
 - Native inference libraries parse untrusted weight files; Rust's memory safety ends at that boundary.
 - A credential visible on screen during streaming is redacted only in the saved session.
 - Approval binds a tool's name and arguments, not what the server does with them.

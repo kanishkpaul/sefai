@@ -51,11 +51,15 @@ pub enum Action {
     },
 }
 
-/// Runs one setup action and returns its report.
+/// Runs one setup action and returns its report; `cancelled` stops a download between reads.
 ///
 /// # Errors
 /// Fails for an unreadable workspace catalog or artifact metadata.
-pub fn report(selection: &Selection, action: &Action) -> io::Result<String> {
+pub fn report(
+    selection: &Selection,
+    action: &Action,
+    cancelled: &std::sync::atomic::AtomicBool,
+) -> io::Result<String> {
     let root = selection.root()?;
     let workspace = root.exists().then(|| Workspace::open(&root)).transpose()?;
     let hardware = snapshot(&root);
@@ -106,7 +110,14 @@ pub fn report(selection: &Selection, action: &Action) -> io::Result<String> {
                 return Err(invalid(format!("{id} cannot run here: {reason}")));
             }
             let destination = to.clone().unwrap_or_else(|| root.join("weights"));
-            get(entry, &destination, &hardware, *yes, workspace.as_ref())
+            get(
+                entry,
+                &destination,
+                &hardware,
+                *yes,
+                workspace.as_ref(),
+                cancelled,
+            )
         }
         Action::Import { id, path, format } => {
             let workspace =
@@ -166,6 +177,7 @@ fn get(
     hardware: &Hardware,
     confirmed: bool,
     workspace: Option<&Workspace>,
+    cancelled: &std::sync::atomic::AtomicBool,
 ) -> io::Result<String> {
     let mut text = super::acquire::preview(entry, destination, hardware.disk_free_bytes);
     if !confirmed {
@@ -177,8 +189,7 @@ fn get(
     }
     let workspace =
         workspace.ok_or_else(|| invalid("initialize the workspace before acquiring a model"))?;
-    let cancelled = std::sync::atomic::AtomicBool::new(false);
-    let directory = super::acquire::acquire(entry, destination, &cancelled, |status| {
+    let directory = super::acquire::acquire(entry, destination, cancelled, |status| {
         text.push_str(status);
         text.push('\n');
     })?;
@@ -221,6 +232,7 @@ fn get(
     _hardware: &Hardware,
     _confirmed: bool,
     _workspace: Option<&Workspace>,
+    _cancelled: &std::sync::atomic::AtomicBool,
 ) -> io::Result<String> {
     Ok(format!(
         "this build cannot download; rebuild with the download feature, or fetch {}@{} yourself and run `sefai setup import {} PATH --format {}`\n",
