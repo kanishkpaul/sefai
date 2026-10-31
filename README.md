@@ -7,7 +7,7 @@ The goal is low RAM/VRAM use, a persistent TUI, Markdown-owned prompts/skills/pr
 
 sefai is in active development and is not ready for a stable release.
 Phases 1–11 are implemented: the GGUF runner, Markdown workspace, terminal TUI, bounded harness, MCP client, optional native MLX and ONNX adapters, GPTQ/AWQ on Apple Silicon, one runtime lifecycle across those formats, measured footprint on Apple Silicon and hosted CPU runners, and hardware-aware model setup.
-Dedicated safety hardening, full testing, packaging and execution on NVIDIA and AMD GPUs remain planned.
+Safety hardening is recorded in the [safety checklist](docs/safety.md); full testing, packaging and execution on NVIDIA and AMD GPUs remain planned.
 Follow the [build plan](docs/build-plan.md) for scope and acceptance gates.
 
 Pinned-model CPU tests pass on Windows, macOS and Linux; local Metal tests and CUDA/Vulkan compilation also pass.

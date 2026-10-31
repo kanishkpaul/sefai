@@ -54,6 +54,8 @@ struct State {
     tools: Option<ToolProtocol>,
     redactor: Redactor,
     uncertain: bool,
+    /// Set by Esc or Ctrl+C; also stops a `/setup get` download between reads.
+    cancelled: Arc<AtomicBool>,
     #[cfg(feature = "mcp")]
     mcp: Option<crate::mcp::Connection>,
 }
@@ -109,6 +111,7 @@ fn work(
         tools,
         redactor,
         uncertain: false,
+        cancelled: cancelled.clone(),
         #[cfg(feature = "mcp")]
         mcp: None,
         statistics: "no generation yet; one model and context at most".into(),
@@ -485,6 +488,7 @@ impl State {
                 events.send(Event::Overlay(crate::setup::report(
                     &self.selection,
                     &action,
+                    &self.cancelled,
                 )?))?;
             }
             "stats" => {
@@ -1047,6 +1051,7 @@ mod tests {
             context_used: 0,
             tools: Some(ToolProtocol::Smollm2),
             redactor: Redactor::environment().unwrap(),
+            cancelled: Arc::new(AtomicBool::new(false)),
             uncertain: false,
             #[cfg(feature = "mcp")]
             mcp: None,

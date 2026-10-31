@@ -181,8 +181,11 @@ fn execute(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
         Command::Devices => runner::devices()?,
         #[cfg(feature = "inference")]
         Command::Setup { action } => {
-            let mut output = io::stdout().lock();
-            term::Output::default().write(&setup::report(&cli.selection, &action)?, &mut output)?;
+            let cancelled = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+            let signal = cancelled.clone();
+            ctrlc::set_handler(move || signal.store(true, std::sync::atomic::Ordering::Relaxed))?;
+            let report = setup::report(&cli.selection, &action, &cancelled)?;
+            term::Output::default().write(&report, &mut io::stdout().lock())?;
         }
         #[cfg(feature = "inference")]
         Command::Run(options) => runner::run(options, runner::Mode::Reply, &cli.selection)?,

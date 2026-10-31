@@ -41,16 +41,17 @@ Entries describe artifacts; their text never grants tool support, runs code or c
 
 Downloading needs a build with the `download` feature; without it `get` prints the pinned repository and the `import` command to use after fetching the files yourself.
 The preview lists each file, its size, whether a matching copy is present, the destination and free disk space; nothing is downloaded until it is confirmed.
-Files come only from `https://huggingface.co` and the HTTPS storage hosts it redirects to, at most five redirects, with 30-second connect and 60-second read timeouts.
+Files come only from `https://huggingface.co`; redirects are followed by hand, at most five, and only over HTTPS to `huggingface.co`, `hf.co` or their subdomains, without any proxy from the environment.
+Connecting and the response headers each have 30 seconds, and each file's body gets 60 seconds plus its size at 256 KiB/s.
 Each file is written to `DIR/.staging-ID`, must match its pinned size and SHA-256, and the staging directory is renamed to `DIR/ID` only when every file verifies.
 An interrupted or failed acquisition keeps verified files in staging for the next attempt and never leaves a half-valid destination; an existing destination is re-verified rather than overwritten.
 A hash match proves the bytes are the pinned ones, not that the model is safe; gated repositories and credentials are not supported.
 The profile is created only if `models/ID.md` does not already exist, through the workspace's atomic write.
-A terminal download cannot be interrupted mid-file; quitting stops it and the next attempt resumes from staging.
+Ctrl+C during `sefai setup get` and Esc during `/setup get ID confirm` stop the download between reads; the partial file is removed and verified files stay staged for the next attempt.
 
 ## Calibration and limits
 
 After acquiring or importing, `sefai --profile ID bench "hello"` measures load, prefill, decode and peak memory on this machine; setup does not run it automatically or store its results.
 GPU memory budgets are not probed, so discrete-GPU fit is not estimated; on Apple Silicon the shared pool is used.
-Gated repositories, credentials and mirrors other than Hugging Face are not supported.
+Gated repositories, credentials and mirrors other than Hugging Face are not supported, and a read already blocked on a stalled server waits for its deadline before cancellation is seen.
 Estimates are recomputed each time they are shown, so they follow current available memory but are never cached or invalidated.

@@ -314,6 +314,8 @@ Re-measure footprint after unification and setup; Phase 12 hardens their safety 
 
 ### Phase 12 — Safety and permission hardening
 
+**Complete:** [safety.md](safety.md) maps every boundary to its control, owner and test, and PRs #30–#32 closed every gap the audit found that sefai can enforce; the remaining rows are stated residual risks.
+
 Consolidate safety across the completed runtimes, harness, MCP client and setup flow before the full Phase 13 verification pass.
 Safety controls and regression tests remain mandatory in every earlier phase; this phase closes cross-feature gaps rather than postponing basic protection.
 Build on existing approval, redaction, file validation and process supervision code; do not introduce a separate policy framework or an additional model to decide authority.

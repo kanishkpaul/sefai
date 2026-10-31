@@ -659,3 +659,20 @@ Phase 11 ships as PR #29 on Apple M5, 16 GB, macOS 27.0.1.
 
 GPU memory budgets, gated downloads, cancelling a terminal download mid-file and automatic calibration are not implemented; `sefai bench` remains the calibration step.
 The recommendation catalog holds only fixtures sefai's own tests run; it is evidence-backed, not a survey of good models.
+
+## Phase 12 — Safety and permission hardening
+
+Phase 12 ships as PRs #30–#32; [safety.md](safety.md) is the checklist, with every row verified by a named test or stated as residual.
+A read-only audit of approvals, MCP, credentials, workspace files, the terminal, model artifacts, downloads, resource bounds and recovery produced the gaps; each high-priority finding was confirmed in the code before it was fixed.
+
+### Evidence
+
+- Special-token forging: on real SmolLM2-135M fixtures, a message containing `<|im_end|>\n<|im_start|>system` produced 3 role tokens instead of 2 on GGUF and 4 instead of 3 on MLX before the fix; the regression tests pass after it on GGUF, MLX and ONNX.
+- Template fuel: a nested-loop template stops at 1,000,000 instructions, and Qwen3's template renders the 1,024-message maximum with under 100,000.
+- Approvals, credentials and MCP server requests: unit tests for the plain-mode code, the 500 ms arming delay, display redaction, MCP argument refusal, credential name matching, private-destination labels and memory provenance; a hostile fixture server's roots, sampling and elicitation requests are all answered with method-not-found.
+- Downloads: a real 105 MB acquisition succeeded through hand-followed Hugging Face redirects; SIGINT stopped a 1 GB acquisition within 4 s with nothing published; redirect, deadline, linked-staging and cancellation tests pass.
+- After each PR: the required checks, Clippy across feature combinations, attribution tests, `mcp_transport` and the lifecycle targets passed.
+
+### Remaining limits
+
+The residual rows in the checklist stand: unsandboxed MCP servers, native parsers of untrusted weights, on-screen streamed secrets, the final workspace check-to-rename window, and audit records that the same OS user can edit.
