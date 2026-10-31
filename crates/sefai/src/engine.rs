@@ -28,6 +28,30 @@ pub enum Device {
         threads: u32,
     },
 }
+impl fmt::Display for Device {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Cpu => formatter.write_str("cpu"),
+            Self::Gpu { backend, index } => {
+                let name = match backend {
+                    GpuBackend::Metal => "metal",
+                    GpuBackend::Cuda => "cuda",
+                    GpuBackend::Vulkan => "vulkan",
+                };
+                write!(formatter, "{name} device {index}")
+            }
+            Self::Mlx => formatter.write_str("mlx apple gpu"),
+            Self::Onnx { provider, threads } => {
+                let name = match provider {
+                    OnnxProvider::Cpu => "cpu",
+                    OnnxProvider::WebGpu => "webgpu",
+                };
+                write!(formatter, "onnx {name} · {threads} threads")
+            }
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum OnnxProvider {
     Cpu,
@@ -402,7 +426,7 @@ impl Model<'_> {
     pub fn memory(&self) -> String {
         match self {
             #[cfg(feature = "gguf")]
-            Self::Llama(_) => "memory reporting unavailable".into(),
+            Self::Llama(_) => "gguf memory reporting unavailable".into(),
             #[cfg(all(feature = "mlx", target_os = "macos", target_arch = "aarch64"))]
             Self::Mlx(..) => match sefai_engine_mlx::memory() {
                 Ok([active, cached, peak]) => format!(

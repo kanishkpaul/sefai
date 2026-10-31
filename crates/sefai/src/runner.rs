@@ -143,7 +143,7 @@ pub fn run(
     let mut output = io::stdout().lock();
     let mut terminal = Output::default();
     eprintln!(
-        "local · {:?} · context {} · prompt {} tokens",
+        "local · {} · context {} · prompt {} tokens",
         model.device(),
         plan.settings.context_tokens,
         input.token_count()
@@ -216,7 +216,7 @@ pub(crate) fn resolve(
         return Err("provider requires backend onnx".into());
     }
     let defaults = Settings::default();
-    let settings = Settings {
+    let mut settings = Settings {
         context_tokens: configured.context.unwrap_or(defaults.context_tokens),
         batch_tokens: configured.batch.unwrap_or(defaults.batch_tokens),
         microbatch_tokens: configured.microbatch.unwrap_or(defaults.microbatch_tokens),
@@ -256,6 +256,25 @@ pub(crate) fn resolve(
         },
         (_, None) => return Err("gpu mode requires --device from `sefai devices`".into()),
     };
+    // MLX and ONNX prefill in microbatch chunks with no separate batch, and MLX schedules its
+    // own threads; an explicit value for a control the engine never applies is an error.
+    let (engine, unused) = match device {
+        Device::Mlx => (
+            "mlx",
+            [("batch", configured.batch), ("threads", configured.threads)],
+        ),
+        Device::Onnx { .. } => ("onnx", [("batch", configured.batch), ("threads", None)]),
+        Device::Cpu | Device::Gpu { .. } => ("gguf", [("batch", None), ("threads", None)]),
+    };
+    if let Some((field, _)) = unused.iter().find(|(_, value)| value.is_some()) {
+        return Err(format!(
+            "runner {field} is not used by the {engine} engine; remove it from the profile, config.md or command"
+        )
+        .into());
+    }
+    if engine != "gguf" {
+        settings.batch_tokens = settings.microbatch_tokens;
+    }
     settings.validate(1, u32::MAX)?;
     Ok(Plan {
         format,
@@ -392,5 +411,36 @@ mod tests {
             };
             assert!(resolve(overrides, Runner::default(), Some(format)).is_err());
         }
+    }
+
+    #[test]
+    fn controls_an_engine_never_applies_are_rejected() {
+        for (backend, field) in [
+            (Backend::Mlx, "batch"),
+            (Backend::Mlx, "threads"),
+            (Backend::Onnx, "batch"),
+        ] {
+            let overrides = Runner {
+                backend: Some(backend),
+                batch: (field == "batch").then_some(64),
+                threads: (field == "threads").then_some(2),
+                ..Runner::default()
+            };
+            let error = resolve(overrides, Runner::default(), None).expect_err(field);
+            assert!(error.to_string().contains(field), "{error}");
+        }
+    }
+
+    #[test]
+    fn microbatch_engines_are_not_bounded_by_the_default_batch() {
+        let overrides = Runner {
+            backend: Some(Backend::Mlx),
+            microbatch: Some(1024),
+            ..Runner::default()
+        };
+        let settings = resolve(overrides, Runner::default(), None)
+            .expect("resolve")
+            .settings;
+        assert_eq!(settings.batch_tokens, 1024);
     }
 }

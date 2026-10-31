@@ -164,7 +164,7 @@ fn work(
             None => return Ok(()),
         };
         events.send(Event::Status(format!(
-            "loading {} · {:?}",
+            "loading {} · {}",
             job.path.display(),
             job.device
         )))?;
@@ -194,7 +194,7 @@ fn work(
                 .take(20)
                 .collect::<String>();
             events.send(Event::Ready(format!(
-                "{} · {:?} · ctx {}/{} · {} · {} records{}",
+                "{} · {} · ctx {}/{} · {} · {} records{}",
                 label,
                 model.device(),
                 state.context_used,
@@ -525,7 +525,7 @@ impl State {
                 };
                 settings.validate(input.token_count(), model.context_tokens_max()).map_err(io::Error::other)?;
                 events.send(Event::Status(format!(
-                    "prefill · {:?} · ctx {}/{} · {}",
+                    "prefill · {} · ctx {}/{} · {}",
                     model.device(),
                     input.token_count(),
                     settings.context_tokens,

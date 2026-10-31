@@ -40,7 +40,7 @@ impl Fixture {
             "---\nschema: 1\nmodel: tools\n---\n",
         )
         .expect("write fixture configuration");
-        fs::write(root.0.join("models/tools.md"), format!("---\nschema: 1\nid: tools\nformat: {FORMAT}\npath: '{}'\nrunner:\n  backend: {BACKEND}\n  context: 2048\n  output: 256\n  threads: 2\n---\n", model.display().to_string().replace('\'', "''"))).expect("write fixture profile");
+        fs::write(root.0.join("models/tools.md"), format!("---\nschema: 1\nid: tools\nformat: {FORMAT}\npath: '{}'\nrunner:\n  backend: {BACKEND}\n  context: 2048\n  output: 256\n{}---\n", model.display().to_string().replace('\'', "''"), if BACKEND == "mlx" { "" } else { "  threads: 2\n" })).expect("write fixture profile");
         root
     }
 
