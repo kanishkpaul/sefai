@@ -6,8 +6,8 @@ The goal is low RAM/VRAM use, a persistent TUI, Markdown-owned prompts/skills/pr
 ## 🏗️ Under construction
 
 sefai is in active development and is not ready for a stable release.
-Phases 1–10 are implemented: the GGUF runner, Markdown workspace, terminal TUI, bounded harness, MCP client, optional native MLX and ONNX adapters, GPTQ/AWQ on Apple Silicon, one runtime lifecycle across those formats, and measured footprint on Apple Silicon and hosted CPU runners.
-Hardware-aware setup, dedicated safety hardening, and execution on NVIDIA and AMD GPUs remain planned.
+Phases 1–11 are implemented: the GGUF runner, Markdown workspace, terminal TUI, bounded harness, MCP client, optional native MLX and ONNX adapters, GPTQ/AWQ on Apple Silicon, one runtime lifecycle across those formats, measured footprint on Apple Silicon and hosted CPU runners, and hardware-aware model setup.
+Dedicated safety hardening, full testing, packaging and execution on NVIDIA and AMD GPUs remain planned.
 Follow the [build plan](docs/build-plan.md) for scope and acceptance gates.
 
 Pinned-model CPU tests pass on Windows, macOS and Linux; local Metal tests and CUDA/Vulkan compilation also pass.
@@ -60,6 +60,7 @@ cargo run --locked -- --workspace /path/to/workspace prompt hello
 ```
 
 Model profiles, explicitly selected skills, literal memory recall and session resume use the same workspace.
+`sefai setup recommend` shortlists pinned models that fit this machine, and [model setup](docs/setup.md) covers checking, downloading and importing them.
 The [workspace guide](docs/workspace.md) documents schema 1, precedence, limits, safe writes and session framing.
 The [Phase 2 closeout](docs/phase2-closeout.md) records the merged workspace foundation.
 The [terminal guide](docs/tui.md) documents the interactive controls, limits and plain mode.

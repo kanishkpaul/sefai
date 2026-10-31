@@ -1,0 +1,34 @@
+---
+schema: 1
+id: qwen3-0-6b-awq
+repository: Orion-zhen/Qwen3-0.6B-AWQ
+revision: '9f607bee5fca19cba0bd2b383ba804c89385ea18'
+format: awq
+entry: '.'
+parameters_millions: 600
+purposes: [chat]
+license: GPL-3.0
+layers: 28
+kv_heads: 8
+head_dim: 128
+trained_context: 40960
+cache_element_bytes: 2
+evidence: docs/gptq-awq.md
+files:
+  - path: 'config.json'
+    bytes: 907
+    sha256: '9304b8ae87effc2ed74a95cd63e510fa6bf1283656a9363eaa95e8ca5c0e28bc'
+  - path: 'generation_config.json'
+    bytes: 214
+    sha256: '81051cd3f6e77013827148d0b8a6ead93f8ac390d5ab805f849199f0af6a08db'
+  - path: 'model.safetensors'
+    bytes: 540176208
+    sha256: '742947cb5a6fe4c36564591719b7ac011bdd9a00f17106bfa0eeea5656be58ba'
+  - path: 'tokenizer.json'
+    bytes: 11422654
+    sha256: 'aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4'
+  - path: 'tokenizer_config.json'
+    bytes: 9706
+    sha256: '253153d0738ceb4c668d2eff957714dd2bea0b56de772a9fdccd96cbf517e6a0'
+---
+Pinned from the [awq.json](../../../tests/fixtures/awq.json) fixture used by sefai's own tests.

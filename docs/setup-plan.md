@@ -75,6 +75,8 @@ Retain engine-specific tests; shared tests must not erase real differences.
 
 ## Phase 11 — Hardware-aware model selection and setup
 
+Phase 11 is complete on Apple Silicon; [model setup](setup.md) documents the shipped commands and limits.
+
 ### One terminal workflow
 
 Expose a focused setup view from first run and a planned `/setup` action; keep the conversation as the permanent home.

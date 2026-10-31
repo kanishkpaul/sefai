@@ -101,6 +101,134 @@ impl Format {
     }
 }
 
+/// One pinned model in the offline setup catalog; it describes an artifact and grants nothing.
+/// Builds without inference validate catalog files in `workspace check` but never use them.
+#[cfg_attr(not(feature = "inference"), allow(dead_code))]
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CatalogEntry {
+    pub schema: u32,
+    pub id: String,
+    /// Hugging Face `owner/name`.
+    pub repository: String,
+    /// The immutable 40-character commit the files are pinned to.
+    pub revision: String,
+    pub format: Format,
+    /// The path to load, relative to the acquired directory; `.` for a bundle directory.
+    pub entry: String,
+    pub parameters_millions: u32,
+    pub purposes: Vec<Purpose>,
+    pub license: String,
+    pub layers: u32,
+    pub kv_heads: u32,
+    pub head_dim: u32,
+    pub trained_context: u32,
+    pub cache_element_bytes: u32,
+    /// A repository document recording this entry's qualification.
+    pub evidence: String,
+    pub files: Vec<CatalogFile>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CatalogFile {
+    pub path: String,
+    pub bytes: u64,
+    pub sha256: String,
+}
+
+/// What a catalog model has been qualified for.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, clap::ValueEnum)]
+#[serde(rename_all = "lowercase")]
+pub enum Purpose {
+    Chat,
+    Tools,
+}
+
+impl CatalogEntry {
+    /// Checks pinned identity, safe relative paths, hashes and bounds.
+    pub fn validate(&self) -> io::Result<()> {
+        version(self.schema)?;
+        id(&self.id)?;
+        let mut parts = self.repository.split('/');
+        let portable = |part: &str| {
+            !part.is_empty()
+                && part.len() <= 96
+                && part
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.'))
+                && !part.starts_with('.')
+        };
+        if !(parts.next().is_some_and(portable)
+            && parts.next().is_some_and(portable)
+            && parts.next().is_none())
+        {
+            return Err(invalid("repository: expected owner/name"));
+        }
+        if !hex(&self.revision, 40) {
+            return Err(invalid("revision: expected a 40-character commit"));
+        }
+        if self.files.is_empty() || self.files.len() > 256 {
+            return Err(invalid("files: expected 1..256 entries"));
+        }
+        for file in &self.files {
+            relative(&file.path)?;
+            if !hex(&file.sha256, 64) || file.bytes == 0 {
+                return Err(invalid("files: each file needs bytes and a sha256"));
+            }
+        }
+        if self.entry != "." {
+            relative(&self.entry)?;
+            if !self.files.iter().any(|file| file.path == self.entry) {
+                return Err(invalid("entry: must be . or a listed file"));
+            }
+        }
+        if self.purposes.is_empty()
+            || [
+                self.layers,
+                self.kv_heads,
+                self.head_dim,
+                self.trained_context,
+            ]
+            .contains(&0)
+            || !matches!(self.cache_element_bytes, 1 | 2 | 4)
+        {
+            return Err(invalid(
+                "shape: layers, heads, context and cache element bytes are required",
+            ));
+        }
+        Ok(())
+    }
+
+    #[cfg(feature = "inference")]
+    pub fn weight_bytes(&self) -> u64 {
+        self.files.iter().map(|file| file.bytes).sum()
+    }
+}
+
+fn hex(value: &str, length: usize) -> bool {
+    value.len() == length
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+}
+
+/// A forward-slash path of plain components that cannot leave its directory.
+fn relative(value: &str) -> io::Result<()> {
+    if value.is_empty()
+        || value.len() > 512
+        || value.contains(['\\', ':', '\0'])
+        || value
+            .split('/')
+            .any(|part| part.is_empty() || part == "." || part == "..")
+    {
+        return Err(invalid(
+            "path: expected a relative path of plain components",
+        ));
+    }
+    Ok(())
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Skill {

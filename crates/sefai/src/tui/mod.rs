@@ -29,7 +29,7 @@ const DISPLAY_BYTES_MAX: usize = 128 * 1024;
 const EVENTS_MAX: usize = 64;
 const COMMANDS_MAX: usize = 1;
 pub const HELP: &str = "Conversation\nEnter send · Shift+Enter newline · Esc stop/close\nPageUp/PageDown scroll · End follow · F2 error details
-Ctrl+K commands · Ctrl+C stop/quit · Ctrl+D quit\n/model PATH  choose a local model\n/profile ID  choose a Markdown model profile\n/models  list profiles\n/new [ID]  preserve this conversation and start another\n/reset  start a fresh conversation\n/resume ID  open a saved session\n/sessions  list sessions\n/skills · /skill ID toggle selected skill\n/memory · /recall TEXT select literal memory recall\n/settings · /mcp · /stats · /help\n/quit  exit\nEdit Markdown with your text editor; it reloads before each turn";
+Ctrl+K commands · Ctrl+C stop/quit · Ctrl+D quit\n/model PATH  choose a local model\n/profile ID  choose a Markdown model profile\n/models  list profiles\n/new [ID]  preserve this conversation and start another\n/reset  start a fresh conversation\n/resume ID  open a saved session\n/sessions  list sessions\n/skills · /skill ID toggle selected skill\n/memory · /recall TEXT select literal memory recall\n/setup [recommend | catalog | check FORMAT PATH | get ID [confirm]]  hardware, model fit and downloads\n/settings · /mcp · /stats · /help\n/quit  exit\nEdit Markdown with your text editor; it reloads before each turn";
 
 #[derive(clap::Args, Default)]
 pub struct Options {

@@ -16,7 +16,8 @@ mlx-model-tests = ["mlx"]
 onnx = ["inference", "dep:sefai-engine-onnx", "sefai-engine-onnx/runtime"]
 onnx-model-tests = ["onnx"]
 onnx-webgpu = ["onnx", "sefai-engine-onnx/webgpu"]
-inference = ["dep:ctrlc", "dep:ratatui", "dep:crossterm", "dep:unicode-segmentation", "dep:serde_json"]
+inference = ["dep:ctrlc", "dep:ratatui", "dep:crossterm", "dep:unicode-segmentation", "dep:serde_json", "dep:sysinfo"]
+download = ["inference", "dep:ureq", "dep:sha2"]
 mcp-fixture-tests = ["mcp-oauth"]
 mcp-oauth = ["mcp-http", "rmcp/auth"]
 mcp-http = ["mcp", "rmcp/transport-streamable-http-client", "dep:reqwest", "dep:futures-util", "dep:http", "dep:sse-stream"]
@@ -46,6 +47,9 @@ serde-saphyr = { version = "2", default-features = false, features = ["deseriali
 ratatui = { optional = true, version = "0.30.2", default-features = false, features = ["crossterm", "unstable-rendered-line-info"] }
 crossterm = { optional = true, version = "0.29.0", default-features = false, features = ["events", "bracketed-paste", "windows"] }
 unicode-segmentation = { version = "1.13.3", optional = true }
+sysinfo = { version = "0.40", optional = true, default-features = false, features = ["system", "disk"] }
+ureq = { version = "3.5", optional = true, default-features = false, features = ["rustls"] }
+sha2 = { version = "0.10", optional = true }
 
 [lints]
 workspace = true

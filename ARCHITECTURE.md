@@ -22,6 +22,7 @@ The binary harness drives bounded generations and opt-in local memory tools with
 Dispatch intent and outcomes use separate Markdown audit records that never become model messages.
 The optional MCP module owns supervised stdio, bounded Streamable HTTP, explicit OAuth and frozen discovery catalogs.
 The harness owns per-call approval and durable dispatch; server metadata never grants authority.
+The binary setup module reports a one-shot hardware snapshot, estimates memory from GGUF headers or `config.json`, shortlists the pinned Markdown catalog and, in an optional `download` build, stages and verifies acquisitions before writing a profile; it never loads a model or runs repository code.
 The [workspace guide](docs/workspace.md) defines schema 1 and its limits.
 The [runner guide](docs/runner.md) defines current limits and local qualification.
 The [build plan](docs/build-plan.md) separates implementation phases and acceptance gates.
@@ -39,6 +40,7 @@ The [audit](docs/bug-fix-plan.md) records the legacy runner defects that a repla
 | Workspace module | Versioned Markdown schema, bounded reads, atomic writes and conflict handling | A hidden canonical database |
 | MCP module | Protocol/transport, server lifecycle, credential references and result limits | Authority to approve its own tool calls |
 | TUI module | Input, transcript, status, approvals and rendering | Model execution on its event thread |
+| Setup module | Hardware snapshot, metadata estimates, catalog shortlist, verified acquisition and profile creation | Loading models, switching the active model or trusting catalog prose |
 
 Modules become crates only when a real dependency/lifecycle boundary warrants it.
 Do not create empty crates for future phases.

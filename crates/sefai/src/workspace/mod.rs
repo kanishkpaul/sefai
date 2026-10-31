@@ -12,7 +12,7 @@ use schema::Format;
 pub use schema::OAuth;
 pub use schema::Runner;
 #[cfg(feature = "inference")]
-pub use schema::{Backend, Format, Provider};
+pub use schema::{Backend, CatalogEntry, Format, Provider, Purpose};
 use schema::{Config, Memory, Model, Skill, Text, invalid};
 #[cfg(feature = "mcp")]
 pub use schema::{Mcp, Transport};
@@ -57,6 +57,12 @@ pub struct Prepared {
     pub model: Option<PathBuf>,
     /// The selected profile's declared format; absent for a bare model path.
     pub format: Option<Format>,
+}
+
+/// Parses one catalog document's front matter; callers validate the entry.
+#[cfg(feature = "inference")]
+pub fn parse_catalog(text: &str) -> io::Result<(CatalogEntry, &str)> {
+    schema::parse(text)
 }
 
 impl Selection {
@@ -352,13 +358,33 @@ impl Workspace {
             .iter()
             .filter(|name| self.root.join(name).exists())
             .count();
-        for directory in ["models", "skills", "memory", "sessions", "mcp"] {
+        for directory in ["models", "skills", "memory", "sessions", "mcp", "catalog"] {
             for path in self.entries(directory)? {
                 self.validate_file(&path, &self.path(&path)?)?;
                 count += 1;
             }
         }
         Ok(count)
+    }
+
+    #[cfg(feature = "download")]
+    pub(crate) fn root(&self) -> &Path {
+        &self.root
+    }
+
+    /// Reads the workspace's own catalog entries; built-in entries belong to setup.
+    #[cfg(feature = "inference")]
+    pub(crate) fn catalog(&self) -> io::Result<Vec<CatalogEntry>> {
+        let mut entries = Vec::new();
+        for path in self.entries("catalog")?.into_iter().take(128) {
+            let text = self.read(&path)?;
+            let (entry, _) =
+                schema::parse::<CatalogEntry>(&text).map_err(|error| at(&path, error))?;
+            self.identity(&path, entry.schema, &entry.id)?;
+            entry.validate().map_err(|error| at(&path, error))?;
+            entries.push(entry);
+        }
+        Ok(entries)
     }
 
     pub(crate) fn validate_document(&self, path: &Path, text: &str) -> io::Result<()> {
@@ -386,6 +412,11 @@ impl Workspace {
             "memory" => {
                 let (header, _) = schema::parse::<Memory>(text)?;
                 self.identity(path, header.schema, &header.id)
+            }
+            "catalog" => {
+                let (header, _) = schema::parse::<schema::CatalogEntry>(text)?;
+                self.identity(path, header.schema, &header.id)?;
+                header.validate().map_err(|error| at(path, error))
             }
             "mcp" => {
                 let (header, _) = schema::parse::<schema::Mcp>(text)?;
@@ -428,7 +459,7 @@ fn kind(path: &Path) -> io::Result<&str> {
         [name] if *name == "system.md" || *name == "preferences.md" => Ok("text"),
         [directory, _] if path.extension().is_some_and(|extension| extension == "md") => {
             match directory.to_str() {
-                Some(kind @ ("models" | "memory" | "mcp" | "sessions")) => Ok(kind),
+                Some(kind @ ("models" | "memory" | "mcp" | "sessions" | "catalog")) => Ok(kind),
                 _ => Err(at(path, "path: unsupported document kind")),
             }
         }

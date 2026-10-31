@@ -5,7 +5,7 @@ GGUF, ONNX, GPTQ, AWQ, and MLX are release targets.
 Phase 1 is complete: the published GGUF runner passes local CPU/Metal tests, Windows/macOS/Linux CPU-model CI and CUDA/Vulkan compile checks.
 Phase 2 is merged through PRs #8–#11 with passing Windows, macOS, Linux and attribution checks.
 Phases 3–8 are merged; Phase 6 native MLX is published through PR #15 with passing CI.
-Phase 9 runtime unification is delivered by PRs #23–#25 and Phase 10 qualification by PRs #26–#28; the Phase 8 NVIDIA gate and Phase 10 GPU execution gates remain open.
+Phase 9 runtime unification is delivered by PRs #23–#25, Phase 10 qualification by PRs #26–#28 and Phase 11 setup by PR #29; the Phase 8 NVIDIA gate and Phase 10 GPU execution gates remain open.
 See [phase2-closeout.md](phase2-closeout.md) for the acceptance matrix and stack order.
 Complete runner correctness before adding harness features.
 Every phase includes regression tests; the second-last phase is a complete product verification pass, and the last is repository organization, installation, and presentation.
@@ -300,6 +300,9 @@ ROCm, ONNX providers and GPTQ/AWQ kernels are separately labeled qualified/exper
 Hosted CI compilation is not proof that a GPU backend ran.
 
 ### Phase 11 — Hardware-aware model selection and setup dashboard
+
+**Complete on Apple Silicon:** `sefai setup` and `/setup` inspect hardware and compiled engines, estimate any local model's memory from metadata, shortlist pinned catalog models that run and fit, acquire one after an explicit preview with hash-verified staged downloads in an optional `download` build, and write its Markdown profile; see [model setup](setup.md).
+Calibration uses the existing `sefai bench`; GPU memory budgets, gated downloads and cancelling a terminal download mid-file remain unimplemented.
 
 Build a focused terminal setup view on the unified contracts and measured Phase 10 data; the conversation remains the permanent home.
 Inspect hardware/runtime availability, import local models or use a small offline Markdown recommendation catalog, explain compatibility and memory fit, preview acquisition/settings, and save/load a chosen Markdown profile.

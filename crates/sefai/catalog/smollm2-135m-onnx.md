@@ -1,0 +1,34 @@
+---
+schema: 1
+id: smollm2-135m-onnx
+repository: HuggingFaceTB/SmolLM2-135M-Instruct
+revision: '12fd25f77366fa6b3b4b768ec3050bf629380bac'
+format: onnx
+entry: 'onnx/model_int8.onnx'
+parameters_millions: 135
+purposes: [chat]
+license: Apache-2.0
+layers: 30
+kv_heads: 3
+head_dim: 64
+trained_context: 8192
+cache_element_bytes: 4
+evidence: docs/onnx.md
+files:
+  - path: 'config.json'
+    bytes: 861
+    sha256: '8eb740e8bbe4cff95ea7b4588d17a2432deb16e8075bc5828ff7ba9be94d982a'
+  - path: 'generation_config.json'
+    bytes: 132
+    sha256: '87b916edaaab66b3899b9d0dd0752727dff6666686da0504d89ae0a6e055a013'
+  - path: 'tokenizer.json'
+    bytes: 2104556
+    sha256: '9ca9acddb6525a194ec8ac7a87f24fbba7232a9a15ffa1af0c1224fcd888e47c'
+  - path: 'tokenizer_config.json'
+    bytes: 3764
+    sha256: '4ec77d44f62efeb38d7e044a1db318f6a939438425312dfa333b8382dbad98df'
+  - path: 'onnx/model_int8.onnx'
+    bytes: 137147867
+    sha256: 'a7c33f9ef85d06734cc9d1f943f7e2ba57c77e769df727f4d3e217d9f672b0cc'
+---
+Pinned from the [onnx.json](../../../tests/fixtures/onnx.json) fixture used by sefai's own tests.
