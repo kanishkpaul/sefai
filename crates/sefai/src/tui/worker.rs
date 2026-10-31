@@ -3,7 +3,7 @@ use crate::engine::{Cache, Device, Engine, Model, Settings, Stop};
 use crate::harness::{self, Action, Redactor, Turn};
 use crate::{
     runner,
-    workspace::{Prepared, Runner, Selection, Workspace},
+    workspace::{Format, Prepared, Runner, Selection, Workspace},
 };
 use sefai_core::{Message, Prompt};
 use std::{
@@ -35,6 +35,7 @@ struct Dispatch<'a> {
 struct Job {
     prepared: Prepared,
     path: PathBuf,
+    format: Option<Format>,
     device: Device,
     settings: Settings,
     user: String,
@@ -167,7 +168,7 @@ fn work(
             job.path.display(),
             job.device
         )))?;
-        let model = match engine.load(&job.path, job.device, cancelled.clone()) {
+        let model = match engine.load(&job.path, job.format, job.device, cancelled.clone()) {
             Ok(model) => model,
             Err(error) => {
                 events.send(Event::Error(error.to_string()))?;
@@ -209,7 +210,7 @@ fn work(
             let Some(next) = state.next(&commands, events) else {
                 return Ok(());
             };
-            if next.path != job.path || next.device != job.device {
+            if next.path != job.path || next.format != job.format || next.device != job.device {
                 pending = Some(next);
                 break;
             }
@@ -341,12 +342,15 @@ impl State {
             .clone()
             .or_else(|| prepared.model.clone())
             .ok_or("choose /model PATH or /profile ID before sending")?;
-        let (device, settings) = runner::resolve(Runner::default(), prepared.runner.clone())?;
+        // A profile's declared format describes its own path, not one chosen with /model.
+        let format = prepared.format.filter(|_| self.model.is_none());
+        let plan = runner::resolve(Runner::default(), prepared.runner.clone(), format)?;
         Ok(Some(Job {
             prepared,
             path,
-            device,
-            settings,
+            format: plan.format,
+            device: plan.device,
+            settings: plan.settings,
             user: text,
             scope,
         }))
@@ -980,6 +984,7 @@ mod tests {
         let job = Job {
             prepared: selection.prepare("hi".into()).unwrap(),
             path: "unused.gguf".into(),
+            format: None,
             device: Device::Cpu,
             settings: Settings::default(),
             user: "hi".into(),

@@ -6,12 +6,14 @@ mod files;
 mod schema;
 mod session;
 
+#[cfg(not(feature = "inference"))]
+use schema::Format;
 #[cfg(feature = "mcp-oauth")]
 pub use schema::OAuth;
 pub use schema::Runner;
 #[cfg(feature = "inference")]
-pub use schema::{Backend, Provider};
-use schema::{Config, Format, Memory, Model, Skill, Text, invalid};
+pub use schema::{Backend, Format, Provider};
+use schema::{Config, Memory, Model, Skill, Text, invalid};
 #[cfg(feature = "mcp")]
 pub use schema::{Mcp, Transport};
 use sefai_core::{Message, Prompt};
@@ -53,6 +55,8 @@ pub struct Prepared {
     pub prompt: Prompt,
     pub runner: Runner,
     pub model: Option<PathBuf>,
+    /// The selected profile's declared format; absent for a bare model path.
+    pub format: Option<Format>,
 }
 
 impl Selection {
@@ -78,6 +82,7 @@ impl Selection {
             prompt: Prompt::new(vec![Message::user(message)]),
             runner: Runner::default(),
             model: None,
+            format: None,
         };
         if let Some(root) = &self.global_workspace {
             Workspace::open(root)?.instructions(&mut result.prompt)?;
@@ -145,6 +150,7 @@ impl Selection {
             } else {
                 workspace.root.join(model.path)
             });
+            result.format = Some(model.format);
             result.runner.overlay(&model.runner);
             if result.runner.provider.is_some() && !matches!(model.format, Format::Onnx) {
                 return Err(at(&path, "provider requires format onnx"));
@@ -526,7 +532,7 @@ fn at(path: impl AsRef<Path>, error: impl std::fmt::Display) -> io::Error {
 /// Formats owned by one adapter select that adapter and take no ggml device index.
 fn native_backend(path: &Path, runner: &mut Runner, backend: schema::Backend) -> io::Result<()> {
     if runner.backend.is_some_and(|selected| selected != backend) || runner.device.is_some() {
-        let name = format!("{backend:?}").to_lowercase();
+        let name = backend.name();
         return Err(at(
             path,
             format!("{name} format requires backend {name} without a device index"),

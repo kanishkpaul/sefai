@@ -37,6 +37,20 @@ pub enum Backend {
     Vulkan,
 }
 
+impl Backend {
+    /// The lowercase name used in profiles and on the command line.
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Mlx => "mlx",
+            Self::Onnx => "onnx",
+            Self::Cpu => "cpu",
+            Self::Metal => "metal",
+            Self::Cuda => "cuda",
+            Self::Vulkan => "vulkan",
+        }
+    }
+}
+
 /// ONNX Runtime execution provider; valid only with backend onnx.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, clap::ValueEnum)]
 #[serde(rename_all = "lowercase")]
@@ -62,7 +76,8 @@ pub struct Model {
     pub runner: Runner,
 }
 
-#[derive(Debug, Deserialize)]
+/// A model artifact's declared format; GPTQ and AWQ run through the MLX engine.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, clap::ValueEnum)]
 #[serde(rename_all = "lowercase")]
 pub enum Format {
     Gguf,
@@ -70,6 +85,20 @@ pub enum Format {
     Gptq,
     Awq,
     Mlx,
+}
+
+#[cfg(feature = "inference")]
+impl Format {
+    /// The lowercase name used in profiles and on the command line.
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Gguf => "gguf",
+            Self::Onnx => "onnx",
+            Self::Gptq => "gptq",
+            Self::Awq => "awq",
+            Self::Mlx => "mlx",
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]

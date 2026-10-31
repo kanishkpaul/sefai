@@ -20,7 +20,7 @@ A checkpoint is admitted only when its `quantization_config` maps exactly:
 
 A bundle that also declares MLX `quantization` with a GPTQ or AWQ method is ambiguous and rejected.
 The architectures are those of the MLX adapter: dense Llama and Qwen3.
-The checkpoint's own `quantization_config` chooses the loader; a profile's `format: gptq` or `format: awq` selects the MLX backend but is not checked against that metadata.
+The checkpoint's own `quantization_config` chooses the loader; a declared `format: gptq` or `format: awq` selects the MLX backend and must match that metadata, so a GPTQ profile pointing at an AWQ checkpoint fails admission before loading.
 
 Scales and biases are stored in the checkpoint's activation dtype, read from `model.embed_tokens.weight`.
 MLX promotes a quantized product whose scales differ from the activations to `float32`; on bf16 Qwen3-0.6B AWQ that cost 3× decode throughput.
@@ -121,5 +121,4 @@ These remain open and are not inferred from it:
 
 - NVIDIA is the follow-up gate: CUDA GPTQ and AWQ kernels such as Marlin or ExLlama through a qualified runtime, compared against vLLM's published matrix, on contributors' hardware.
 - Act-order GPTQ, 2-, 3- and other bit widths, per-channel groups, AWQ GEMV and quantized `lm_head` checkpoints are rejected rather than supported.
-- A profile's GPTQ or AWQ format is not checked against the checkpoint's metadata.
 - Decode trails Python `mlx-lm` by the same margin as the MLX adapter; that is a Phase 9 and 10 concern, not specific to these formats.
