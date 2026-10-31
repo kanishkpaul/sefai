@@ -183,6 +183,20 @@ fn stdio_rejects_malformed_messages() {
     assert!(!Fixture::new("malformed", false).inspect().status.success());
 }
 #[test]
+fn server_requests_for_roots_sampling_and_elicitation_are_refused() {
+    let fixture = Fixture::new("server-requests", false);
+    assert!(fixture.inspect().status.success());
+    let answers: serde_json::Value = serde_json::from_slice(
+        &fs::read(fixture.root.join("fixture-server-requests.txt"))
+            .expect("the server recorded the client's answers"),
+    )
+    .expect("json");
+    for key in ["roots", "sampling", "elicitation"] {
+        assert_eq!(answers[key]["error"]["code"], -32601, "{key}: {answers}");
+        assert!(answers[key].get("result").is_none(), "{key}: {answers}");
+    }
+}
+#[test]
 fn stdio_reads_only_a_selected_resource() {
     let fixture = Fixture::new("normal", false);
     assert_eq!(

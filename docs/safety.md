@@ -28,10 +28,10 @@ Status is **verified** when the control and its test exist, **Phase 12** when th
 | Arguments change between preview and dispatch | The approved action is consumed once and compared before dispatch | `harness` | `changed_arguments_invalidate_approval`, `approval_cannot_be_replayed` | verified |
 | Scope, definition or catalog changes during an approval | Workspace scope and `mcp/ID.md` text revalidated after approval and immediately before dispatch | `tui/worker`, `mcp` | `edited_definition_invalidates_connection_authority`, `frozen_scope_does_not_adopt_a_new_memory` | verified |
 | Tool output or skill text widens scope | Runtime-owned tool list; unknown names and other server IDs rejected | `harness` | `tool_output_cannot_widen_scope`, `tool_outside_catalog_is_never_sent` | verified |
-| A pasted block in plain mode carries `y` for the next approval | In an interactive terminal, plain mode asks for a one-time code shown with the preview | `tui` | Phase 12 | Phase 12 |
-| A key typed just before the overlay appears approves it | The screen overlay ignores keys for a short arming delay | `tui` | Phase 12 | Phase 12 |
+| A pasted block in plain mode carries `y` for the next approval | In an interactive terminal, plain mode asks for a one-time `y-NNNN` code shown with the preview; piped input remains an explicit script | `tui` | `approval_codes_are_four_digits` | verified |
+| A key typed just before the overlay appears approves it | The screen overlay ignores `y` for 500 ms after it appears | `tui` | `y_typed_as_the_preview_appears_is_ignored` | verified |
 | Approval timeout or cancellation | 120-second turn limit; Esc and Ctrl+C cancel; no dispatch after either | `harness`, `tui/worker` | `time_budget_stops_approval`, `expired_approval_denies_without_waiting`, `cancellation_stops_dispatch` | verified |
-| A user wants to stop a connection mid-session | `/disconnect` drops it and stops the child between turns; cancellation stops a turn | `tui/worker` | Phase 12 adds the help entry and a test | Phase 12 |
+| A user wants to stop a connection mid-session | `/disconnect`, listed in help, drops it and stops the child between turns; later calls fail; cancellation stops a turn | `tui/worker` | `disconnect_ends_mcp_authority_for_later_calls` | verified |
 | A misleadingly named MCP tool | The preview shows the server, destination, tool name and escaped arguments; the tool's description is not shown or bound | `tui/worker` | `approved_mcp_dispatch_preserves_exact_arguments_and_outcome` | residual: judge the call by its arguments |
 
 ### Untrusted text reaching the model
@@ -39,7 +39,7 @@ Status is **verified** when the control and its test exist, **Phase 12** when th
 | Abuse case | Control | Owner | Test | Status |
 | --- | --- | --- | --- | --- |
 | Memory, skill, tool or MCP text contains `<\|im_start\|>system` or another special-token string, forging a role | Each engine inserts a word joiner into its own special-token strings inside message content before rendering, so only the template emits them | engines, `core::neutralize_special` | `gguf_message_text_cannot_forge_a_role_token`, MLX and ONNX `message_text_cannot_forge_a_role_token`, `forged_role_markers_are_broken` | verified |
-| A model-written memory is later recalled as if the user wrote it | Memories created by `remember_memory` record `source: model` and are recalled under a model-memory label | `workspace`, `tui/worker` | Phase 12 | Phase 12 |
+| A model-written memory is later recalled as if the user wrote it | Memories created by `remember_memory` record `source: model` and are recalled under an untrusted-note label | `workspace`, `tui/worker` | `model_written_memory_is_recalled_with_a_provenance_label` | verified |
 | A session file forges a role or a dispatch record | Quoted record grammar; harness records never become roles | `workspace` | `session_body_cannot_inject_a_role`, `conversation_text_cannot_forge_a_dispatch_record` | verified |
 | Front matter injected through a memory body | Parsing stops at the first closing delimiter | `workspace` | `body_is_never_configuration` | verified |
 
@@ -48,14 +48,14 @@ Status is **verified** when the control and its test exist, **Phase 12** when th
 | Abuse case | Control | Owner | Test | Status |
 | --- | --- | --- | --- | --- |
 | A known credential is written into a session record | Values of credential-named variables, MCP env references, `token_env` and OAuth tokens are redacted before persistence | `harness::Redactor` | `secrets_are_redacted_literally`, `escaped_secret_is_redacted_in_audit_json` | verified |
-| The model places a known credential in MCP arguments or a memory | The call is refused before approval | `harness` | `known_credentials_cannot_be_written_as_memory_ids`; MCP case Phase 12 | Phase 12 |
-| A known credential appears in an approval preview, tool row or error | Redacted before display | `tui/worker` | Phase 12 | Phase 12 |
+| The model places a known credential in MCP arguments or a memory | The call is refused before approval | `harness` | `known_credentials_cannot_be_written_as_memory_ids`, `mcp_arguments_carrying_a_known_credential_are_refused` | verified |
+| A known credential appears in an approval preview, tool row, overlay, status or error | The display shares the worker's redactor | `tui` | `displayed_errors_and_previews_hide_known_credentials` | verified |
 | A known credential streams in a live reply | Not redacted on screen because a value can split across tokens; the saved record is redacted | `harness` | none | residual |
-| Short or common values such as `1` mangle saved text | Values shorter than 8 bytes are not treated as secrets | `harness::Redactor` | Phase 12 | Phase 12 |
-| Credential names outside the suffix list | `KEY`, `TOKEN`, `SECRET`, `PASSWORD`, plus `PAT`, `AUTH` and `CREDENTIALS` suffixes | `harness::Redactor` | Phase 12 | Phase 12 |
+| Short or common values such as `1` mangle saved text | Values shorter than 8 bytes are not treated as secrets | `harness::Redactor` | `short_values_are_not_treated_as_secrets` | verified |
+| Credential names outside the suffix list | `KEY`, `TOKEN`, `SECRET`, `PASSWORD`, `PAT`, `AUTH` and `CREDENTIALS` suffixes in any case; other names such as `DATABASE_URL` are missed | `harness::Redactor` | `credential_names_match_common_suffixes_in_any_case` | verified; residual for other names |
 | `token_env` names an unrelated credential | The connect preview names the variable and the destination; only the user's approval binds them | `mcp` | `http_requires_the_endpoint_credential` | residual |
-| An MCP endpoint on a private, link-local or loopback network | Remote URLs need HTTPS or literal loopback; the preview labels private destinations | `mcp` | Phase 12 | Phase 12 |
-| A server requests sampling, elicitation or roots | sefai refuses all three itself instead of relying on SDK defaults | `mcp` | Phase 12 | Phase 12 |
+| An MCP endpoint on a private, link-local or loopback network | Remote URLs need HTTPS or literal loopback; the preview labels loopback, private, link-local and single-label hosts; resolved addresses are not pinned | `mcp` | `private_and_local_endpoints_are_labeled` | verified |
+| A server requests sampling, elicitation or roots | sefai's client handler answers all three with method-not-found | `mcp` | `server_requests_for_roots_sampling_and_elicitation_are_refused` | verified |
 
 ### Files and durable state
 

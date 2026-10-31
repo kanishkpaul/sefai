@@ -41,11 +41,27 @@ impl Workspace {
     }
 
     pub fn remember(&self, id: &str, text: &str, expected: Option<&Path>) -> io::Result<()> {
+        self.write_memory(id, text, expected, "")
+    }
+
+    /// Creates a memory from an approved model tool call, marked so recall labels it.
+    #[cfg(feature = "inference")]
+    pub fn remember_from_model(&self, id: &str, text: &str) -> io::Result<()> {
+        self.write_memory(id, text, None, "source: model\n")
+    }
+
+    fn write_memory(
+        &self,
+        id: &str,
+        text: &str,
+        expected: Option<&Path>,
+        source: &str,
+    ) -> io::Result<()> {
         schema::id(id)?;
         if text.len() > schema::FILE_BYTES_MAX {
             return Err(invalid("memory.body: exceeds 1048576 bytes"));
         }
-        let text = format!("---\nschema: 1\nid: {id}\n---\n{text}");
+        let text = format!("---\nschema: 1\nid: {id}\n{source}---\n{text}");
         self.put(
             Path::new(&format!("memory/{id}.md")),
             expected,

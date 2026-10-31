@@ -3,7 +3,11 @@ mod tests;
 
 use sefai_core::{Message, Prompt};
 use serde::Deserialize;
-use std::{io, time::Duration};
+use std::{
+    io,
+    sync::{Arc, RwLock},
+    time::Duration,
+};
 
 pub const STEPS_MAX: u32 = 8;
 pub const TOKENS_MAX: u32 = 4096;
@@ -378,23 +382,44 @@ pub fn fail(message: &str) -> io::Error {
     io::Error::other(message)
 }
 
-/// Captures credential-like environment values once; these never enter durable records.
-pub struct Redactor(Vec<String>);
+/// Environment variable names ending in one of these, in any case, hold credentials.
+const CREDENTIAL_SUFFIXES: [&str; 7] = [
+    "KEY",
+    "TOKEN",
+    "SECRET",
+    "PASSWORD",
+    "PAT",
+    "AUTH",
+    "CREDENTIALS",
+];
+/// Shorter values such as `1` or `true` are configuration, and redacting them would mangle
+/// ordinary text.
+const SECRET_BYTES_MIN: usize = 8;
+
+fn credential_name(key: &str) -> bool {
+    let key = key.to_ascii_uppercase();
+    CREDENTIAL_SUFFIXES
+        .iter()
+        .any(|suffix| key.ends_with(suffix))
+}
+
+/// Known credential values, captured once and shared by the worker, which redacts durable
+/// records and refuses writes or calls carrying them, and the display, which redacts
+/// previews, tool rows, overlays and errors. Streamed reply tokens are not redacted on screen
+/// because a value can split across tokens; their saved record is.
+#[derive(Clone, Default)]
+pub struct Redactor(Arc<RwLock<Vec<String>>>);
 impl Redactor {
     pub fn environment() -> io::Result<Self> {
         let mut secrets = Vec::new();
         for (key, value) in std::env::vars_os() {
-            if !key.to_str().is_some_and(|key| {
-                ["KEY", "TOKEN", "SECRET", "PASSWORD"]
-                    .iter()
-                    .any(|suffix| key.ends_with(suffix))
-            }) {
+            if !key.to_str().is_some_and(credential_name) {
                 continue;
             }
             let value = value
                 .into_string()
                 .map_err(|_| fail("credential environment value is not Unicode"))?;
-            if value.is_empty() {
+            if value.len() < SECRET_BYTES_MIN {
                 continue;
             }
             if secrets.len() == 128 || value.len() > 4096 {
@@ -404,24 +429,40 @@ impl Redactor {
             }
             secrets.push(value);
         }
-        secrets.sort_by_key(|value| std::cmp::Reverse(value.len()));
-        Ok(Self(secrets))
+        Ok(Self::with(secrets))
     }
+
+    pub fn with(mut values: Vec<String>) -> Self {
+        values.sort_by_key(|value| std::cmp::Reverse(value.len()));
+        Self(Arc::new(RwLock::new(values)))
+    }
+
+    fn values(&self) -> std::sync::RwLockReadGuard<'_, Vec<String>> {
+        self.0
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
     #[cfg(feature = "mcp")]
-    pub fn capture(&mut self, values: Vec<String>) -> io::Result<()> {
+    pub fn capture(&self, values: Vec<String>) -> io::Result<()> {
+        let mut secrets = self
+            .0
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         for value in values {
-            if value.is_empty() || self.0.contains(&value) {
+            if value.len() < SECRET_BYTES_MIN || secrets.contains(&value) {
                 continue;
             }
-            if value.len() > 4096 || self.0.len() == 128 {
+            if value.len() > 4096 || secrets.len() == 128 {
                 return Err(fail("mcp credential redaction capture exceeds limits"));
             }
-            self.0.push(value);
+            secrets.push(value);
         }
-        self.0.sort_by_key(|value| std::cmp::Reverse(value.len()));
+        secrets.sort_by_key(|value| std::cmp::Reverse(value.len()));
         Ok(())
     }
 
+    /// Refuses a memory write or an MCP call that would carry a known credential value.
     pub fn check_write(&self, action: &Action) -> io::Result<()> {
         if action.name == "remember_memory"
             && (self.text(&action.arguments.id) != action.arguments.id
@@ -435,11 +476,20 @@ impl Redactor {
                 "memory write contains a credential value; refused before persistence",
             ));
         }
+        #[cfg(feature = "mcp")]
+        if let Some(call) = &action.arguments.mcp {
+            let arguments = serde_json::Value::Object(call.arguments.clone()).to_string();
+            if self.text(&arguments) != arguments || self.text(&call.tool) != call.tool {
+                return Err(fail(
+                    "mcp call contains a credential value; refused before approval",
+                ));
+            }
+        }
         Ok(())
     }
 
     pub fn text(&self, text: &str) -> String {
-        self.0.iter().fold(text.to_owned(), |text, secret| {
+        self.values().iter().fold(text.to_owned(), |text, secret| {
             let escaped = serde_json::to_string(secret).expect("strings always serialize");
             text.replace(&escaped[1..escaped.len() - 1], "[redacted]")
                 .replace(secret, "[redacted]")

@@ -24,6 +24,8 @@ No server starts and no endpoint is contacted before approval.
 A connection does not approve a model-proposed tool call.
 A failed/cancelled startup closes its connection and returns the TUI to a visible no-server state.
 `/mcp` shows the selected connection and `/disconnect` closes it.
+The connect preview marks a loopback, private, link-local or single-label host so a local-network service is approved deliberately.
+sefai declares no roots, sampling or elicitation capability and answers a server that requests any of them with method-not-found.
 Restart with `--mcp ID` to connect again or to apply a changed definition.
 There is no persistent always-allow grant.
 

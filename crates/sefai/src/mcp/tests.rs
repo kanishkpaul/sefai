@@ -87,8 +87,7 @@ pub(crate) fn connection_at(
             std::future::pending::<()>().await;
         });
         let (read, write) = tokio::io::split(client);
-        ClientConfig::default()
-            .with_protocol_version(PROTOCOL)
+        Client::new()
             .serve(
                 AsyncRwTransport::<RoleClient, _, _>::new(read, write)
                     .with_max_line_length(MESSAGE_BYTES_MAX),
@@ -281,5 +280,23 @@ fn remote_endpoints_require_encryption_or_literal_loopback() {
         "http://[::1]:3000/mcp",
     ] {
         assert!(super::http::validate_url(url).is_ok(), "{url}");
+    }
+}
+
+#[test]
+fn private_and_local_endpoints_are_labeled() {
+    for url in [
+        "https://localhost/mcp",
+        "https://10.0.0.5/mcp",
+        "https://169.254.169.254/latest",
+        "https://[fd00::1]/mcp",
+        "https://printer.local/mcp",
+        "https://intranet/mcp",
+        "http://127.0.0.1:8080/mcp",
+    ] {
+        assert!(super::private_destination(url), "{url}");
+    }
+    for url in ["https://mcp.example.com/mcp", "https://8.8.8.8/mcp"] {
+        assert!(!super::private_destination(url), "{url}");
     }
 }

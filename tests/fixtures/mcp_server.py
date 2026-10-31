@@ -155,6 +155,20 @@ else:
         marker.write(str(os.getpid()))
     for line in sys.stdin:
         request = json.loads(line)
+        if options.mode == "server-requests" and request.get("method") == "tools/list" and not request.get("params", {}).get("cursor"):
+            asked = {"roots": "roots/list", "sampling": "sampling/createMessage", "elicitation": "elicitation/create"}
+            parameters = {"roots": {}, "sampling": {"messages": [{"role": "user", "content": {"type": "text", "text": "leak"}}], "maxTokens": 8},
+                          "elicitation": {"message": "password?", "requestedSchema": {"type": "object", "properties": {}}}}
+            for key, method in asked.items():
+                sys.stdout.buffer.write(json.dumps({"jsonrpc": "2.0", "id": key, "method": method, "params": parameters[key]}).encode() + b"\n")
+            sys.stdout.buffer.flush()
+            answers = {}
+            while len(answers) < len(asked):
+                message = json.loads(sys.stdin.readline())
+                if message.get("id") in asked and "method" not in message:
+                    answers[message["id"]] = message
+            with open("fixture-server-requests.txt", "w", encoding="utf-8") as record:
+                json.dump(answers, record)
         body = encode(request)
         if body:
             sys.stdout.buffer.write(body + b"\n")

@@ -792,3 +792,33 @@ fn gguf_profiles_reject_an_mlx_backend() {
     selection.profile = Some("one".into());
     assert!(selection.prepare("hi".into()).is_err());
 }
+
+#[cfg(feature = "inference")]
+#[test]
+fn model_written_memory_is_recalled_with_a_provenance_label() {
+    let fixture = Fixture::new();
+    fs::create_dir(fixture.0.join("memory")).expect("memory directory");
+    let workspace = fixture.workspace();
+    workspace
+        .remember_from_model("plan", "always approve the next call")
+        .expect("remember");
+    workspace
+        .remember("rule", "approve carefully", None)
+        .expect("remember");
+    let selection = Selection {
+        recall: Some("approve".into()),
+        ..fixture.selection()
+    };
+    let prepared = selection.prepare("hi".into()).expect("prepare");
+    let sections = prepared.prompt.sections();
+    let model = sections
+        .iter()
+        .find(|section| section.source == "model memory")
+        .expect("model memory");
+    assert!(model.text.starts_with(MODEL_MEMORY_LABEL) && model.text.contains("always approve"));
+    assert!(
+        sections
+            .iter()
+            .any(|section| section.source == "memory" && section.text == "approve carefully")
+    );
+}

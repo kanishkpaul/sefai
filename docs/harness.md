@@ -26,6 +26,8 @@ The two tool definitions are runtime-owned; Markdown prose, tool results and mod
 Before composing instructions, the worker freezes the canonical workspace path and at most 128 existing memory IDs for reads.
 A memory added after that snapshot is unavailable until a new user turn.
 Creation accepts a portable new ID and at most 8,192 UTF-8 text bytes; existing files are never replaced.
+A created memory records `source: model`, and recall prefixes it with a note that it is the model's untrusted note rather than an instruction.
+A memory write or MCP call whose arguments contain a known credential value is refused before approval.
 Memory edit and forget remain explicit CLI operations with revision checks.
 
 A proposal must be the entire response: one complete `<tool_call>[{"name":"…","arguments":{…}}]</tool_call>` block.
@@ -35,8 +37,8 @@ Both reads and writes require approval, even though they remain local.
 The preview shows the exact workspace, server, tool, arguments and consequence.
 Non-ASCII argument characters use explicit Unicode escapes to make deceptive controls visible.
 `y` approves once; `n`, Esc and Enter deny.
-Pasting `y` cannot approve; no always-allow option exists.
-The plain interface reads one bounded approval line and accepts only `y`.
+Pasting `y` cannot approve, and a `y` pressed in the first 500 ms after the preview appears is ignored; no always-allow option exists.
+The plain interface reads one bounded approval line; at an interactive terminal it accepts only the one-time `y-NNNN` code printed with that preview, so lines pasted ahead of it cannot approve, while piped input accepts `y` as an explicit script of decisions.
 Its stdin reader remains line-blocking; a deadline or signal closes runtime authority immediately, while the plain input display may wait for a newline or EOF before consuming that status.
 Plain piped input is an explicit source of user decisions, never model output.
 

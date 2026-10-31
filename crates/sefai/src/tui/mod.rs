@@ -2,7 +2,7 @@
 mod view;
 mod worker;
 
-use crate::{term, workspace::Selection};
+use crate::{harness::Redactor, term, workspace::Selection};
 use crossterm::{
     event::{
         self, DisableBracketedPaste, EnableBracketedPaste, Event as InputEvent, KeyCode,
@@ -19,7 +19,7 @@ use std::{
         atomic::{AtomicBool, Ordering},
         mpsc::{self, Receiver, SyncSender},
     },
-    time::Duration,
+    time::{Duration, Instant},
 };
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -28,8 +28,10 @@ const COMPOSER_BYTES_MAX: usize = 16 * 1024;
 const DISPLAY_BYTES_MAX: usize = 128 * 1024;
 const EVENTS_MAX: usize = 64;
 const COMMANDS_MAX: usize = 1;
+/// How long an approval preview is shown before `y` can approve it.
+const APPROVAL_ARMING: Duration = Duration::from_millis(500);
 pub const HELP: &str = "Conversation\nEnter send · Shift+Enter newline · Esc stop/close\nPageUp/PageDown scroll · End follow · F2 error details
-Ctrl+K commands · Ctrl+C stop/quit · Ctrl+D quit\n/model PATH  choose a local model\n/profile ID  choose a Markdown model profile\n/models  list profiles\n/new [ID]  preserve this conversation and start another\n/reset  start a fresh conversation\n/resume ID  open a saved session\n/sessions  list sessions\n/skills · /skill ID toggle selected skill\n/memory · /recall TEXT select literal memory recall\n/setup [recommend | catalog | check FORMAT PATH | get ID [confirm]]  hardware, model fit and downloads\n/settings · /mcp · /stats · /help\n/quit  exit\nEdit Markdown with your text editor; it reloads before each turn";
+Ctrl+K commands · Ctrl+C stop/quit · Ctrl+D quit\n/model PATH  choose a local model\n/profile ID  choose a Markdown model profile\n/models  list profiles\n/new [ID]  preserve this conversation and start another\n/reset  start a fresh conversation\n/resume ID  open a saved session\n/sessions  list sessions\n/skills · /skill ID toggle selected skill\n/memory · /recall TEXT select literal memory recall\n/setup [recommend | catalog | check FORMAT PATH | get ID [confirm]]  hardware, model fit and downloads\n/settings · /mcp · /stats · /help\n/disconnect  stop the MCP connection and its server process (mcp builds)\n/quit  exit\nEdit Markdown with your text editor; it reloads before each turn";
 
 #[derive(clap::Args, Default)]
 pub struct Options {
@@ -73,11 +75,14 @@ struct App {
     error: Option<String>,
     overlay: Option<String>,
     approval: bool,
+    /// A `y` before this instant is ignored, so a key typed as the preview appears cannot approve it.
+    approval_armed_at: Option<Instant>,
     overlay_scroll: u16,
     busy: bool,
     scroll: Option<u16>,
     bottom: u16,
     sanitizer: term::Output,
+    redactor: Redactor,
 }
 
 impl Default for App {
@@ -90,11 +95,13 @@ impl Default for App {
             error: None,
             overlay: None,
             approval: false,
+            approval_armed_at: None,
             overlay_scroll: 0,
             busy: true,
             scroll: None,
             bottom: 0,
             sanitizer: term::Output::default(),
+            redactor: Redactor::default(),
         }
     }
 }
@@ -112,27 +119,32 @@ pub fn run(selection: Selection, options: Options) -> Result<(), Box<dyn std::er
         signal.store(true, Ordering::Relaxed);
         signal_requested.store(true, Ordering::Relaxed);
     })?;
+    let redactor = Redactor::environment()?;
     let (commands, incoming) = mpsc::sync_channel(COMMANDS_MAX);
     let (outgoing, events) = mpsc::sync_channel(EVENTS_MAX);
     let flag = cancelled.clone();
+    let shared = redactor.clone();
     let worker = std::thread::Builder::new()
         .name("model".into())
         .spawn(move || {
             worker::run(
                 selection,
-                options.model,
-                options.tool_protocol,
-                #[cfg(feature = "mcp")]
-                options.mcp,
+                worker::Start {
+                    model: options.model,
+                    tools: options.tool_protocol,
+                    #[cfg(feature = "mcp")]
+                    mcp: options.mcp,
+                },
                 incoming,
                 outgoing,
                 flag,
+                shared,
             )
         })?;
     let result = if plain {
-        plain_loop(&commands, &events, &cancelled)
+        plain_loop(&commands, &events, &cancelled, &redactor)
     } else {
-        screen_loop(&commands, &events, &cancelled, &interrupted)
+        screen_loop(&commands, &events, &cancelled, &interrupted, redactor)
     };
     cancelled.store(true, Ordering::Relaxed);
     drop(commands);
@@ -148,11 +160,15 @@ fn screen_loop(
     events: &Receiver<Event>,
     cancelled: &AtomicBool,
     interrupted: &AtomicBool,
+    redactor: Redactor,
 ) -> io::Result<()> {
     let _restore = Restore;
     let mut terminal = ratatui::try_init()?;
     execute!(io::stdout(), EnableBracketedPaste)?;
-    let mut app = App::default();
+    let mut app = App {
+        redactor,
+        ..App::default()
+    };
     let mut dirty = true;
     loop {
         if interrupted.swap(false, Ordering::Relaxed) && !app.busy {
@@ -217,6 +233,11 @@ impl Drop for Restore {
 }
 
 impl App {
+    /// Sanitized text with known credential values replaced.
+    fn shown(&self, text: &str) -> String {
+        self.redactor.text(&clean(text))
+    }
+
     fn apply(&mut self, event: Event) {
         match event {
             Event::Continue => {
@@ -224,14 +245,15 @@ impl App {
                 self.transcript.push(Message::assistant(""));
             }
             Event::Approval(text) => {
-                self.overlay = Some(clean(&text));
+                self.overlay = Some(self.shown(&text));
                 self.overlay_scroll = 0;
                 self.approval = true;
+                self.approval_armed_at = Some(Instant::now() + APPROVAL_ARMING);
                 self.status = "1 approval pending · deny by default".into();
             }
             Event::Tool(text) => {
                 self.transcript
-                    .push(Message::tool(format!("┊ {}", clean(&text))));
+                    .push(Message::tool(format!("┊ {}", self.shown(&text))));
             }
             Event::History(messages) => {
                 self.transcript = messages
@@ -244,7 +266,7 @@ impl App {
                 self.scroll = None;
             }
             Event::Ready(status) => {
-                self.status = clean(&status);
+                self.status = self.shown(&status);
                 self.busy = false;
                 if self.approval {
                     self.overlay = None;
@@ -252,15 +274,15 @@ impl App {
                 }
                 self.submitted = None;
             }
-            Event::Status(status) => self.status = clean(&status),
+            Event::Status(status) => self.status = self.shown(&status),
             Event::Error(error) => {
                 if let Some(text) = self.submitted.take() {
                     self.input = text;
                 }
-                self.error = Some(clean(&error).chars().take(4096).collect());
+                self.error = Some(self.shown(&error).chars().take(4096).collect());
             }
             Event::Overlay(text) => {
-                self.overlay = Some(clean(&text));
+                self.overlay = Some(self.shown(&text));
                 self.overlay_scroll = 0;
             }
             Event::Begin(user) => {
@@ -323,6 +345,13 @@ impl App {
                     KeyCode::Char('y' | 'n') | KeyCode::Esc | KeyCode::Enter
                 )
             {
+                if code == KeyCode::Char('y')
+                    && self
+                        .approval_armed_at
+                        .is_some_and(|armed| Instant::now() < armed)
+                {
+                    return Ok(true);
+                }
                 let decision = if code == KeyCode::Char('y') && modifiers.is_empty() {
                     "/approve"
                 } else {
@@ -407,7 +436,12 @@ fn plain_loop(
     commands: &SyncSender<String>,
     events: &Receiver<Event>,
     cancelled: &AtomicBool,
+    redactor: &Redactor,
 ) -> io::Result<()> {
+    let clean = |text: &str| redactor.text(&clean(text));
+    // Piped input is a script of explicit decisions; a person at a terminal may paste lines
+    // ahead of a preview, so an interactive approval needs a code shown only with it.
+    let interactive = io::stdin().is_terminal();
     let mut input = io::stdin().lock();
     let mut output = io::stdout().lock();
     let mut sanitizer = term::Output::default();
@@ -420,6 +454,13 @@ fn plain_loop(
                 }
                 Event::Approval(text) => {
                     writeln!(output, "\n[approve?]\n{}", clean(&text))?;
+                    let expected = if interactive {
+                        let code = format!("y-{}", approval_code());
+                        writeln!(output, "type {code} to approve once; anything else denies")?;
+                        code
+                    } else {
+                        "y".into()
+                    };
                     output.flush()?;
                     let mut decision = String::new();
                     (&mut input)
@@ -427,7 +468,7 @@ fn plain_loop(
                         .read_line(&mut decision)?;
                     commands
                         .send(
-                            if decision.trim() == "y" {
+                            if decision.trim() == expected {
                                 "/approve"
                             } else {
                                 "/deny"
@@ -482,6 +523,18 @@ fn plain_loop(
             .send(line.trim_end_matches(['\r', '\n']).into())
             .map_err(io::Error::other)?;
     }
+}
+
+/// A four-digit code from the standard library's randomly seeded hasher.
+fn approval_code() -> String {
+    use std::hash::{BuildHasher, Hasher};
+    let mut hasher = std::collections::hash_map::RandomState::new().build_hasher();
+    hasher.write_u128(
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(0, |elapsed| elapsed.as_nanos()),
+    );
+    format!("{:04}", hasher.finish() % 10_000)
 }
 
 fn clean(text: &str) -> String {
@@ -618,6 +671,8 @@ mod approval_tests {
         app.apply(Event::Approval("exact action".into()));
         app.paste("y\n");
         assert!(incoming.try_recv().is_err());
+        // The arming delay has passed.
+        app.approval_armed_at = None;
         app.key(
             KeyCode::Char('y'),
             KeyModifiers::NONE,
@@ -643,5 +698,41 @@ mod approval_tests {
         app.apply(Event::Ready("timed out".into()));
         assert!(!app.approval);
         assert!(app.overlay.is_none());
+    }
+
+    #[test]
+    fn y_typed_as_the_preview_appears_is_ignored() {
+        let (commands, received) = mpsc::sync_channel(1);
+        let mut app = App {
+            busy: false,
+            ..App::default()
+        };
+        app.apply(Event::Approval("tool: x".into()));
+        app.key(
+            KeyCode::Char('y'),
+            KeyModifiers::NONE,
+            &commands,
+            &AtomicBool::new(false),
+        )
+        .expect("key");
+        assert!(app.approval && received.try_recv().is_err());
+    }
+
+    #[test]
+    fn displayed_errors_and_previews_hide_known_credentials() {
+        let mut app = App {
+            redactor: Redactor::with(vec!["sk-live-123456".into()]),
+            ..App::default()
+        };
+        app.apply(Event::Error("rejected sk-live-123456".into()));
+        app.apply(Event::Approval("arguments: sk-live-123456".into()));
+        assert_eq!(app.error.as_deref(), Some("rejected [redacted]"));
+        assert_eq!(app.overlay.as_deref(), Some("arguments: [redacted]"));
+    }
+
+    #[test]
+    fn approval_codes_are_four_digits() {
+        let code = approval_code();
+        assert!(code.len() == 4 && code.bytes().all(|byte| byte.is_ascii_digit()));
     }
 }
