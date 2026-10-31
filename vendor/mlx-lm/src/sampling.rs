@@ -260,9 +260,14 @@ impl SamplingEngine {
         evaluate: &mut impl FnMut(&[&Array]) -> Result<(), Exception>,
     ) -> Result<PendingSample, GenerationError> {
         self.validate_row(&logits)?;
-        validate_values(&logits, evaluate)?;
+        // Value checks join the sample's single evaluation instead of each forcing a GPU sync.
+        let mut checks = vec![value_checks(&logits)?];
+        let penalized =
+            self.repetition.is_some() || self.presence.is_some() || self.frequency.is_some();
         let processed = self.process(history, logits)?;
-        validate_values(&processed, evaluate)?;
+        if penalized {
+            checks.push(value_checks(&processed)?);
+        }
         let greedy = self.options.temperature == 0.0;
         let filtered = if !greedy || capture_logprobs {
             let logprobs = processed
@@ -274,7 +279,7 @@ impl SamplingEngine {
             } else {
                 self.filter(logprobs)?
             };
-            validate_values(&filtered, evaluate)?;
+            checks.push(value_checks(&filtered)?);
             Some(filtered)
         } else {
             None
@@ -292,7 +297,7 @@ impl SamplingEngine {
             )
             .and_then(|reciprocal| filtered.multiply(reciprocal))
             .map_err(SamplingError::from)?;
-            validate_values(&scaled, evaluate)?;
+            checks.push(value_checks(&scaled)?);
             let mut candidate = match rng {
                 Some(state) => state.clone(),
                 None => match self.options.seed {
@@ -313,7 +318,14 @@ impl SamplingEngine {
         if let Some(row) = &filtered {
             outputs.push(row);
         }
+        for (invalid, support) in &checks {
+            outputs.push(invalid);
+            outputs.push(support);
+        }
         evaluate(&outputs)?;
+        for (invalid, support) in &checks {
+            check_values(invalid, support)?;
+        }
         Ok(PendingSample {
             token,
             filtered_logprobs: if capture_logprobs { filtered } else { None },
@@ -367,20 +379,18 @@ impl SamplingEngine {
     }
 }
 
-fn validate_values(
-    row: &Array,
-    evaluate: &mut impl FnMut(&[&Array]) -> Result<(), Exception>,
-) -> Result<(), GenerationError> {
-    let predicates = || -> Result<_, SamplingError> {
-        let invalid = row
-            .is_nan()?
-            .logical_or(row.eq(scalar(f32::INFINITY, row.dtype())?)?)?
-            .any(false)?;
-        let support = row.is_finite()?.any(false)?;
-        Ok((invalid, support))
-    };
-    let (invalid, support) = predicates()?;
-    evaluate(&[row, &invalid, &support])?;
+/// Lazily builds whether `row` holds NaN or positive infinity, and whether any value is finite.
+fn value_checks(row: &Array) -> Result<(Array, Array), SamplingError> {
+    let invalid = row
+        .is_nan()?
+        .logical_or(row.eq(scalar(f32::INFINITY, row.dtype())?)?)?
+        .any(false)?;
+    let support = row.is_finite()?.any(false)?;
+    Ok((invalid, support))
+}
+
+/// Reads evaluated value checks; the sample they guard is discarded on an error.
+fn check_values(invalid: &Array, support: &Array) -> Result<(), GenerationError> {
     if invalid.try_item_exact::<bool>().map_err(conversion_error)? {
         return Err(SamplingError::InvalidLogitsValue.into());
     }
