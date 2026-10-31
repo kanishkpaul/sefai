@@ -64,7 +64,7 @@ Full guide: https://github.com/kanishkpaul/sefai/blob/main/docs/install.md
 
 
 def host_triple():
-    output = subprocess.run(["rustc", "-vV"], capture_output=True, text=True, check=True).stdout
+    output = subprocess.run(["rustc", "-vV"], capture_output=True, text=True, encoding="utf-8", check=True).stdout
     return next(line.split(": ", 1)[1] for line in output.splitlines() if line.startswith("host: "))
 
 
@@ -72,7 +72,7 @@ def resolved_packages(feature_args):
     metadata = json.loads(subprocess.run(
         ["cargo", "metadata", "--locked", "--format-version", "1", "--filter-platform", host_triple(),
          "--manifest-path", str(ROOT / "Cargo.toml"), *feature_args],
-        capture_output=True, text=True, check=True).stdout)
+        capture_output=True, text=True, encoding="utf-8", check=True).stdout)
     packages = {package["id"]: package for package in metadata["packages"]}
     nodes = {node["id"]: node for node in metadata["resolve"]["nodes"]}
     root = next(identifier for identifier, package in packages.items() if package["name"] == "sefai" and package["source"] is None)
@@ -93,7 +93,7 @@ def license_texts(directory):
     texts = []
     for path in sorted(directory.iterdir()):
         if path.is_file() and path.name.lower().startswith(LICENSE_PREFIXES):
-            texts.append((path.name, path.read_text(errors="replace")))
+            texts.append((path.name, path.read_text(encoding="utf-8", errors="replace")))
     return texts
 
 
@@ -129,7 +129,7 @@ def notices(feature_args, sidecars):
     if any(path.name.startswith("libwebgpu_dawn") for path in sidecars):
         native.append(("Dawn (WebGPU)", ROOT / "licenses/dawn-LICENSE.txt"))
     for title, path in native:
-        lines += ["=" * 72, title, "=" * 72, path.read_text(errors="replace"), ""]
+        lines += ["=" * 72, title, "=" * 72, path.read_text(encoding="utf-8", errors="replace"), ""]
     for package in packages:
         texts = license_texts(Path(package["manifest_path"]).parent)
         lines += ["=" * 72, f"{package['name']} {package['version']}", "=" * 72]
@@ -158,7 +158,7 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     options = parser.parse_args(sys.argv[1:split])
     feature_args = sys.argv[split + 1:]
-    version = subprocess.run([str(options.binary), "--version"], capture_output=True, text=True, check=True).stdout.split()[-1]
+    version = subprocess.run([str(options.binary), "--version"], capture_output=True, text=True, encoding="utf-8", check=True).stdout.split()[-1]
     stage = options.out / options.name
     if stage.exists():
         shutil.rmtree(stage)
@@ -176,8 +176,8 @@ def main():
             raise SystemExit(f"{metallib} is missing; MLX builds need it beside the executable")
         shutil.copyfile(metallib, stage / "mlx.metallib")
     shutil.copyfile(ROOT / "LICENSE", stage / "LICENSE.txt")
-    (stage / "THIRD_PARTY_NOTICES.txt").write_text(notices(feature_args, sidecars))
-    (stage / "INSTALL.txt").write_text(INSTALL.format(version=version, name=options.name))
+    (stage / "THIRD_PARTY_NOTICES.txt").write_text(notices(feature_args, sidecars), encoding="utf-8")
+    (stage / "INSTALL.txt").write_text(INSTALL.format(version=version, name=options.name), encoding="utf-8")
     if platform.system() == "Windows":
         archive = options.out / f"{options.name}.zip"
         with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as output:
@@ -187,7 +187,7 @@ def main():
         archive = options.out / f"{options.name}.tar.gz"
         with tarfile.open(archive, "w:gz") as output:
             output.add(stage, arcname=options.name)
-    (options.out / f"{archive.name}.sha256").write_text(f"{sha256(archive)}  {archive.name}\n")
+    (options.out / f"{archive.name}.sha256").write_text(f"{sha256(archive)}  {archive.name}\n", encoding="utf-8")
     print(archive)
 
 
