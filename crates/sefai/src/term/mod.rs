@@ -36,6 +36,9 @@ impl Output {
                     '\u{9b}' => self.state = Csi,
                     '\u{90}' | '\u{98}' | '\u{9d}' | '\u{9e}' | '\u{9f}' => self.state = String,
                     '\n' | '\t' => output.write_all(&[character as u8])?,
+                    // Bidi embeddings, overrides and isolates can make displayed text read
+                    // differently from its bytes; the marks U+200E and U+200F stay.
+                    '\u{202a}'..='\u{202e}' | '\u{2066}'..='\u{2069}' => {}
                     character if !character.is_control() => {
                         let mut bytes = [0; 4];
                         output.write_all(character.encode_utf8(&mut bytes).as_bytes())?;
@@ -104,6 +107,22 @@ mod tests {
             output.write(piece, &mut bytes).expect("output");
         }
         assert_eq!(String::from_utf8(bytes).expect("utf8"), "safetextবাংলা🙂\n");
+    }
+
+    #[test]
+    fn bidi_overrides_are_removed() {
+        let mut output = Output::default();
+        let mut bytes = Vec::new();
+        output
+            .write(
+                "approve \u{202e}evil\u{202c} \u{2066}x\u{2069} שלום\u{200f}",
+                &mut bytes,
+            )
+            .expect("output");
+        assert_eq!(
+            String::from_utf8(bytes).expect("utf8"),
+            "approve evil x שלום\u{200f}"
+        );
     }
 
     #[test]

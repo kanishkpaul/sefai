@@ -26,6 +26,9 @@ type Result<T> = std::result::Result<T, Error>;
 
 const OUTPUT_BYTES_MAX: usize = 1024 * 1024;
 const PROMPT_TOKENS_MAX: usize = 131_072;
+/// Instructions a chat template may execute per render; a model's own template is untrusted.
+/// Qwen3's template renders the 1,024-message maximum with under 100,000.
+const TEMPLATE_FUEL: u64 = 1_000_000;
 // Matches the GGUF sampler: greedy with a 0.1 frequency penalty over the last 64 tokens.
 const PENALTY_TOKENS: usize = 64;
 const FREQUENCY_PENALTY: f32 = 0.1;
@@ -70,6 +73,8 @@ pub struct Model {
     session: RefCell<Session>,
     provider: Provider,
     tokenizer: tokenizers::Tokenizer,
+    /// Added-token text, neutralized inside message content.
+    specials: Vec<String>,
     chat: Chat,
     bundle: Bundle,
     layout: Layout,
@@ -181,10 +186,16 @@ impl Model {
         let outputs = session.outputs().iter().map(port).collect::<Vec<_>>();
         let layout =
             signature::check(&ports(&inputs), &ports(&outputs), &bundle).map_err(Error::Invalid)?;
+        let specials = tokenizer
+            .get_added_tokens_decoder()
+            .into_values()
+            .map(|token| token.content)
+            .collect();
         Ok(Self {
             session: RefCell::new(session),
             provider,
             tokenizer,
+            specials,
             chat,
             bundle,
             layout,
@@ -221,32 +232,15 @@ impl Model {
         {
             return Err("prompt exceeds 1024 messages/sections or 1048576 bytes".into());
         }
-        let template = self
-            .chat
-            .environment
-            .as_ref()
-            .ok_or("onnx tokenizer_config.json has no chat template")?;
         let messages = prompt
             .to_messages()
             .into_iter()
             .map(|message| {
-                minijinja::context! {
-                    role => match message.role {
-                        Role::System => "system",
-                        Role::User => "user",
-                        Role::Assistant => "assistant",
-                        Role::Tool => "tool",
-                    },
-                    content => message.content,
-                }
+                let content = sefai_core::neutralize_special(&message.content, &self.specials);
+                (message.role, content.into_owned())
             })
             .collect::<Vec<_>>();
-        let rendered = template.get_template("chat")?.render(minijinja::context! {
-            messages => messages,
-            add_generation_prompt => true,
-            enable_thinking => false,
-            ..minijinja::Value::from_serialize(&self.chat.special)
-        })?;
+        let rendered = self.chat.render(&messages)?;
         let special = !self
             .chat
             .bos
@@ -601,6 +595,35 @@ struct Chat {
 }
 
 impl Chat {
+    /// Renders the model's template with a generation prompt and thinking disabled.
+    /// Rendering stops with an error when the template exhausts [`TEMPLATE_FUEL`].
+    fn render(&self, messages: &[(Role, String)]) -> Result<String> {
+        let template = self
+            .environment
+            .as_ref()
+            .ok_or("onnx tokenizer_config.json has no chat template")?;
+        let messages = messages
+            .iter()
+            .map(|(role, content)| {
+                minijinja::context! {
+                    role => match role {
+                        Role::System => "system",
+                        Role::User => "user",
+                        Role::Assistant => "assistant",
+                        Role::Tool => "tool",
+                    },
+                    content => content,
+                }
+            })
+            .collect::<Vec<_>>();
+        Ok(template.get_template("chat")?.render(minijinja::context! {
+            messages => messages,
+            add_generation_prompt => true,
+            enable_thinking => false,
+            ..minijinja::Value::from_serialize(&self.special)
+        })?)
+    }
+
     /// Uses `tokenizer_config.json`'s template, or a `chat_template.jinja` beside it.
     fn new(config: &serde_json::Value, root: &Path) -> Result<Self> {
         let content = |value: &serde_json::Value| {
@@ -629,6 +652,7 @@ impl Chat {
             None => None,
             Some(source) => {
                 let mut environment = minijinja::Environment::new();
+                environment.set_fuel(Some(TEMPLATE_FUEL));
                 environment.set_trim_blocks(true);
                 environment.set_lstrip_blocks(true);
                 environment.set_unknown_method_callback(
@@ -671,4 +695,51 @@ fn environment() -> Result<&'static Environment> {
         })
         .as_ref()
         .map_err(|error| Error::Runtime(error.clone()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn chat(template: &str) -> Chat {
+        let root = std::env::temp_dir().join(format!(
+            "sefai-onnx-template-{}-{}",
+            std::process::id(),
+            template.len()
+        ));
+        std::fs::create_dir_all(&root).expect("fixture directory");
+        let chat =
+            Chat::new(&serde_json::json!({ "chat_template": template }), &root).expect("chat");
+        std::fs::remove_dir_all(&root).expect("remove fixture");
+        chat
+    }
+
+    #[test]
+    fn the_largest_prompt_renders_within_the_fuel_limit() {
+        let chat = chat(include_str!(
+            "../../../tests/fixtures/templates/qwen3.jinja"
+        ));
+        let messages = (0..1024)
+            .map(|index| {
+                let role = if index % 2 == 0 {
+                    Role::User
+                } else {
+                    Role::Assistant
+                };
+                (
+                    role,
+                    "a message of ordinary length for a long conversation".repeat(16),
+                )
+            })
+            .collect::<Vec<_>>();
+        assert!(chat.render(&messages).is_ok());
+    }
+
+    #[test]
+    fn a_runaway_template_stops_at_the_fuel_limit() {
+        let chat = chat(
+            "{% for a in range(100000) %}{% for b in range(100000) %}{% endfor %}{% endfor %}",
+        );
+        assert!(chat.render(&[(Role::User, "hi".into())]).is_err());
+    }
 }

@@ -2,7 +2,7 @@
 //! No Python, downloads, checkpoint conversion or remote code execution.
 
 mod bundle;
-pub use bundle::{Bundle, Weights, validate};
+pub use bundle::{Bundle, Weights, added_tokens, validate};
 #[cfg(any(
     test,
     all(feature = "runtime", target_os = "macos", target_arch = "aarch64")
