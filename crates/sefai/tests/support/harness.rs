@@ -148,7 +148,10 @@ fn real_model_creates_only_the_approved_memory() {
         approved.strip_suffix('.').unwrap_or(approved),
         "Keep answers concise"
     );
-    assert_eq!(memory, format!("---\nschema: 1\nid: rule\n---\n{approved}"));
+    assert_eq!(
+        memory,
+        format!("---\nschema: 1\nid: rule\nsource: model\n---\n{approved}")
+    );
     let dispatch = saved
         .lines()
         .filter_map(|line| serde_json::from_str::<serde_json::Value>(line.strip_prefix("> ")?).ok())
