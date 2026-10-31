@@ -91,6 +91,7 @@ A different context reservation reallocates the buffers.
 
 A new prompt reuses the cache only when the cached tokens are a strict prefix, so at least one new token produces logits.
 Cancellation, a callback error or any runtime error clears the cache.
+An explicit `batch` is rejected because this adapter has no separate batch.
 Prefill runs in `microbatch` chunks because these exports return logits for every input position: 4,096 positions of a 49,152-token vocabulary would be 768 MiB of `float32` logits.
 
 [Memory evidence](evidence/phase7/memory.json) samples the process footprint, including GPU memory, once per second over three 1,536-token generations in one process.

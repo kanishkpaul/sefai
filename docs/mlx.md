@@ -61,7 +61,6 @@ format: mlx
 runner:
   backend: mlx
   context: 2048
-  batch: 128
   microbatch: 128
   output: 128
 ---
@@ -74,8 +73,8 @@ Unsupported platforms and disabled engines return an explicit error.
 The same `chat`, workspace, session and opt-in harness paths select the concrete engine in the binary.
 The shared request settings and statistics live in dependency-free, I/O-free `core`; native model types remain private to their adapter.
 The library request default uses one thread; the CLI retains its previous available-parallelism default for GGUF.
-MLX controls its own native scheduling and does not apply GGUF CPU thread or batch flags.
-`microbatch` is its prefill chunk size; the shared context/output reservation still bounds the request.
+MLX controls its own native scheduling, so an explicit `batch` or `threads` in the command, profile or `config.md` is rejected rather than ignored.
+`microbatch` is its prefill chunk size and is not capped by the GGUF batch default; the shared context/output reservation still bounds the request.
 
 ## Bounds and ownership
 

@@ -56,6 +56,7 @@ Different kinds have separate namespaces.
 
 `runner` accepts optional `backend` (`cpu`, `metal`, `cuda`, `vulkan`, `mlx`, `onnx`), `provider` (`cpu`, `webgpu`; ONNX profiles only), `device` (nonnegative ggml index), `context` (1–131072 tokens), `batch`/`microbatch` (1–4096 tokens), `output` (0–131072 tokens), and `threads` (1–256).
 The runner additionally validates device compatibility, batch/context relationships and reserved output before inference.
+GGUF applies every field; MLX rejects an explicit `batch` or `threads`, and ONNX rejects an explicit `batch`, because those engines never apply them.
 GPU selection still requires an explicit device; no automatic CPU fallback occurs.
 
 A minimal config is:
