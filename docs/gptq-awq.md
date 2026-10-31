@@ -62,7 +62,7 @@ The repack added 0.3–1.9 s to load on these fixtures: 0.48 s for Qwen3-0.6B GP
 | SmolLM2-1.7B-Instruct auto-round AWQ Int4 | [awq-tool.json](../tests/fixtures/awq-tool.json) | AWQ, 4 bits, Llama; tool harness |
 
 Large-file hashes match the upstream LFS records and the other files match the upstream sizes.
-JunHowie's Qwen3-0.6B-GPTQ-Int4 is used only in the parity checks: its chat template is only in `chat_template.jinja`, which the pinned tokenizer does not read, so its two templated real-bundle cases fail while the nine raw-prompt cases pass.
+JunHowie's Qwen3-0.6B-GPTQ-Int4 at revision `b9d87006067b0c0c2dea836370d6288e14f112ab` is used in the parity checks; its chat template is only in `chat_template.jinja`, which the tokenizer reads when `tokenizer_config.json` declares none, and all eleven real-bundle cases pass on it.
 
 ## Verification
 
@@ -121,6 +121,5 @@ These remain open and are not inferred from it:
 
 - NVIDIA is the follow-up gate: CUDA GPTQ and AWQ kernels such as Marlin or ExLlama through a qualified runtime, compared against vLLM's published matrix, on contributors' hardware.
 - Act-order GPTQ, 2-, 3- and other bit widths, per-channel groups, AWQ GEMV and quantized `lm_head` checkpoints are rejected rather than supported.
-- Checkpoints whose template is only in `chat_template.jinja` cannot render chat prompts on the pinned tokenizer.
 - A profile's GPTQ or AWQ format is not checked against the checkpoint's metadata.
 - Decode trails Python `mlx-lm` by the same margin as the MLX adapter; that is a Phase 9 and 10 concern, not specific to these formats.

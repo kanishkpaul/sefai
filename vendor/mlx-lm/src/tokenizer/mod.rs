@@ -38,7 +38,12 @@ impl Tokenizer {
     fn load_assets(path: &Path) -> Result<Self, TokenizerError> {
         let mut tokenizer = Self::from_file(path.join("tokenizer.json"))?;
         let config = read_optional_json(&path.join("tokenizer_config.json"))?;
+        let file_template;
         let template = match config.get("chat_template") {
+            None | Some(Value::Null) => {
+                file_template = read_optional_text(&path.join("chat_template.jinja"))?;
+                file_template.as_deref()
+            }
             Some(Value::String(template)) => Some(template.as_str()),
             Some(Value::Object(templates)) => templates.get("default").and_then(Value::as_str),
             Some(Value::Array(templates)) => templates.iter().rev().find_map(|template| {
@@ -261,6 +266,13 @@ fn read_optional_json(path: &Path) -> Result<Value, TokenizerError> {
     match std::fs::read(path) {
         Ok(bytes) => Ok(serde_json::from_slice(&bytes)?),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(Value::Null),
+        Err(error) => Err(error.into()),
+    }
+}
+fn read_optional_text(path: &Path) -> Result<Option<String>, TokenizerError> {
+    match std::fs::read_to_string(path) {
+        Ok(text) => Ok(Some(text)),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
         Err(error) => Err(error.into()),
     }
 }

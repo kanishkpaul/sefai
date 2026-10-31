@@ -89,7 +89,7 @@ Use trusted bundles.
 
 Prompt text is limited to 1 MiB and 1,024 messages/sections; encoded input and context are capped at 131,072 tokens.
 The model's declared context limit and reserved output are checked before decoding.
-The model-native text template is used with `enable_thinking: false`; raw mode skips it and adds no special tokens.
+The model-native text template comes from `tokenizer_config.json`, or from a `chat_template.jinja` beside it when the config declares none, and is used with `enable_thinking: false`; raw mode skips it and adds no special tokens.
 Tool results keep their distinct role; only the harness can validate or approve proposals.
 The existing explicit SmolLM2 text protocol remains the only harness parser, including when an MLX model is asked to use it.
 SmolLM2-1.7B-Q8 passed the seven end-to-end tool cases; Qwen3-0.6B failed six of them with malformed or missing call markup and is not qualified for reliable tools.
