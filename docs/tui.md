@@ -61,6 +61,7 @@ Idle input polling uses 250 ms without repainting unchanged frames.
 | `/settings` | Inspect workspace and instruction selections |
 | `/mcp` | List connection files and the explicitly selected connection (`chat --mcp ID`, optional `mcp` build) |
 | `/disconnect` | Close the MCP connection and its owned child process group/job (optional `mcp` build) |
+| `/setup [recommend \| catalog \| check FORMAT PATH \| get ID [confirm]]` | Inspect hardware, check a local model's fit, shortlist catalog models and download one after confirmation; see [model setup](setup.md) |
 | `/stats` | Show token counts, timings, stop reason and reused prompt tokens |
 | `/help` | Show commands and shortcuts |
 

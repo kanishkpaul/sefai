@@ -6,6 +6,8 @@ mod harness;
 mod mcp;
 #[cfg(feature = "inference")]
 mod runner;
+#[cfg(feature = "inference")]
+mod setup;
 mod term;
 #[cfg(feature = "inference")]
 mod tui;
@@ -44,6 +46,12 @@ enum Command {
     /// Stream a reply from a local model.
     #[cfg(feature = "inference")]
     Run(runner::Options),
+    /// Inspect hardware, check local models and shortlist catalog models without loading one.
+    #[cfg(feature = "inference")]
+    Setup {
+        #[command(subcommand)]
+        action: setup::Action,
+    },
     /// Measure prefill and generation with one loaded model.
     #[cfg(feature = "inference")]
     Bench {
@@ -171,6 +179,11 @@ fn execute(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
         }
         #[cfg(feature = "inference")]
         Command::Devices => runner::devices()?,
+        #[cfg(feature = "inference")]
+        Command::Setup { action } => {
+            let mut output = io::stdout().lock();
+            term::Output::default().write(&setup::report(&cli.selection, &action)?, &mut output)?;
+        }
         #[cfg(feature = "inference")]
         Command::Run(options) => runner::run(options, runner::Mode::Reply, &cli.selection)?,
         #[cfg(feature = "inference")]

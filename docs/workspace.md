@@ -53,6 +53,7 @@ Different kinds have separate namespaces.
 | `memory/ID.md` | `schema: 1`, `id` | None | Recallable text |
 | `sessions/ID.md` | `schema: 1`, `id`, `outcome: completed` or `interrupted` | None | Quoted session records |
 | `mcp/ID.md` | `schema: 1`, `id`, `transport` | None | Notes; never approval |
+| `catalog/ID.md` | `schema: 1`, `id`, `repository`, `revision`, `format`, `entry`, `parameters_millions`, `purposes`, `license`, `layers`, `kv_heads`, `head_dim`, `trained_context`, `cache_element_bytes`, `evidence`, `files` | None | Notes; never grants tools or runs code; see [model setup](setup.md) |
 
 `runner` accepts optional `backend` (`cpu`, `metal`, `cuda`, `vulkan`, `mlx`, `onnx`), `provider` (`cpu`, `webgpu`; ONNX profiles only), `device` (nonnegative ggml index), `context` (1–131072 tokens), `batch`/`microbatch` (1–4096 tokens), `output` (0–131072 tokens), and `threads` (1–256).
 The runner additionally validates device compatibility, batch/context relationships and reserved output before inference.

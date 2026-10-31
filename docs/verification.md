@@ -639,3 +639,23 @@ An early default-thread result suggested all ten cores slowed decode by a third;
 CUDA, Vulkan, ROCm, GPTQ and AWQ CUDA kernels, ONNX GPU providers other than WebGPU on Apple Silicon, physical Windows and Linux terminals, and multi-GPU selection were not executed.
 Hosted runner throughput comes from shared virtual machines and is a smoke check.
 MLX decode still trails Python `mlx-lm` on small models; asynchronous pipelining of the next forward pass is the likely remaining difference and was not attempted.
+
+## Phase 11 — Hardware-aware model setup
+
+Phase 11 ships as PR #29 on Apple M5, 16 GB, macOS 27.0.1.
+`sefai setup` and `/setup` report hardware and compiled engines, check local models from metadata, shortlist the 14 pinned catalog entries, list blockers, preview and perform verified acquisitions in a `download` build, and import local models.
+
+### Evidence
+
+- Unit tests cover the bounded GGUF header reader, the KV-cache formula against Qwen3-0.6B's 448 MiB at 4,096 tokens, fit bands, catalog validation and duplicates, recommendations limited to compiled engines, memory and trained context, feature blockers, SHA-256 mismatch and a cancelled acquisition that publishes nothing.
+- The `setup` target runs the binary for the catalog listing, a metadata check, trained-context rejection, a create-once import, a rejected non-GGUF import, workspace catalog entries, duplicate and escaping entries, and an unconfirmed `get` that downloads nothing; it passes 9/9 with and without `download`.
+- Estimates against Phase 10 peaks: SmolLM2-135M GGUF 0.19–0.23 GiB against 0.22 GiB measured; Qwen3-0.6B GPTQ 1.16–1.29 GiB against 1.23 GiB; SmolLM2-135M ONNX 0.30–0.60 GiB against 0.59 GiB.
+- A real `sefai setup get smollm2-135m-gguf --yes` downloaded 105,454,432 bytes from Hugging Face in 30 s, verified its SHA-256, promoted the staging directory, wrote a workspace-relative profile and generated through `chat --plain --profile`; a second run re-verified and succeeded without rewriting the profile.
+- `setup import` of the GPTQ fixture wrote a profile that generated on MLX through the terminal.
+- `/setup`, `/setup recommend`, `/setup check`, `/setup get ID` and an invalid subcommand behave the same in plain terminal mode.
+- Lifecycle targets for GGUF, MLX, ONNX and engine switching still pass with the new first-run hint.
+
+### Remaining limits
+
+GPU memory budgets, gated downloads, cancelling a terminal download mid-file and automatic calibration are not implemented; `sefai bench` remains the calibration step.
+The recommendation catalog holds only fixtures sefai's own tests run; it is evidence-backed, not a survey of good models.

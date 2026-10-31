@@ -54,6 +54,8 @@ jobs:
       - run: cargo clippy --locked -p sefai --no-default-features --features mcp-oauth --all-targets -- -D warnings
       - run: cargo test --locked -p sefai --features mcp-oauth --bin sefai
       - run: cargo test --locked -p sefai --no-default-features --features mcp-oauth
+      - run: cargo clippy --locked -p sefai --features download --all-targets -- -D warnings
+      - run: cargo test --locked -p sefai --features download --bin sefai --test setup
       - name: Test MCP processes and authenticated loopback transports
         shell: bash
         run: |

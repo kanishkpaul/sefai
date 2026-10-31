@@ -152,7 +152,7 @@ fn work(
         ))?;
     }
     events.send(Event::Ready(format!(
-        "session {} · {} · /model PATH or /profile ID · /help",
+        "session {} · {} · /setup, /model PATH or /profile ID · /help",
         state.session,
         state.locality()
     )))?;
@@ -341,7 +341,7 @@ impl State {
             .model
             .clone()
             .or_else(|| prepared.model.clone())
-            .ok_or("choose /model PATH or /profile ID before sending")?;
+            .ok_or("choose /model PATH or /profile ID before sending; /setup recommends one")?;
         // A profile's declared format describes its own path, not one chosen with /model.
         let format = prepared.format.filter(|_| self.model.is_none());
         let plan = runner::resolve(Runner::default(), prepared.runner.clone(), format)?;
@@ -440,6 +440,49 @@ impl State {
             }
             "settings" => {
                 events.send(Event::Overlay(format!("workspace {}\nprofile {:?}\nskills {:?}\nrecall {:?}\nmodel {:?}\nedit config.md and profiles with your text editor; changes reload before each turn", self.selection.root()?.display(), self.selection.profile, self.selection.skill, self.selection.recall, self.model)))?;
+            }
+            "setup" => {
+                let action = match argument.split_once(' ') {
+                    None if argument.is_empty() => crate::setup::Action::Hardware,
+                    None if argument == "recommend" => crate::setup::Action::Recommend {
+                        purpose: crate::workspace::Purpose::Chat,
+                        context: 4096,
+                    },
+                    None if argument == "catalog" => crate::setup::Action::Catalog,
+                    Some(("get", rest)) => {
+                        let (id, confirm) =
+                            rest.trim().split_once(' ').unwrap_or((rest.trim(), ""));
+                        if !matches!(confirm, "" | "confirm") {
+                            return Err("usage: /setup get ID [confirm]".into());
+                        }
+                        crate::setup::Action::Get {
+                            id: id.into(),
+                            to: None,
+                            yes: confirm == "confirm",
+                        }
+                    }
+                    Some(("check", rest)) => {
+                        let (format, path) = rest
+                            .trim()
+                            .split_once(' ')
+                            .ok_or("usage: /setup check FORMAT PATH")?;
+                        crate::setup::Action::Check {
+                            path: path.trim().into(),
+                            format: clap::ValueEnum::from_str(format, true)
+                                .map_err(|_| "format must be gguf, mlx, gptq, awq or onnx")?,
+                            context: 4096,
+                        }
+                    }
+                    _ => {
+                        return Err(
+                            "usage: /setup [recommend | catalog | check FORMAT PATH | get ID [confirm]]".into(),
+                        );
+                    }
+                };
+                events.send(Event::Overlay(crate::setup::report(
+                    &self.selection,
+                    &action,
+                )?))?;
             }
             "stats" => {
                 events.send(Event::Overlay(self.statistics.clone()))?;
