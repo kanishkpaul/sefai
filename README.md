@@ -6,8 +6,8 @@ The goal is low RAM/VRAM use, a persistent TUI, Markdown-owned prompts/skills/pr
 ## 🏗️ Under construction
 
 sefai is in active development and is not ready for a stable release.
-Phases 1–8 are merged: the GGUF runner, Markdown workspace, terminal TUI, bounded harness, MCP client, optional native MLX and ONNX adapters, and GPTQ/AWQ on Apple Silicon are implemented.
-GPTQ/AWQ on NVIDIA, runtime unification, hardware-aware setup and dedicated safety hardening remain planned.
+Phases 1–9 are implemented: the GGUF runner, Markdown workspace, terminal TUI, bounded harness, MCP client, optional native MLX and ONNX adapters, GPTQ/AWQ on Apple Silicon, and one runtime lifecycle across those formats.
+Footprint and platform qualification, GPTQ/AWQ on NVIDIA, hardware-aware setup and dedicated safety hardening remain planned.
 Follow the [build plan](docs/build-plan.md) for scope and acceptance gates.
 
 Pinned-model CPU tests pass on Windows, macOS and Linux; local Metal tests and CUDA/Vulkan compilation also pass.

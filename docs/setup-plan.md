@@ -28,6 +28,8 @@ Use those semantics as a reference; do not add a Python dependency to the produc
 
 ## Phase 9 — Runtime unification
 
+Phase 9 is complete on Apple Silicon; the [build plan](build-plan.md#phase-9--runtime-unification) records what shipped and what remains hardware-gated.
+
 ### Reuse the existing implementation
 
 Phase 6 already shares bounded settings/statistics in `core`, selects concrete engines in `crates/sefai/src/engine.rs` and uses the same worker, harness and Markdown profiles.
