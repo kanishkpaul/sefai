@@ -71,6 +71,11 @@ pub fn validate(path: &Path) -> io::Result<Bundle> {
     if root.join("generation_config.json").exists() {
         json(&root, "generation_config.json")?;
     }
+    // The tokenizer reads this template when tokenizer_config.json declares none.
+    if root.join("chat_template.jinja").exists() {
+        String::from_utf8(read(&root, "chat_template.jinja")?)
+            .map_err(|_| invalid("mlx chat_template.jinja must be utf-8"))?;
+    }
     let mut shards = BTreeSet::new();
     if root.join("model.safetensors.index.json").exists() {
         let index = json(&root, "model.safetensors.index.json")?;
@@ -211,7 +216,7 @@ fn asset(root: &Path, name: &str) -> io::Result<File> {
     File::open(path)
 }
 
-fn json(root: &Path, name: &str) -> io::Result<Value> {
+fn read(root: &Path, name: &str) -> io::Result<Vec<u8>> {
     let mut bytes = Vec::new();
     asset(root, name)?
         .take(METADATA_BYTES_MAX + 1)
@@ -219,7 +224,12 @@ fn json(root: &Path, name: &str) -> io::Result<Value> {
     if bytes.len() as u64 > METADATA_BYTES_MAX {
         return Err(invalid("mlx metadata exceeds 64 mib"));
     }
-    serde_json::from_slice(&bytes).map_err(|error| invalid(format!("mlx {name}: {error}")))
+    Ok(bytes)
+}
+
+fn json(root: &Path, name: &str) -> io::Result<Value> {
+    serde_json::from_slice(&read(root, name)?)
+        .map_err(|error| invalid(format!("mlx {name}: {error}")))
 }
 
 fn invalid(message: impl Into<String>) -> io::Error {
@@ -356,6 +366,26 @@ mod tests {
             .expect("tokenizer")
             .set_len(METADATA_BYTES_MAX + 1)
             .expect("sparse file");
+        assert!(validate(&fixture.0).is_err());
+    }
+    #[test]
+    fn utf8_chat_template_file_passes_admission() {
+        let fixture = Fixture::new();
+        fs::write(fixture.0.join("chat_template.jinja"), "{{ messages }}").expect("template");
+        assert!(validate(&fixture.0).is_ok());
+    }
+    #[test]
+    fn non_utf8_chat_template_file_is_rejected() {
+        let fixture = Fixture::new();
+        fs::write(fixture.0.join("chat_template.jinja"), [0xff, 0xfe]).expect("template");
+        assert!(validate(&fixture.0).is_err());
+    }
+    #[cfg(unix)]
+    #[test]
+    fn symlinked_chat_template_cannot_escape() {
+        let fixture = Fixture::new();
+        std::os::unix::fs::symlink("/etc/hosts", fixture.0.join("chat_template.jinja"))
+            .expect("symlink");
         assert!(validate(&fixture.0).is_err());
     }
     #[cfg(unix)]
