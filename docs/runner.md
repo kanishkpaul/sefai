@@ -115,6 +115,31 @@ Forced logit biases exercise termination at every fixture EOG ID independently o
 CUDA/Vulkan workflow jobs compile their respective builds without claiming GPU execution.
 Current measurements, failed probes and remaining gates are in [verification.md](verification.md).
 
+## Lifecycle contract
+
+Every qualified format runs the same six end-to-end scenarios through the release binary:
+a profile streams a Unicode prompt through the terminal worker, an overflowing prompt is rejected before streaming, a failed admission leaves the session usable for the next profile, a saved session resumes after restart, `bench` reports statistics and an engine memory line, and `run` reports the selected engine's device.
+Engine-specific behavior such as cache reuse, cancellation inside native calls and tool parsing stays in each adapter's own tests.
+`lifecycle_switch` additionally switches one session from GGUF to MLX to ONNX and back, unloading each model before the next loads.
+
+[`scripts/fetch_fixture.py`](../scripts/fetch_fixture.py) downloads a pinned manifest and verifies every file's size and SHA-256:
+
+```sh
+python3 scripts/fetch_fixture.py tests/fixtures/gguf.json fixtures/smollm2-135m.gguf
+python3 scripts/fetch_fixture.py tests/fixtures/mlx-llama.json fixtures/mlx-llama
+python3 scripts/fetch_fixture.py tests/fixtures/gptq.json fixtures/gptq
+python3 scripts/fetch_fixture.py tests/fixtures/awq.json fixtures/awq
+python3 scripts/fetch_fixture.py tests/fixtures/onnx.json fixtures/onnx
+SEFAI_LIFECYCLE_GGUF=$PWD/fixtures/smollm2-135m.gguf cargo test --locked --release -p sefai --features harness-model-tests --test lifecycle_gguf
+SEFAI_LIFECYCLE_MLX=$PWD/fixtures/mlx-llama cargo test --locked --release -p sefai --features mlx-model-tests --test lifecycle_mlx
+SEFAI_LIFECYCLE_GPTQ=$PWD/fixtures/gptq cargo test --locked --release -p sefai --features mlx-model-tests --test lifecycle_gptq
+SEFAI_LIFECYCLE_AWQ=$PWD/fixtures/awq cargo test --locked --release -p sefai --features mlx-model-tests --test lifecycle_awq
+SEFAI_LIFECYCLE_ONNX=$PWD/fixtures/onnx/onnx/model_int8.onnx cargo test --locked --release -p sefai --features onnx-model-tests --test lifecycle_onnx
+```
+
+`lifecycle_switch` needs the GGUF, MLX and ONNX variables together and `--features harness-model-tests,mlx-model-tests,onnx-model-tests`.
+Each target fails when its fixture variable is unset or the path is missing.
+
 ## Dependency reasons
 
 `llama-cpp-2` supplies the safe native inference API, tokenizer, template renderer and sampler; implementing those in the standard library would duplicate llama.cpp.

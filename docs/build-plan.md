@@ -4,7 +4,8 @@ Build a small Rust LLM runner and terminal harness, with Markdown-owned customiz
 GGUF, ONNX, GPTQ, AWQ, and MLX are release targets.
 Phase 1 is complete: the published GGUF runner passes local CPU/Metal tests, Windows/macOS/Linux CPU-model CI and CUDA/Vulkan compile checks.
 Phase 2 is merged through PRs #8–#11 with passing Windows, macOS, Linux and attribution checks.
-Phases 3–6 are merged; Phase 6 native MLX is published through PR #15 with passing CI.
+Phases 3–8 are merged; Phase 6 native MLX is published through PR #15 with passing CI.
+Phase 9 runtime unification is delivered by PRs #23–#25; the Phase 8 NVIDIA gate remains open.
 See [phase2-closeout.md](phase2-closeout.md) for the acceptance matrix and stack order.
 Complete runner correctness before adding harness features.
 Every phase includes regression tests; the second-last phase is a complete product verification pass, and the last is repository organization, installation, and presentation.
@@ -262,6 +263,9 @@ Unsupported packing/hardware fails clearly.
 Compare against the selected runtime with equal context, cache dtype and single-request concurrency.
 
 ### Phase 9 — Runtime unification
+
+**Complete on Apple Silicon:** one load plan carries each artifact's declared format, every engine admits the artifact before native allocation, unused runner controls are rejected, and the same lifecycle contract passes for GGUF, MLX, GPTQ, AWQ and ONNX fixtures, including switching engines within one session; see [the runner guide](runner.md#lifecycle-contract) and [verification](verification.md#phase-9--runtime-unification).
+CUDA, Vulkan and non-CPU ONNX providers inherit the contract but were not exercised; they remain Phase 10 hardware gates.
 
 Consolidate demonstrated adapter differences after the GGUF, MLX, ONNX and GPTQ/AWQ implementations exist.
 Keep baseline measurements during each adapter phase; run the full Phase 10 platform and memory matrix against the unified implementation.

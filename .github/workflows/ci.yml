@@ -109,6 +109,12 @@ jobs:
           cargo test --locked -p sefai-engine-llama --features model-tests --test gguf
           cargo test --locked -p sefai-engine-llama --features model-tests --lib gguf_
 
+      - name: Run the GGUF lifecycle contract on CPU
+        shell: bash
+        env:
+          SEFAI_LIFECYCLE_GGUF: ${{ github.workspace }}/fixture.gguf
+        run: cargo test --locked -p sefai --features harness-model-tests --test lifecycle_gguf -- --test-threads=1
+
       - name: Verify GGUF loading with both native libraries linked
         if: runner.os == 'macOS'
         env:
@@ -172,6 +178,11 @@ jobs:
           cargo clippy --locked -p sefai-engine-onnx --features model-tests --all-targets -- -D warnings
           cargo test --locked -p sefai --features onnx,mcp-oauth --bin sefai
           cargo test --locked -p sefai-engine-onnx --features runtime
+      - name: Run the ONNX lifecycle contract on the CPU provider
+        shell: bash
+        run: |
+          python3 scripts/fetch_fixture.py tests/fixtures/onnx.json onnx-fixture
+          SEFAI_LIFECYCLE_ONNX="$PWD/onnx-fixture/onnx/model_int8.onnx" cargo test --locked -p sefai --features onnx-model-tests --test lifecycle_onnx -- --test-threads=1
       - name: Check the optional ONNX WebGPU provider build
         if: runner.os == 'macOS'
         run: |

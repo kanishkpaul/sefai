@@ -576,3 +576,41 @@ Hosted CI compiles native MLX combinations and tests pure contracts plus combine
 Windows/Linux MLX selection is an explicit unsupported-platform error; GPU vendor coverage remains provided by the selected GGUF backends and requires the planned physical matrix.
 Under the expanded build plan, asset packaging and clean-machine installation remain Phase 14 gates, following runtime unification in Phase 9, setup in Phase 11, safety and permission hardening in Phase 12, and complete testing and essential red teaming in Phase 13.
 The changed workflow and status-only `AGENTS.md` edit require maintainer inspection before publication.
+
+## Phase 9 — Runtime unification
+
+Phase 9 ships as three stacked PRs: #23 admits artifacts against their declared format, #24 rejects runner controls an engine never applies, and #25 adds the shared lifecycle contract.
+Local qualification ran on Apple M5, 16 GB, macOS 27.0.1, Rust 1.96.1.
+
+### Inventory
+
+Reproduced before changing behavior:
+
+- A profile's `format` was reduced to a backend during resolution; `--model` and `/model` had no format, and loading never saw one.
+- A `format: gptq` profile could load an AWQ checkpoint, and a CLI `--backend cpu` could send a GPTQ profile's bundle directory to llama.cpp.
+- MLX silently ignored `batch` and `threads`, and ONNX ignored `batch`, while profiles presented them as adjustable.
+- Device labels in `run` and terminal status were Rust debug output, and every load failure was an unclassified string.
+
+### Lifecycle contract
+
+Each fixture was fetched with `scripts/fetch_fixture.py`, which verified every file's size and SHA-256 against its manifest, and run with the release profile and `--test-threads=1`:
+
+| Target | Fixture | Result |
+| --- | --- | --- |
+| `lifecycle_gguf` | [gguf.json](../tests/fixtures/gguf.json), SmolLM2-135M Q4_K_M, CPU | 6 passed |
+| `lifecycle_mlx` | [mlx-llama.json](../tests/fixtures/mlx-llama.json), SmolLM2-135M 8-bit MLX | 6 passed |
+| `lifecycle_gptq` | [gptq.json](../tests/fixtures/gptq.json), Qwen3-0.6B GPTQ Int8 | 6 passed |
+| `lifecycle_awq` | [awq.json](../tests/fixtures/awq.json), Qwen3-0.6B AWQ | 6 passed |
+| `lifecycle_onnx` | [onnx.json](../tests/fixtures/onnx.json), SmolLM2-135M int8, CPU provider | 6 passed |
+| `lifecycle_switch` | GGUF, MLX and ONNX fixtures above | 1 passed: one session switched GGUF → MLX → ONNX → GGUF and reported `cpu`, `mlx apple gpu`, `onnx cpu · 10 threads` and `cpu` |
+
+The first `lifecycle_switch` run failed in the test's own parsing: plain mode prints the ready status directly after the streamed reply, so a line-start match missed it; the corrected test passes.
+Hosted CI now runs `lifecycle_gguf` in the three-OS check job and `lifecycle_onnx` in the three-OS ONNX job.
+
+Before the contract, JunHowie's Qwen3-0.6B-GPTQ-Int4 confirmed admission through the CLI: `--format awq` fails with `unsupported artifact: declared format awq but the checkpoint stores gptq weights`, `--format gguf` fails with the directory guidance, and `--format gptq`, `--backend mlx` and `--microbatch 1024` each generate; `--threads 4` and `--batch 64` are rejected with the field named.
+
+### Remaining limits
+
+CUDA, Vulkan, ROCm and ONNX providers other than CPU and WebGPU inherit the same load plan and admission but were not executed; they remain Phase 10 hardware gates.
+The lifecycle contract checks behavior shared by every engine; cancellation inside native calls, cache reuse and tool parsing remain covered by each adapter's own targets.
+Admission validates bundle metadata twice for MLX and ONNX, once in the binary and once in the adapter's loader; the second read is bounded by the same limits and costs milliseconds against model load.
