@@ -1,0 +1,511 @@
+{
+ "workflow_run": 41153320733,
+ "commit": "d379f0d",
+ "runners": {
+  "ubuntu-latest": {
+   "bench-gguf-cpu": {
+    "kind": "bench",
+    "arguments": [
+     "--raw",
+     "--model",
+     "fixture.gguf",
+     "--context",
+     "4096",
+     "--output",
+     "64",
+     "--repetitions",
+     "3",
+     " a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a"
+    ],
+    "memory": {
+     "peak_resident_bytes": 246493184
+    },
+    "samples": [
+     {
+      "sample": "1",
+      "load_s": "0.104049",
+      "prompt_tokens": "512",
+      "generated_tokens": "64",
+      "prefill_s": "1.240486",
+      "generation_s": "0.545843",
+      "stop": "OutputLimit"
+     },
+     {
+      "sample": "2",
+      "load_s": "0.104049",
+      "prompt_tokens": "512",
+      "generated_tokens": "64",
+      "prefill_s": "1.218793",
+      "generation_s": "0.551288",
+      "stop": "OutputLimit"
+     },
+     {
+      "sample": "3",
+      "load_s": "0.104049",
+      "prompt_tokens": "512",
+      "generated_tokens": "64",
+      "prefill_s": "1.211450",
+      "generation_s": "0.549637",
+      "stop": "OutputLimit"
+     }
+    ],
+    "engine_memory": [
+     "gguf memory reporting unavailable",
+     "gguf memory reporting unavailable",
+     "gguf memory reporting unavailable"
+    ],
+    "host": {
+     "system": "Linux",
+     "machine": "x86_64",
+     "release": "7.0.0-1017-azure",
+     "python": "3.12.3",
+     "chip": "AMD EPYC 9V74 80-Core Processor",
+     "cpu_count": 4
+    },
+    "binary_bytes": 8160288
+   },
+   "idle-gguf": {
+    "kind": "idle",
+    "memory": {
+     "resident_bytes": 7426048,
+     "peak_resident_bytes": 7426048,
+     "anonymous_bytes": 593920
+    },
+    "host": {
+     "system": "Linux",
+     "machine": "x86_64",
+     "release": "7.0.0-1017-azure",
+     "python": "3.12.3",
+     "chip": "AMD EPYC 9V74 80-Core Processor",
+     "cpu_count": 4
+    },
+    "binary_bytes": 8160288
+   },
+   "idle-mcp": {
+    "kind": "idle",
+    "memory": {
+     "resident_bytes": 8654848,
+     "peak_resident_bytes": 8654848,
+     "anonymous_bytes": 806912
+    },
+    "host": {
+     "system": "Linux",
+     "machine": "x86_64",
+     "release": "7.0.0-1017-azure",
+     "python": "3.12.3",
+     "chip": "AMD EPYC 9V74 80-Core Processor",
+     "cpu_count": 4
+    },
+    "binary_bytes": 16212896
+   },
+   "minimal": {
+    "minimal_binary_bytes": 2345600
+   }
+  },
+  "ubuntu-24.04-arm": {
+   "bench-gguf-cpu": {
+    "kind": "bench",
+    "arguments": [
+     "--raw",
+     "--model",
+     "fixture.gguf",
+     "--context",
+     "4096",
+     "--output",
+     "64",
+     "--repetitions",
+     "3",
+     " a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a"
+    ],
+    "memory": {
+     "peak_resident_bytes": 233697280
+    },
+    "samples": [
+     {
+      "sample": "1",
+      "load_s": "0.081415",
+      "prompt_tokens": "512",
+      "generated_tokens": "64",
+      "prefill_s": "1.969357",
+      "generation_s": "0.628479",
+      "stop": "OutputLimit"
+     },
+     {
+      "sample": "2",
+      "load_s": "0.081415",
+      "prompt_tokens": "512",
+      "generated_tokens": "64",
+      "prefill_s": "1.970324",
+      "generation_s": "0.658063",
+      "stop": "OutputLimit"
+     },
+     {
+      "sample": "3",
+      "load_s": "0.081415",
+      "prompt_tokens": "512",
+      "generated_tokens": "64",
+      "prefill_s": "1.972451",
+      "generation_s": "0.836727",
+      "stop": "OutputLimit"
+     }
+    ],
+    "engine_memory": [
+     "gguf memory reporting unavailable",
+     "gguf memory reporting unavailable",
+     "gguf memory reporting unavailable"
+    ],
+    "host": {
+     "system": "Linux",
+     "machine": "aarch64",
+     "release": "7.0.0-1017-azure",
+     "python": "3.12.3",
+     "chip": "aarch64",
+     "cpu_count": 4
+    },
+    "binary_bytes": 6890424
+   },
+   "idle-gguf": {
+    "kind": "idle",
+    "memory": {
+     "resident_bytes": 6184960,
+     "peak_resident_bytes": 6184960,
+     "anonymous_bytes": 577536
+    },
+    "host": {
+     "system": "Linux",
+     "machine": "aarch64",
+     "release": "7.0.0-1017-azure",
+     "python": "3.12.3",
+     "chip": "aarch64",
+     "cpu_count": 4
+    },
+    "binary_bytes": 6890424
+   },
+   "idle-mcp": {
+    "kind": "idle",
+    "memory": {
+     "resident_bytes": 7299072,
+     "peak_resident_bytes": 7299072,
+     "anonymous_bytes": 778240
+    },
+    "host": {
+     "system": "Linux",
+     "machine": "aarch64",
+     "release": "7.0.0-1017-azure",
+     "python": "3.12.3",
+     "chip": "aarch64",
+     "cpu_count": 4
+    },
+    "binary_bytes": 13316640
+   },
+   "minimal": {
+    "minimal_binary_bytes": 1905568
+   }
+  },
+  "macos-latest": {
+   "bench-gguf-cpu": {
+    "kind": "bench",
+    "arguments": [
+     "--raw",
+     "--model",
+     "fixture.gguf",
+     "--context",
+     "4096",
+     "--output",
+     "64",
+     "--repetitions",
+     "3",
+     " a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a"
+    ],
+    "memory": {
+     "peak_physical_footprint_bytes": 204032000,
+     "peak_resident_bytes": 349110272
+    },
+    "samples": [
+     {
+      "sample": "1",
+      "load_s": "20.242902",
+      "prompt_tokens": "512",
+      "generated_tokens": "64",
+      "prefill_s": "1.172616",
+      "generation_s": "0.955547",
+      "stop": "OutputLimit"
+     },
+     {
+      "sample": "2",
+      "load_s": "20.242902",
+      "prompt_tokens": "512",
+      "generated_tokens": "64",
+      "prefill_s": "0.924160",
+      "generation_s": "0.393241",
+      "stop": "OutputLimit"
+     },
+     {
+      "sample": "3",
+      "load_s": "20.242902",
+      "prompt_tokens": "512",
+      "generated_tokens": "64",
+      "prefill_s": "1.858896",
+      "generation_s": "0.353653",
+      "stop": "OutputLimit"
+     }
+    ],
+    "engine_memory": [
+     "gguf memory reporting unavailable",
+     "gguf memory reporting unavailable",
+     "gguf memory reporting unavailable"
+    ],
+    "host": {
+     "system": "Darwin",
+     "machine": "arm64",
+     "release": "25.6.0",
+     "python": "3.15.0",
+     "chip": "Apple M1 (Virtual)",
+     "memory_bytes": 7516192768,
+     "cpu_count": 3
+    },
+    "binary_bytes": 11767424
+   },
+   "idle-gguf": {
+    "kind": "idle",
+    "memory": {
+     "resident_bytes": 10338304,
+     "physical_footprint_bytes": 2311168
+    },
+    "host": {
+     "system": "Darwin",
+     "machine": "arm64",
+     "release": "25.6.0",
+     "python": "3.15.0",
+     "chip": "Apple M1 (Virtual)",
+     "memory_bytes": 7516192768,
+     "cpu_count": 3
+    },
+    "binary_bytes": 11767424
+   },
+   "idle-mcp": {
+    "kind": "idle",
+    "memory": {
+     "resident_bytes": 10960896,
+     "physical_footprint_bytes": 2524160
+    },
+    "host": {
+     "system": "Darwin",
+     "machine": "arm64",
+     "release": "25.6.0",
+     "python": "3.15.0",
+     "chip": "Apple M1 (Virtual)",
+     "memory_bytes": 7516192768,
+     "cpu_count": 3
+    },
+    "binary_bytes": 18263184
+   },
+   "minimal": {
+    "minimal_binary_bytes": 1949248
+   }
+  },
+  "macos-15-intel": {
+   "bench-gguf-cpu": {
+    "kind": "bench",
+    "arguments": [
+     "--raw",
+     "--model",
+     "fixture.gguf",
+     "--context",
+     "4096",
+     "--output",
+     "64",
+     "--repetitions",
+     "3",
+     " a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a"
+    ],
+    "memory": {
+     "peak_physical_footprint_bytes": 157749248,
+     "peak_resident_bytes": 295931904
+    },
+    "samples": [
+     {
+      "sample": "1",
+      "load_s": "30.422723",
+      "prompt_tokens": "512",
+      "generated_tokens": "64",
+      "prefill_s": "1.173158",
+      "generation_s": "0.542227",
+      "stop": "OutputLimit"
+     },
+     {
+      "sample": "2",
+      "load_s": "30.422723",
+      "prompt_tokens": "512",
+      "generated_tokens": "64",
+      "prefill_s": "0.924908",
+      "generation_s": "0.586234",
+      "stop": "OutputLimit"
+     },
+     {
+      "sample": "3",
+      "load_s": "30.422723",
+      "prompt_tokens": "512",
+      "generated_tokens": "64",
+      "prefill_s": "1.038786",
+      "generation_s": "0.608270",
+      "stop": "OutputLimit"
+     }
+    ],
+    "engine_memory": [
+     "gguf memory reporting unavailable",
+     "gguf memory reporting unavailable",
+     "gguf memory reporting unavailable"
+    ],
+    "host": {
+     "system": "Darwin",
+     "machine": "x86_64",
+     "release": "24.6.0",
+     "python": "3.14.7",
+     "chip": "Intel(R) Core(TM) i7-8700B CPU @ 3.20GHz",
+     "memory_bytes": 15032385536,
+     "cpu_count": 4
+    },
+    "binary_bytes": 12891256
+   },
+   "idle-gguf": {
+    "kind": "idle",
+    "memory": {
+     "resident_bytes": 3739648,
+     "physical_footprint_bytes": 1298432
+    },
+    "host": {
+     "system": "Darwin",
+     "machine": "x86_64",
+     "release": "24.6.0",
+     "python": "3.14.7",
+     "chip": "Intel(R) Core(TM) i7-8700B CPU @ 3.20GHz",
+     "memory_bytes": 15032385536,
+     "cpu_count": 4
+    },
+    "binary_bytes": 12891256
+   },
+   "idle-mcp": {
+    "kind": "idle",
+    "memory": {
+     "resident_bytes": 4022272,
+     "physical_footprint_bytes": 1490944
+    },
+    "host": {
+     "system": "Darwin",
+     "machine": "x86_64",
+     "release": "24.6.0",
+     "python": "3.14.7",
+     "chip": "Intel(R) Core(TM) i7-8700B CPU @ 3.20GHz",
+     "memory_bytes": 15032385536,
+     "cpu_count": 4
+    },
+    "binary_bytes": 20635352
+   },
+   "minimal": {
+    "minimal_binary_bytes": 2162904
+   }
+  },
+  "windows-latest": {
+   "bench-gguf-cpu": {
+    "kind": "bench",
+    "arguments": [
+     "--raw",
+     "--model",
+     "fixture.gguf",
+     "--context",
+     "4096",
+     "--output",
+     "64",
+     "--repetitions",
+     "3",
+     " a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a"
+    ],
+    "memory": {
+     "peak_working_set_bytes": 244678656,
+     "sampled_private_bytes": 19210240
+    },
+    "samples": [
+     {
+      "sample": "1",
+      "load_s": "0.188743",
+      "prompt_tokens": "512",
+      "generated_tokens": "64",
+      "prefill_s": "1.399418",
+      "generation_s": "0.620319",
+      "stop": "OutputLimit"
+     },
+     {
+      "sample": "2",
+      "load_s": "0.188743",
+      "prompt_tokens": "512",
+      "generated_tokens": "64",
+      "prefill_s": "1.421022",
+      "generation_s": "0.612069",
+      "stop": "OutputLimit"
+     },
+     {
+      "sample": "3",
+      "load_s": "0.188743",
+      "prompt_tokens": "512",
+      "generated_tokens": "64",
+      "prefill_s": "1.641887",
+      "generation_s": "0.679141",
+      "stop": "OutputLimit"
+     }
+    ],
+    "engine_memory": [
+     "gguf memory reporting unavailable",
+     "gguf memory reporting unavailable",
+     "gguf memory reporting unavailable"
+    ],
+    "host": {
+     "system": "Windows",
+     "machine": "AMD64",
+     "release": "2025Server",
+     "python": "3.12.10",
+     "chip": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD",
+     "cpu_count": 4
+    },
+    "binary_bytes": 7528448
+   },
+   "idle-gguf": {
+    "kind": "idle",
+    "memory": {
+     "working_set_bytes": 7753728,
+     "peak_working_set_bytes": 7753728,
+     "private_bytes": 2109440
+    },
+    "host": {
+     "system": "Windows",
+     "machine": "AMD64",
+     "release": "2025Server",
+     "python": "3.12.10",
+     "chip": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD",
+     "cpu_count": 4
+    },
+    "binary_bytes": 7528448
+   },
+   "idle-mcp": {
+    "kind": "idle",
+    "memory": {
+     "working_set_bytes": 9121792,
+     "peak_working_set_bytes": 9121792,
+     "private_bytes": 2322432
+    },
+    "host": {
+     "system": "Windows",
+     "machine": "AMD64",
+     "release": "2025Server",
+     "python": "3.12.10",
+     "chip": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD",
+     "cpu_count": 4
+    },
+    "binary_bytes": 15459328
+   },
+   "minimal": {
+    "minimal_binary_bytes": 2463744
+   }
+  }
+ }
+}

@@ -614,3 +614,28 @@ Before the contract, JunHowie's Qwen3-0.6B-GPTQ-Int4 confirmed admission through
 CUDA, Vulkan, ROCm and ONNX providers other than CPU and WebGPU inherit the same load plan and admission but were not executed; they remain Phase 10 hardware gates.
 The lifecycle contract checks behavior shared by every engine; cancellation inside native calls, cache reuse and tool parsing remain covered by each adapter's own targets.
 Admission validates bundle metadata twice for MLX and ONNX, once in the binary and once in the adapter's loader; the second read is bounded by the same limits and costs milliseconds against model load.
+
+## Phase 10 — Footprint and platform qualification
+
+Phase 10 ships as PRs #26–#28 and is scoped to one MacBook Air (Apple M5, 16 GB) plus GitHub-hosted CPU runners; results and method are in [footprint.md](footprint.md), raw records in [evidence/phase10](evidence/phase10).
+
+### Local measurement
+
+Nine release variants were built and measured idle; six engine and fixture pairs were benchmarked with raw 512-token prompts, and microbatch, context and thread sweeps followed, each run separated by 8 s with the thermal state recorded.
+No thermal or performance warning was recorded.
+The first pass used chat-templated prompts, on which SmolLM2-135M ends after one token; it measured no decode, so every bench was rerun raw and the hosted workflow was corrected the same way.
+A copied WebGPU binary aborted at launch because `libwebgpu_dawn.dylib` must sit beside it; placing the library there fixed it and the requirement is recorded for packaging.
+Xcode updated itself to 27.2 during the session and removed the Metal toolchain; `xcodebuild -downloadComponent MetalToolchain` restored it before the MLX builds were measured.
+An early default-thread result suggested all ten cores slowed decode by a third; a controlled sweep showed 340 against a best of 366 tokens/s, so the default was not changed.
+
+### Changes from measurement
+
+- GGUF defaults to 512-token microbatches: Metal prefill 12,878 → 18,897 tokens/s and CPU 982 → 1,050 for at most 9 MiB more.
+- MLX evaluates each sampling step once: SmolLM2-135M decode 245.8 → 274.5 tokens/s with byte-identical greedy output; `sefai-engine-mlx --test mlx` passes 11/11 on the MLX, GPTQ and AWQ fixtures.
+- `sefai setup` estimates use the measured per-engine overheads.
+
+### Remaining limits
+
+CUDA, Vulkan, ROCm, GPTQ and AWQ CUDA kernels, ONNX GPU providers other than WebGPU on Apple Silicon, physical Windows and Linux terminals, and multi-GPU selection were not executed.
+Hosted runner throughput comes from shared virtual machines and is a smoke check.
+MLX decode still trails Python `mlx-lm` on small models; asynchronous pipelining of the next forward pass is the likely remaining difference and was not attempted.

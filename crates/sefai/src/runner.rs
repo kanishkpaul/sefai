@@ -52,6 +52,10 @@ pub struct Plan {
     pub settings: Settings,
 }
 
+/// The GGUF microbatch when none is configured; MLX and ONNX keep the shared default because
+/// their prefill logits grow with vocabulary size times microbatch.
+const GGUF_MICROBATCH_TOKENS: u32 = 512;
+
 pub enum Mode {
     Reply,
     Benchmark(u32),
@@ -272,7 +276,13 @@ pub(crate) fn resolve(
         )
         .into());
     }
-    if engine != "gguf" {
+    if engine == "gguf" {
+        // Phase 10 measured GGUF prefill on an Apple M5 at 18.9K tokens/s on Metal with
+        // 512-token microbatches against 12.9K with 128, for 5 MiB more peak memory.
+        if configured.microbatch.is_none() {
+            settings.microbatch_tokens = settings.batch_tokens.min(GGUF_MICROBATCH_TOKENS);
+        }
+    } else {
         settings.batch_tokens = settings.microbatch_tokens;
     }
     settings.validate(1, u32::MAX)?;
@@ -442,5 +452,30 @@ mod tests {
             .expect("resolve")
             .settings;
         assert_eq!(settings.batch_tokens, 1024);
+    }
+
+    #[test]
+    fn gguf_defaults_to_full_batch_microbatches() {
+        let plan = resolve(Runner::default(), Runner::default(), None).expect("resolve");
+        assert_eq!(plan.settings.microbatch_tokens, 512);
+        let overrides = Runner {
+            microbatch: Some(64),
+            ..Runner::default()
+        };
+        let plan = resolve(overrides, Runner::default(), None).expect("resolve");
+        assert_eq!(plan.settings.microbatch_tokens, 64);
+    }
+
+    #[test]
+    fn mlx_keeps_the_shared_microbatch_default() {
+        let overrides = Runner {
+            backend: Some(Backend::Mlx),
+            ..Runner::default()
+        };
+        let plan = resolve(overrides, Runner::default(), None).expect("resolve");
+        assert_eq!(
+            plan.settings.microbatch_tokens,
+            Settings::default().microbatch_tokens
+        );
     }
 }
