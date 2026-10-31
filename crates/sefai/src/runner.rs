@@ -1,6 +1,6 @@
 use crate::engine::{Device, Engine, GpuBackend, OnnxProvider, Settings, Stop};
 use crate::term::Output;
-use crate::workspace::{Backend, Provider, Runner, Selection};
+use crate::workspace::{Backend, Format, Provider, Runner, Selection};
 use clap::Args;
 use std::{
     io::{self, Read, Write},
@@ -21,6 +21,9 @@ pub struct Options {
     /// Bypass chat templating and tokenize literal text.
     #[arg(long)]
     raw: bool,
+    /// Declared model format, checked against the artifact before loading.
+    #[arg(long, value_enum)]
+    format: Option<Format>,
     #[arg(long, value_enum)]
     backend: Option<Backend>,
     /// ONNX Runtime execution provider; requires --backend onnx.
@@ -39,6 +42,14 @@ pub struct Options {
     output: Option<u32>,
     #[arg(long)]
     threads: Option<u32>,
+}
+
+/// One model load: the declared format, the engine device and the bounded settings.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Plan {
+    pub format: Option<Format>,
+    pub device: Device,
+    pub settings: Settings,
 }
 
 pub enum Mode {
@@ -100,7 +111,9 @@ pub fn run(
         return Err("prompt must contain text within 1048576 bytes".into());
     }
     let prepared = selection.prepare(prompt)?;
-    let (device, settings) = resolve(overrides, prepared.runner)?;
+    // A profile's declared format describes its own path, not one given with --model.
+    let declared = prepared.format.filter(|_| options.model.is_none());
+    let plan = resolve(overrides, prepared.runner, options.format.or(declared))?;
     if options.raw
         && (!prepared.prompt.sections().is_empty() || prepared.prompt.conversation().len() != 1)
     {
@@ -115,7 +128,7 @@ pub fn run(
     ctrlc::set_handler(move || signal.store(true, Ordering::Relaxed))?;
     let mut engine = Engine::new()?;
     let loading = Instant::now();
-    let model = engine.load(&path, device, cancelled.clone())?;
+    let model = engine.load(&path, plan.format, plan.device, cancelled.clone())?;
     let load_seconds = loading.elapsed().as_secs_f64();
     let input = if options.raw {
         let message = prepared
@@ -132,13 +145,13 @@ pub fn run(
     eprintln!(
         "local · {:?} · context {} · prompt {} tokens",
         model.device(),
-        settings.context_tokens,
+        plan.settings.context_tokens,
         input.token_count()
     );
     for repetition in 1..=repetitions {
         let statistics = model.generate(
             &input,
-            settings,
+            plan.settings,
             || cancelled.load(Ordering::Relaxed),
             |text| {
                 if matches!(mode, Mode::Benchmark(_)) {
@@ -169,11 +182,36 @@ pub fn run(
     Ok(())
 }
 
+/// Resolves runner settings and checks that the declared format can run on the selected backend.
+/// A declared format without a backend selects its engine; GGUF still defaults to the CPU.
 pub(crate) fn resolve(
     overrides: Runner,
     mut configured: Runner,
-) -> Result<(Device, Settings), Box<dyn std::error::Error>> {
+    format: Option<Format>,
+) -> Result<Plan, Box<dyn std::error::Error>> {
     configured.overlay(&overrides);
+    let implied = match format {
+        Some(Format::Mlx | Format::Gptq | Format::Awq) => Some(Backend::Mlx),
+        Some(Format::Onnx) => Some(Backend::Onnx),
+        Some(Format::Gguf) | None => None,
+    };
+    configured.backend = configured.backend.or(implied);
+    if let Some(format) = format {
+        let backend = configured.backend.unwrap_or(Backend::Cpu);
+        let compatible = match format {
+            Format::Gguf => !matches!(backend, Backend::Mlx | Backend::Onnx),
+            Format::Mlx | Format::Gptq | Format::Awq => backend == Backend::Mlx,
+            Format::Onnx => backend == Backend::Onnx,
+        };
+        if !compatible {
+            return Err(format!(
+                "format {} cannot run on backend {}; no automatic conversion",
+                format.name(),
+                backend.name()
+            )
+            .into());
+        }
+    }
     if configured.provider.is_some() && configured.backend != Some(Backend::Onnx) {
         return Err("provider requires backend onnx".into());
     }
@@ -219,7 +257,11 @@ pub(crate) fn resolve(
         (_, None) => return Err("gpu mode requires --device from `sefai devices`".into()),
     };
     settings.validate(1, u32::MAX)?;
-    Ok((device, settings))
+    Ok(Plan {
+        format,
+        device,
+        settings,
+    })
 }
 
 #[cfg(test)]
@@ -238,7 +280,9 @@ mod tests {
             ..Runner::default()
         };
         assert_eq!(
-            resolve(overrides, configured).expect("resolve").0,
+            resolve(overrides, configured, None)
+                .expect("resolve")
+                .device,
             Device::Cpu
         );
     }
@@ -255,7 +299,9 @@ mod tests {
             output: Some(0),
             ..Runner::default()
         };
-        let (_, settings) = resolve(overrides, configured).expect("resolve");
+        let settings = resolve(overrides, configured, None)
+            .expect("resolve")
+            .settings;
         assert_eq!((settings.threads, settings.output_tokens), (4, 0));
     }
 
@@ -266,7 +312,7 @@ mod tests {
             device: Some(2),
             ..Runner::default()
         };
-        assert!(resolve(overrides, Runner::default()).is_err());
+        assert!(resolve(overrides, Runner::default(), None).is_err());
     }
 
     #[test]
@@ -277,7 +323,9 @@ mod tests {
             ..Runner::default()
         };
         assert_eq!(
-            resolve(overrides, Runner::default()).expect("resolve").0,
+            resolve(overrides, Runner::default(), None)
+                .expect("resolve")
+                .device,
             Device::Onnx {
                 provider: OnnxProvider::Cpu,
                 threads: 3
@@ -291,7 +339,7 @@ mod tests {
             provider: Some(Provider::Webgpu),
             ..Runner::default()
         };
-        assert!(resolve(overrides, Runner::default()).is_err());
+        assert!(resolve(overrides, Runner::default(), None).is_err());
     }
 
     #[test]
@@ -303,11 +351,46 @@ mod tests {
             ..Runner::default()
         };
         assert_eq!(
-            resolve(overrides, Runner::default()).expect("resolve").0,
+            resolve(overrides, Runner::default(), None)
+                .expect("resolve")
+                .device,
             Device::Onnx {
                 provider: OnnxProvider::WebGpu,
                 threads: 2
             }
         );
+    }
+
+    #[test]
+    fn declared_format_selects_its_engine() {
+        for (format, device) in [
+            (Format::Gptq, Device::Mlx),
+            (Format::Awq, Device::Mlx),
+            (Format::Mlx, Device::Mlx),
+            (Format::Gguf, Device::Cpu),
+        ] {
+            assert_eq!(
+                resolve(Runner::default(), Runner::default(), Some(format))
+                    .expect("resolve")
+                    .device,
+                device
+            );
+        }
+    }
+
+    #[test]
+    fn declared_format_rejects_another_engine() {
+        for (format, backend) in [
+            (Format::Gptq, Backend::Cpu),
+            (Format::Awq, Backend::Onnx),
+            (Format::Onnx, Backend::Mlx),
+            (Format::Gguf, Backend::Mlx),
+        ] {
+            let overrides = Runner {
+                backend: Some(backend),
+                ..Runner::default()
+            };
+            assert!(resolve(overrides, Runner::default(), Some(format)).is_err());
+        }
     }
 }

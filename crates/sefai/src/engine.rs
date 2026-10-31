@@ -1,9 +1,11 @@
 //! Concrete engine selection belongs to the binary; adapters never depend on each other.
+//! Loading admits the artifact against its declared format before any native allocation.
 
+use crate::workspace::Format;
 use sefai_core::Prompt;
 pub use sefai_core::{PROMPT_BYTES_MAX, Settings, Statistics, Stop};
 use std::{
-    io,
+    fmt, io,
     marker::PhantomData,
     path::Path,
     sync::{Arc, atomic::AtomicBool},
@@ -42,6 +44,33 @@ pub struct Engine {
     #[cfg(feature = "gguf")]
     llama: Option<sefai_engine_llama::Engine>,
 }
+
+/// Why a model was not loaded, naming the specific blocker.
+#[derive(Debug)]
+pub enum LoadError {
+    /// The selected engine is not compiled into this build or not available on this platform.
+    // A build with every engine on Apple Silicon never constructs it.
+    #[allow(dead_code)]
+    MissingRuntime(&'static str),
+    /// The artifact is not the declared format or fails its engine's admission checks.
+    UnsupportedArtifact(String),
+    /// The native runtime rejected an admitted artifact or device.
+    Failed(String),
+}
+
+impl fmt::Display for LoadError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::MissingRuntime(message) => write!(formatter, "missing runtime: {message}"),
+            Self::UnsupportedArtifact(message) => {
+                write!(formatter, "unsupported artifact: {message}")
+            }
+            Self::Failed(message) => write!(formatter, "load failed: {message}"),
+        }
+    }
+}
+
+impl std::error::Error for LoadError {}
 
 #[cfg(any(
     feature = "gguf",
@@ -99,43 +128,66 @@ impl Engine {
             llama: None,
         })
     }
+    /// Admits `path` for the device's engine, then loads it; `format` is the declared format, if any.
+    ///
+    /// # Errors
+    /// Returns the specific blocker: an engine absent from this build, an artifact that is not
+    /// the declared format, or a native load failure.
     pub fn load(
         &mut self,
         path: &Path,
+        format: Option<Format>,
         device: Device,
         cancelled: Arc<AtomicBool>,
-    ) -> Result<Model<'_>> {
+    ) -> std::result::Result<Model<'_>, LoadError> {
+        #[cfg(not(all(feature = "mlx", target_os = "macos", target_arch = "aarch64")))]
+        let _ = format;
         if let Device::Onnx { provider, threads } = device {
             #[cfg(feature = "onnx")]
-            return Ok(Model::Onnx(
-                Box::new(sefai_engine_onnx::Model::load(
-                    path,
-                    match provider {
-                        OnnxProvider::Cpu => sefai_engine_onnx::Provider::Cpu,
-                        OnnxProvider::WebGpu => sefai_engine_onnx::Provider::WebGpu,
-                    },
-                    threads,
-                    cancelled,
-                )?),
-                PhantomData,
-            ));
+            {
+                sefai_engine_onnx::validate(path).map_err(unsupported)?;
+                return Ok(Model::Onnx(
+                    Box::new(
+                        sefai_engine_onnx::Model::load(
+                            path,
+                            match provider {
+                                OnnxProvider::Cpu => sefai_engine_onnx::Provider::Cpu,
+                                OnnxProvider::WebGpu => sefai_engine_onnx::Provider::WebGpu,
+                            },
+                            threads,
+                            cancelled,
+                        )
+                        .map_err(failed)?,
+                    ),
+                    PhantomData,
+                ));
+            }
             #[cfg(not(feature = "onnx"))]
             {
                 let _ = (provider, threads);
-                return Err("onnx requires the optional onnx feature".into());
+                return Err(LoadError::MissingRuntime(
+                    "onnx requires the optional onnx feature",
+                ));
             }
         }
         if device == Device::Mlx {
             #[cfg(all(feature = "mlx", target_os = "macos", target_arch = "aarch64"))]
-            return Ok(Model::Mlx(
-                Box::new(sefai_engine_mlx::Model::load(path, cancelled)?),
-                PhantomData,
-            ));
+            {
+                let bundle = sefai_engine_mlx::validate(path).map_err(unsupported)?;
+                admit_mlx_weights(format, bundle.weights)?;
+                return Ok(Model::Mlx(
+                    Box::new(sefai_engine_mlx::Model::load(path, cancelled).map_err(failed)?),
+                    PhantomData,
+                ));
+            }
             #[cfg(not(all(feature = "mlx", target_os = "macos", target_arch = "aarch64")))]
-            return Err("mlx requires the optional mlx feature on Apple Silicon macos".into());
+            return Err(LoadError::MissingRuntime(
+                "mlx requires the optional mlx feature on Apple Silicon macos",
+            ));
         }
         #[cfg(feature = "gguf")]
         {
+            admit_gguf(path)?;
             let device = match device {
                 Device::Cpu => sefai_engine_llama::Device::Cpu,
                 Device::Gpu { backend, index } => sefai_engine_llama::Device::Gpu {
@@ -149,21 +201,85 @@ impl Engine {
                 Device::Mlx | Device::Onnx { .. } => unreachable!(),
             };
             if self.llama.is_none() {
-                self.llama = Some(sefai_engine_llama::Engine::new()?);
+                self.llama = Some(sefai_engine_llama::Engine::new().map_err(failed)?);
             }
             Ok(Model::Llama(
                 self.llama
                     .as_mut()
                     .expect("engine was initialized")
-                    .load(path, device, cancelled)?,
+                    .load(path, device, cancelled)
+                    .map_err(failed)?,
             ))
         }
         #[cfg(not(feature = "gguf"))]
         {
             let _ = (path, cancelled);
-            Err("gguf requires the optional gguf feature".into())
+            Err(LoadError::MissingRuntime(
+                "gguf requires the optional gguf feature",
+            ))
         }
     }
+}
+
+/// GGUF files begin with this magic; anything else would only fail inside llama.cpp.
+#[cfg(feature = "gguf")]
+fn admit_gguf(path: &Path) -> std::result::Result<(), LoadError> {
+    use std::io::Read;
+    if path.is_dir() {
+        return Err(LoadError::UnsupportedArtifact(
+            "gguf model is a directory; select format mlx, gptq, awq or onnx for a bundle".into(),
+        ));
+    }
+    let mut magic = [0; 4];
+    std::fs::File::open(path)
+        .and_then(|mut file| file.read_exact(&mut magic))
+        .map_err(|error| LoadError::UnsupportedArtifact(format!("gguf model: {error}")))?;
+    if &magic != b"GGUF" {
+        return Err(LoadError::UnsupportedArtifact(
+            "gguf model must be a file beginning with the GGUF magic".into(),
+        ));
+    }
+    Ok(())
+}
+
+/// A declared GPTQ, AWQ or MLX format must match the checkpoint's own quantization metadata.
+/// An undeclared format admits whichever layout the MLX bundle validated.
+#[cfg(feature = "mlx")]
+#[cfg_attr(
+    not(all(target_os = "macos", target_arch = "aarch64")),
+    allow(dead_code)
+)]
+fn admit_mlx_weights(
+    format: Option<Format>,
+    weights: sefai_engine_mlx::Weights,
+) -> std::result::Result<(), LoadError> {
+    use sefai_engine_mlx::Weights;
+    let stored = match weights {
+        Weights::Mlx => Format::Mlx,
+        Weights::Gptq { .. } => Format::Gptq,
+        Weights::Awq { .. } => Format::Awq,
+    };
+    match format {
+        None => Ok(()),
+        Some(declared) if declared == stored => Ok(()),
+        Some(declared) => Err(LoadError::UnsupportedArtifact(format!(
+            "declared format {} but the checkpoint stores {} weights",
+            declared.name(),
+            stored.name()
+        ))),
+    }
+}
+
+#[cfg(any(
+    feature = "onnx",
+    all(feature = "mlx", target_os = "macos", target_arch = "aarch64")
+))]
+fn unsupported(error: io::Error) -> LoadError {
+    LoadError::UnsupportedArtifact(error.to_string())
+}
+
+fn failed(error: impl fmt::Display) -> LoadError {
+    LoadError::Failed(error.to_string())
 }
 
 #[cfg(any(
@@ -375,5 +491,43 @@ impl Model<'_> {
     }
     pub fn memory(&self) -> String {
         match *self.0 {}
+    }
+}
+
+#[cfg(all(test, any(feature = "gguf", feature = "mlx")))]
+mod tests {
+    use super::*;
+
+    #[cfg(feature = "gguf")]
+    #[test]
+    fn non_gguf_file_is_rejected_before_native_loading() {
+        let path = std::env::temp_dir().join(format!("sefai-not-gguf-{}", std::process::id()));
+        std::fs::write(&path, b"ONNX").expect("fixture");
+        let mut engine = Engine::new().expect("engine");
+        let result = engine.load(
+            &path,
+            Some(Format::Gguf),
+            Device::Cpu,
+            Arc::new(AtomicBool::new(false)),
+        );
+        std::fs::remove_file(&path).expect("remove fixture");
+        assert!(matches!(result, Err(LoadError::UnsupportedArtifact(_))));
+    }
+
+    #[cfg(feature = "mlx")]
+    #[test]
+    fn declared_quantization_must_match_the_checkpoint() {
+        use sefai_engine_mlx::Weights;
+        let awq = Weights::Awq {
+            bits: 4,
+            group_size: 128,
+        };
+        assert!(matches!(
+            admit_mlx_weights(Some(Format::Gptq), awq),
+            Err(LoadError::UnsupportedArtifact(_))
+        ));
+        assert!(admit_mlx_weights(Some(Format::Awq), awq).is_ok());
+        assert!(admit_mlx_weights(None, awq).is_ok());
+        assert!(admit_mlx_weights(Some(Format::Mlx), Weights::Mlx).is_ok());
     }
 }

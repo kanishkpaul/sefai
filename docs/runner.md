@@ -26,6 +26,11 @@ Explicit flags override a selected Markdown model profile, which overrides works
 Explicit CPU selection clears an inherited GPU device; passing CPU and an explicit device together remains an error.
 `--raw` rejects nonempty workspace instructions or resumed history before loading weights.
 
+`--format gguf|mlx|gptq|awq|onnx`, or a profile's `format`, declares the artifact's format; a profile's format applies only to its own path, not to one given with `--model` or `/model`.
+A declared format without a backend selects its engine, and a format paired with another engine's backend is rejected before loading; with neither, a bare path loads as GGUF on the CPU.
+Every engine admits the artifact before native allocation: GGUF needs a regular file with the GGUF magic, and a declared MLX, GPTQ or AWQ format must match the bundle's own quantization metadata.
+Load failures name their category: `missing runtime` for an engine absent from the build or platform, `unsupported artifact` for a file that fails admission, and `load failed` for a native runtime error.
+
 Pass `-` as the prompt to read at most 1 MiB of UTF-8 from stdin.
 The ordinary `run` command streams text to stdout and reports locality/device/context on stderr.
 It emits no interactive banner or color; terminal controls are filtered across stream chunks.
