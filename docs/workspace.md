@@ -50,7 +50,7 @@ Different kinds have separate namespaces.
 | `system.md`, `preferences.md` | `schema: 1` | None | Instructions |
 | `models/ID.md` | `schema: 1`, `id`, `path`, `format` | `runner` | Notes |
 | `skills/ID/SKILL.md` | `schema: 1`, `id` | `resources: [relative-path]` | Selected instructions |
-| `memory/ID.md` | `schema: 1`, `id` | None | Recallable text |
+| `memory/ID.md` | `schema: 1`, `id` | `source: model` for memories created by an approved tool call | Recallable text |
 | `sessions/ID.md` | `schema: 1`, `id`, `outcome: completed` or `interrupted` | None | Quoted session records |
 | `mcp/ID.md` | `schema: 1`, `id`, `transport` | None | Notes; never approval |
 | `catalog/ID.md` | `schema: 1`, `id`, `repository`, `revision`, `format`, `entry`, `parameters_millions`, `purposes`, `license`, `layers`, `kv_heads`, `head_dim`, `trained_context`, `cache_element_bytes`, `evidence`, `files` | None | Notes; never grants tools or runs code; see [model setup](setup.md) |

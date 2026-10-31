@@ -58,25 +58,23 @@ struct State {
     mcp: Option<crate::mcp::Connection>,
 }
 
+/// The command-line choices the worker starts from, before it reads the workspace.
+pub struct Start {
+    pub model: Option<PathBuf>,
+    pub tools: Option<ToolProtocol>,
+    #[cfg(feature = "mcp")]
+    pub mcp: Option<String>,
+}
+
 pub fn run(
     selection: Selection,
-    model: Option<PathBuf>,
-    tools: Option<ToolProtocol>,
-    #[cfg(feature = "mcp")] mcp: Option<String>,
+    start: Start,
     commands: Receiver<String>,
     events: SyncSender<Event>,
     cancelled: Arc<AtomicBool>,
+    redactor: Redactor,
 ) {
-    let result = work(
-        selection,
-        model,
-        tools,
-        #[cfg(feature = "mcp")]
-        mcp,
-        commands,
-        &events,
-        cancelled,
-    );
+    let result = work(selection, start, commands, &events, cancelled, redactor);
     if let Err(error) = result {
         let _ = events.send(Event::Error(error.to_string()));
     }
@@ -84,13 +82,18 @@ pub fn run(
 
 fn work(
     selection: Selection,
-    model: Option<PathBuf>,
-    tools: Option<ToolProtocol>,
-    #[cfg(feature = "mcp")] mcp: Option<String>,
+    start: Start,
     commands: Receiver<String>,
     events: &SyncSender<Event>,
     cancelled: Arc<AtomicBool>,
+    redactor: Redactor,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let Start {
+        model,
+        tools,
+        #[cfg(feature = "mcp")]
+        mcp,
+    } = start;
     let root = selection.root()?;
     if !root.exists() {
         Workspace::init(&root)?;
@@ -104,7 +107,7 @@ fn work(
         unsaved: false,
         context_used: 0,
         tools,
-        redactor: Redactor::environment()?,
+        redactor,
         uncertain: false,
         #[cfg(feature = "mcp")]
         mcp: None,
@@ -728,6 +731,7 @@ impl State {
             .mcp
             .as_ref()
             .ok_or_else(|| harness::fail("mcp call arguments missing"))?;
+        self.redactor.check_write(action)?;
         if connection.id() != action.arguments.id || !connection.has_tool(&call.tool) {
             return Err(harness::fail(
                 "mcp call is outside the frozen connection catalog",
@@ -873,14 +877,13 @@ impl Scope {
         self.validate(action)?;
         let workspace = Workspace::open(&self.root)?;
         if action.name == "remember_memory" {
-            workspace.remember(
+            workspace.remember_from_model(
                 &action.arguments.id,
                 action
                     .arguments
                     .text
                     .as_deref()
                     .ok_or_else(|| harness::fail("memory text missing"))?,
-                None,
             )?;
             Ok(format!("created memory/{}.md", action.arguments.id))
         } else {
@@ -1226,6 +1229,38 @@ mod tests {
                 .any(|request| request["method"] == "tools/call")
         );
         assert!(audit.contains("\"outcome\":\"denied\""));
+    }
+
+    #[cfg(feature = "mcp")]
+    #[test]
+    fn disconnect_ends_mcp_authority_for_later_calls() {
+        use crate::mcp::tests::{connection_at, initialized};
+        let fixture = Fixture::new();
+        let (mut state, job) = state_and_job(&fixture);
+        let (connection, _) = connection_at(&fixture.0, vec![initialized()]);
+        state.mcp = Some(connection);
+        let (events, _received) = std::sync::mpsc::sync_channel(64);
+        state
+            .run_command("disconnect", &events)
+            .expect("disconnect");
+        assert!(state.mcp.is_none());
+        let mut turn = Turn::new(&job.prepared.prompt, true);
+        let action = turn.accept("<tool_call>[{\"name\":\"mcp_call\",\"arguments\":{\"id\":\"fixture\",\"mcp\":{\"tool\":\"echo\",\"arguments\":{\"text\":\"after\"}}}}]</tool_call>".into(), 1, true).unwrap().unwrap();
+        let (_sender, incoming) = std::sync::mpsc::sync_channel(1);
+        let cancelled = AtomicBool::new(false);
+        let result = state.dispatch(
+            &mut turn,
+            &action,
+            &Dispatch {
+                job: &job,
+                base: None,
+                events: &events,
+                commands: &incoming,
+                cancelled: &cancelled,
+                started: Instant::now(),
+            },
+        );
+        assert!(result.is_err());
     }
 
     #[cfg(feature = "mcp")]

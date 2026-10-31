@@ -243,6 +243,18 @@ pub struct Skill {
 pub struct Memory {
     pub schema: u32,
     pub id: String,
+    /// Who created the memory; absent means the user did.
+    #[serde(default)]
+    pub source: Source,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Source {
+    #[default]
+    User,
+    /// Created by an approved `remember_memory` call; recalled as untrusted notes.
+    Model,
 }
 
 #[derive(Debug, Deserialize)]

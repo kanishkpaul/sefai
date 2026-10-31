@@ -128,7 +128,7 @@ fn tool_output_cannot_widen_scope() {
 #[test]
 fn secrets_are_redacted_literally() {
     assert_eq!(
-        Redactor(vec!["secret-value".into()]).text("key: secret-value"),
+        Redactor::with(vec!["secret-value".into()]).text("key: secret-value"),
         "key: [redacted]"
     );
 }
@@ -252,7 +252,7 @@ fn fake_engine_error_preserves_partial_reply() {
 fn escaped_secret_is_redacted_in_audit_json() {
     let secret = "abc\"def\nxyz";
     let audit = serde_json::json!({"text":secret}).to_string();
-    let redacted = Redactor(vec![secret.into()]).text(&audit);
+    let redacted = Redactor::with(vec![secret.into()]).text(&audit);
     assert_eq!(
         serde_json::from_str::<serde_json::Value>(&redacted).unwrap()["text"],
         "[redacted]"
@@ -324,7 +324,7 @@ fn known_credentials_cannot_be_written_as_memory_ids() {
         },
     };
     assert!(
-        Redactor(vec!["secret-token".into()])
+        Redactor::with(vec!["secret-token".into()])
             .check_write(&action)
             .is_err()
     );
@@ -350,4 +350,48 @@ fn mcp_proposal_preserves_arbitrary_json_arguments() {
     let mut turn = Turn::new(&Prompt::default(), true);
     let action = turn.accept("<tool_call>[{\"name\":\"mcp_call\",\"arguments\":{\"id\":\"fixture\",\"mcp\":{\"tool\":\"echo\",\"arguments\":{\"nested\":[true,4,\"text\"]}}}}]</tool_call>".into(), 1, true).unwrap().unwrap();
     assert_eq!(action.arguments.mcp.unwrap().arguments["nested"][1], 4);
+}
+
+#[test]
+fn credential_names_match_common_suffixes_in_any_case() {
+    for name in [
+        "OPENAI_API_KEY",
+        "github_pat",
+        "Service_Auth",
+        "AWS_CREDENTIALS",
+    ] {
+        assert!(super::credential_name(name), "{name}");
+    }
+    for name in ["PATH", "HOME", "KEYBOARD_LAYOUT"] {
+        assert!(!super::credential_name(name), "{name}");
+    }
+}
+
+#[test]
+fn short_values_are_not_treated_as_secrets() {
+    let redactor = Redactor::with(Vec::new());
+    #[cfg(feature = "mcp")]
+    redactor
+        .capture(vec!["1".into(), "true".into()])
+        .expect("capture");
+    assert_eq!(redactor.text("1 true"), "1 true");
+}
+
+#[cfg(feature = "mcp")]
+#[test]
+fn mcp_arguments_carrying_a_known_credential_are_refused() {
+    let action: Action = serde_json::from_str(
+        r#"{"name":"mcp_call","arguments":{"id":"server","mcp":{"tool":"send","arguments":{"body":"token sk-live-123456"}}}}"#,
+    )
+    .expect("action");
+    assert!(
+        Redactor::with(vec!["sk-live-123456".into()])
+            .check_write(&action)
+            .is_err()
+    );
+    assert!(
+        Redactor::with(vec!["unrelated-secret".into()])
+            .check_write(&action)
+            .is_ok()
+    );
 }
