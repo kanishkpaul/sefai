@@ -116,6 +116,20 @@ pub fn validate(path: &Path) -> io::Result<Bundle> {
     Ok(Bundle { context, weights })
 }
 
+/// Reads the text of every added token in a validated bundle's `tokenizer.json`.
+///
+/// # Errors
+/// Fails for unreadable or oversized metadata.
+pub fn added_tokens(path: &Path) -> io::Result<Vec<String>> {
+    let tokenizer = json(&path.canonicalize()?, "tokenizer.json")?;
+    Ok(tokenizer["added_tokens"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|token| token["content"].as_str().map(str::to_owned))
+        .collect())
+}
+
 /// Admits only GPTQ and AWQ layouts that map exactly onto MLX affine groups.
 /// MLX's own `quantization` metadata is validated by the native loader.
 fn weights(config: &Value) -> io::Result<Weights> {

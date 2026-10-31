@@ -246,8 +246,11 @@ pub struct ChatTemplateOptions {
     /// `None` leaves the template variable undefined; a value overrides its thinking default.
     pub enable_thinking: Option<bool>,
 }
+/// Instructions a chat template may execute per render; a model's own template is untrusted.
+const TEMPLATE_FUEL: u64 = 1_000_000;
 fn environment() -> Environment<'static> {
     let mut env = Environment::new();
+    env.set_fuel(Some(TEMPLATE_FUEL));
     env.set_trim_blocks(true);
     env.set_lstrip_blocks(true);
     env.set_unknown_method_callback(minijinja_contrib::pycompat::unknown_method_callback);

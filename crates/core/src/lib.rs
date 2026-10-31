@@ -6,9 +6,11 @@
 
 mod message;
 mod prompt;
+mod special;
 
 pub use message::{Message, Role};
 pub use prompt::{Prompt, Section};
+pub use special::neutralize_special;
 
 mod inference;
 pub use inference::{

@@ -50,6 +50,8 @@ pub struct Model {
     model: RefCell<mlx_lm::Model>,
     context: u32,
     weights: Weights,
+    /// Added-token text from `tokenizer.json`, neutralized inside message content.
+    specials: Vec<String>,
     _lease: Lease,
 }
 
@@ -114,6 +116,7 @@ impl Model {
     /// Cancellation is checked around native loading, not inside it.
     pub fn load(path: &Path, cancelled: Arc<AtomicBool>) -> Result<Self> {
         let Bundle { context, weights } = super::validate(path)?;
+        let specials = super::added_tokens(path)?;
         if cancelled.load(Ordering::Relaxed) {
             return Err("model loading cancelled".into());
         }
@@ -144,6 +147,7 @@ impl Model {
             model: RefCell::new(model),
             context,
             weights,
+            specials,
             _lease: lease,
         })
     }
@@ -183,7 +187,7 @@ impl Model {
                     Role::Assistant => mlx_lm::Role::Assistant,
                     Role::Tool => mlx_lm::Role::Tool,
                 },
-                content: m.content,
+                content: sefai_core::neutralize_special(&m.content, &self.specials).into_owned(),
             })
             .collect::<Vec<_>>();
         let model = self

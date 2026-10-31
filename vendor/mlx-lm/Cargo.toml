@@ -18,7 +18,7 @@ serde_json = "1"
 thiserror = "2"
 safetensors = "0.8"
 tokenizers = { version = "0.22", default-features = false, features = ["onig"] }
-minijinja = { version = "2", features = ["loader"] }
+minijinja = { version = "2", features = ["fuel", "loader"] }
 minijinja-contrib = { version = "2", features = ["pycompat"] }
 
 # Upstream's Hub and oracle-hook features are omitted; their cfg gates stay unchanged.

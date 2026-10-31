@@ -17,7 +17,7 @@ runtime = ["dep:half", "dep:minijinja", "dep:minijinja-contrib", "dep:ort", "dep
 sefai-core.workspace = true
 serde_json = "1"
 half = { version = "2", optional = true }
-minijinja = { version = "2", optional = true }
+minijinja = { version = "2", optional = true, features = ["fuel"] }
 minijinja-contrib = { version = "2", optional = true, features = ["pycompat"] }
 ort = { version = "=2.0.0-rc.15", optional = true, default-features = false, features = ["std", "download-binaries", "half", "tls-native"] }
 thiserror = { version = "2", optional = true }

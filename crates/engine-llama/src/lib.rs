@@ -84,6 +84,8 @@ pub struct Model<'engine> {
     generating: RefCell<()>,
     device: Device,
     piece_bytes_max: usize,
+    /// Text of control and user-defined tokens, neutralized inside message content.
+    specials: Vec<String>,
 }
 
 /// A model-bound context whose reusable prefix is verified against rendered tokens.
@@ -212,12 +214,24 @@ impl Engine {
                 "invalid or oversized vocabulary token".into(),
             ));
         }
+        let specials = vocab
+            .tokens()
+            .filter(|token| {
+                vocab.attr(*token).intersects(
+                    llama_cpp_2::token_type::LlamaTokenAttr::Control
+                        | llama_cpp_2::token_type::LlamaTokenAttr::UserDefined,
+                )
+            })
+            .filter_map(|token| vocab.text(token))
+            .filter_map(|text| text.to_str().ok().map(str::to_owned))
+            .collect();
         Ok(Model {
             model,
             engine: self,
             generating: RefCell::new(()),
             device,
             piece_bytes_max,
+            specials,
         })
     }
 }
@@ -257,7 +271,8 @@ impl Model<'_> {
             .to_messages()
             .into_iter()
             .map(|message| {
-                LlamaChatMessage::new(message.role.as_str().into(), message.content)
+                let content = sefai_core::neutralize_special(&message.content, &self.specials);
+                LlamaChatMessage::new(message.role.as_str().into(), content.into_owned())
                     .map_err(|error| Error::operation("preparing chat message", error))
             })
             .collect::<Result<Vec<_>, _>>()?;
