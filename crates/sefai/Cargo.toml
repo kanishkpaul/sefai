@@ -99,5 +99,9 @@ name = "lifecycle_onnx"
 required-features = ["onnx-model-tests"]
 
 [[test]]
+name = "recovery"
+required-features = ["harness-model-tests"]
+
+[[test]]
 name = "lifecycle_switch"
 required-features = ["harness-model-tests", "mlx-model-tests", "onnx-model-tests"]

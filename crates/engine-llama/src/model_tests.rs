@@ -216,3 +216,43 @@ fn gguf_message_text_cannot_forge_a_role_token() {
         "only the template may emit a role marker"
     );
 }
+
+/// Hostile GGUF files: each must fail to load with an error rather than crash or allocate without bound.
+#[test]
+fn gguf_hostile_files_fail_cleanly() {
+    let _guard = BACKEND.lock().unwrap_or_else(|poison| poison.into_inner());
+    let real = std::fs::read(fixture()).expect("fixture bytes");
+    let mut huge_counts = b"GGUF".to_vec();
+    huge_counts.extend(3u32.to_le_bytes());
+    huge_counts.extend(u64::MAX.to_le_bytes());
+    huge_counts.extend(u64::MAX.to_le_bytes());
+    let mut huge_string = b"GGUF".to_vec();
+    huge_string.extend(3u32.to_le_bytes());
+    huge_string.extend(0u64.to_le_bytes());
+    huge_string.extend(1u64.to_le_bytes());
+    huge_string.extend(u64::MAX.to_le_bytes());
+    let mut flipped = real.clone();
+    for index in (4096..flipped.len().min(1 << 20)).step_by(97) {
+        flipped[index] ^= 0xff;
+    }
+    let cases = [
+        ("truncated header", real[..64].to_vec()),
+        ("truncated tensors", real[..real.len() / 2].to_vec()),
+        ("absurd counts", huge_counts),
+        ("absurd string length", huge_string),
+        ("flipped metadata bytes", flipped),
+    ];
+    let mut engine = Engine::new().expect("backend");
+    for (name, bytes) in cases {
+        let path =
+            std::env::temp_dir().join(format!("sefai-hostile-{}-{name}.gguf", std::process::id()));
+        std::fs::write(&path, bytes).expect("write case");
+        let rejected = engine
+            .load(&path, Device::Cpu, Arc::new(AtomicBool::new(false)))
+            .is_err();
+        // Windows CI has observed the file still open after a rejected load, and Windows cannot
+        // delete an open file, so cleanup of this per-process temporary file is best effort.
+        let _ = std::fs::remove_file(&path);
+        assert!(rejected, "{name} must be rejected");
+    }
+}

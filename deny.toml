@@ -1,0 +1,41 @@
+# Dependency policy checked by `cargo deny check` in CI; see docs/testing.md.
+
+[graph]
+all-features = true
+
+[advisories]
+# Every RustSec advisory fails the check unless it is listed here with a reason.
+ignore = [
+    # paste is unmaintained, not vulnerable: a compile-time macro used by mlx-rs and tokenizers
+    # with no maintained replacement upstream; it runs only at build time.
+    { id = "RUSTSEC-2024-0436", reason = "build-time macro in mlx-rs and tokenizers; no runtime code" },
+]
+
+[licenses]
+allow = [
+    "MIT",
+    "MIT-0",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "Unicode-3.0",
+    "Unlicense",
+    "CC0-1.0",
+    "BSL-1.0",
+    "CDLA-Permissive-2.0",
+]
+confidence-threshold = 0.9
+
+[bans]
+multiple-versions = "allow"
+# Workspace and vendored crates are unpublished path or pinned-git dependencies; Cargo.lock
+# fixes every resolved version.
+wildcards = "allow"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-git = ["https://github.com/oxiglade/mlx-rs"]

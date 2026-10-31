@@ -676,3 +676,12 @@ A read-only audit of approvals, MCP, credentials, workspace files, the terminal,
 ### Remaining limits
 
 The residual rows in the checklist stand: unsandboxed MCP servers, native parsers of untrusted weights, on-screen streamed secrets, the final workspace check-to-rename window, and audit records that the same OS user can edit.
+
+## Phase 13 — Full testing and essential red teaming
+
+Phase 13 ships as PR #33; [testing.md](testing.md) holds the coverage table, red-team results, dependency audit, long-session memory and known limits.
+
+- Hostile weights: five malformed GGUF files, four malformed safetensors and three malformed ONNX graphs, built from the real fixtures, were each rejected with an error by llama.cpp, MLX and ONNX Runtime; none crashed.
+- Recovery: killing `chat --plain` while a reply streamed left a workspace that `workspace check` accepts, one session file, and a session that resumes and accepts a new turn.
+- Dependencies: `cargo deny check` found RUSTSEC-2026-0384 in `tokio` 1.54.0, fixed by updating to 1.54.1 in its own commit, and the unmaintained build-time `paste`, ignored with a reason; licenses and sources pass, and CI now runs the check on every pull request and weekly.
+- Memory: sixty GGUF turns stayed flat; switching away from an ONNX Optimum export left about 560 MiB that only exiting returns, and disabling ONNX Runtime's arena did not help, so it is a recorded limit rather than a change.
