@@ -685,3 +685,14 @@ Phase 13 ships as PR #33; [testing.md](testing.md) holds the coverage table, red
 - Recovery: killing `chat --plain` while a reply streamed left a workspace that `workspace check` accepts, one session file, and a session that resumes and accepts a new turn.
 - Dependencies: `cargo deny check` found RUSTSEC-2026-0384 in `tokio` 1.54.0, fixed by updating to 1.54.1 in its own commit, and the unmaintained build-time `paste`, ignored with a reason; licenses and sources pass, and CI now runs the check on every pull request and weekly.
 - Memory: sixty GGUF turns stayed flat; switching away from an ONNX Optimum export left about 560 MiB that only exiting returns, and disabling ONNX Runtime's arena did not help, so it is a recorded limit rather than a change.
+
+## Phase 14 — Repository, installation and presentation
+
+Phase 14 ships as PR #34.
+
+- A macOS arm64 archive built with every engine was checked against its SHA-256, extracted to a fresh directory and run with an empty environment and a temporary home; with the compile-time `mlx.metallib` path moved away it generated through GGUF on CPU and Metal, MLX and ONNX, loading `mlx.metallib` and `libwebgpu_dawn.dylib` from beside the executable.
+- Deleting the extracted directory left the workspace in place.
+- Without `mlx.metallib` beside it, the MLX build fails with a clear library-not-found error rather than falling back.
+- `THIRD_PARTY_NOTICES.txt` carries the license text of every bundled crate plus llama.cpp, mlx-c, MLX, ONNX Runtime 1.31.0 with its third-party notices, and Dawn; eleven crates that ship no license file are reproduced under the MIT option they declare.
+- The release workflow repeats the build and clean-runner install check on five platforms; its first full run is the evidence for the hosted archives.
+- The repository needed no structural change: every crate, module and script has a current owner, and historical documents stay as records.

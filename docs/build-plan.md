@@ -384,6 +384,9 @@ Use a deterministic core test suite plus separately recorded real-model/hardware
 
 ### Phase 14 — Repository structure, installation and presentation (last)
 
+**Complete for the first release:** the release workflow builds five platform archives with third-party notices and SHA-256 sums, checks each on a fresh runner by installing, generating and uninstalling, and drafts a release on a version tag for the maintainer to publish; [install.md](install.md) and the README cover installing, customizing, connecting MCP and uninstalling.
+Archives are unsigned because no signing certificates exist, and no archive includes the unqualified CUDA or Vulkan backends.
+
 Review the actual modules and ownership boundaries; remove unused code and organize only around responsibilities that now exist.
 Do not defer a buildable workspace until this phase: it is the final structural cleanup, not the first structure.
 Keep `core` free of dependencies; concrete engine types stay inside engine crates; the binary composes the selected runtime.
