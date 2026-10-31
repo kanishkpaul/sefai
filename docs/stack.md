@@ -22,15 +22,18 @@ Other runtime choices and the wider platform/model matrix still require qualific
 
 ## Hardware targets
 
-| OS / hardware | GGUF baseline | Other planned routes | Release evidence required |
-| --- | --- | --- | --- |
-| macOS arm64 / Apple Silicon | Metal, CPU | MLX, GPTQ/AWQ on MLX; ONNX CPU and qualified providers | Actual Metal and MLX runs |
-| macOS x86_64 / Intel | CPU | ONNX CPU where runtime build supports it | Separate artifact/test; no Apple-GPU promise |
-| Windows x86_64 / NVIDIA | CUDA, CPU | Qualified ONNX and GPTQ/AWQ runtime | Windows GPU run and clean install |
-| Linux x86_64 / NVIDIA | CUDA, CPU | Qualified ONNX and GPTQ/AWQ runtime | Linux GPU run and clean install |
-| Windows x86_64 / AMD | Vulkan, CPU | ONNX provider only if qualified | Actual AMD Vulkan run |
-| Linux x86_64 / AMD | Vulkan, CPU | Optional ROCm and qualified ONNX provider | Actual AMD Vulkan run; ROCm separately labeled |
-| Linux arm64 | CPU where dependencies build | Additional acceleration only with evidence | Separate qualification; not inferred from x86 CI |
+Status uses four labels: **qualified** means sefai's tests and measurements ran on that hardware, **CI CPU** means hosted runners ran the CPU contract and footprint, **compiled** means the build succeeds but nothing executed, and **unavailable** means no build exists.
+Phase 10 evidence and limits are in [footprint.md](footprint.md).
+
+| OS / hardware | GGUF | MLX, GPTQ, AWQ | ONNX | Evidence |
+| --- | --- | --- | --- | --- |
+| macOS arm64 / Apple Silicon | CPU and Metal qualified | Qualified | CPU and WebGPU qualified | Apple M5 local runs; hosted macOS arm64 CI CPU |
+| macOS x86_64 / Intel | CI CPU | Unavailable | Not built | Hosted `macos-15-intel` |
+| Linux x86_64 | CI CPU; CUDA and Vulkan compiled | Unavailable | CI CPU | Hosted `ubuntu-latest`; no GPU execution |
+| Linux arm64 | CI CPU | Unavailable | Not built | Hosted `ubuntu-24.04-arm` |
+| Windows x86_64 | CI CPU; CUDA and Vulkan compiled | Unavailable | CI CPU | Hosted `windows-latest`; no GPU execution |
+| NVIDIA GPUs | CUDA compiled | GPTQ and AWQ kernels unavailable | CUDA provider not built | Follow-up gate for contributors with the hardware |
+| AMD GPUs | Vulkan compiled; ROCm not built | Unavailable | Not built | Follow-up gate for contributors with the hardware |
 
 No supported-format row implies every architecture, quantization or execution provider works everywhere.
 GPU vendors' kernels and drivers constrain individual combinations.
@@ -41,6 +44,6 @@ No silently hosted inference and no mandatory local HTTP server.
 
 A base GGUF harness aims for at most 40 MiB of idle overhead; the TUI with idle MCP client aims for 60 MiB excluding the backend and child servers.
 Report total process-tree RAM/VRAM as well as the breakdown, so exclusions never hide a large worker.
-These are targets, not results.
+Phase 10 measured both targets as met on every hosted platform and the Apple M5; see [footprint.md](footprint.md) for the numbers.
 The measurement method and arithmetic are in [the research note](research/2026-10-19-inference-and-engineering.md).
 Treat installed size, cold-load peak, steady-state memory, quality and latency as separate measurements.

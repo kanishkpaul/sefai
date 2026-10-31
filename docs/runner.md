@@ -79,7 +79,7 @@ The vocabulary's EOG predicate handles every declared stop token rather than che
 
 Blank text and nul bytes fail; total input and rendered text are bounded to 1 MiB and 1,024 messages/sections.
 The context ceiling is 131,072 tokens and never exceeds the model's training context.
-`--context` defaults to 4,096, `--batch` to 512, `--microbatch` to 128 and `--output` to 128.
+`--context` defaults to 4,096, `--batch` to 512, `--microbatch` to 512 for GGUF and 128 for MLX and ONNX, and `--output` to 128; [Phase 10 measurements](footprint.md) chose the GGUF microbatch.
 A batch cannot exceed context or 4,096 tokens; microbatch must be within the batch; threads must be within 1–256.
 Prompt tokens plus the full reserved output must fit before context allocation or decoding, including checked integer positions.
 Output zero validates the request but allocates no context and performs no decode.

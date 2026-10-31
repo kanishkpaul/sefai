@@ -5,7 +5,7 @@ GGUF, ONNX, GPTQ, AWQ, and MLX are release targets.
 Phase 1 is complete: the published GGUF runner passes local CPU/Metal tests, Windows/macOS/Linux CPU-model CI and CUDA/Vulkan compile checks.
 Phase 2 is merged through PRs #8–#11 with passing Windows, macOS, Linux and attribution checks.
 Phases 3–8 are merged; Phase 6 native MLX is published through PR #15 with passing CI.
-Phase 9 runtime unification is delivered by PRs #23–#25; the Phase 8 NVIDIA gate remains open.
+Phase 9 runtime unification is delivered by PRs #23–#25 and Phase 10 qualification by PRs #26–#28; the Phase 8 NVIDIA gate and Phase 10 GPU execution gates remain open.
 See [phase2-closeout.md](phase2-closeout.md) for the acceptance matrix and stack order.
 Complete runner correctness before adding harness features.
 Every phase includes regression tests; the second-last phase is a complete product verification pass, and the last is repository organization, installation, and presentation.
@@ -276,6 +276,9 @@ See [setup-plan.md](setup-plan.md) for researched constraints, ownership, delive
 **Exit:** the same terminal/harness lifecycle handles every qualified format, reports unsupported capabilities and missing requirements precisely, and passes switching/unload/recovery contracts on declared hardware.
 
 ### Phase 10 — Footprint and platform qualification
+
+**Complete within its Apple-first scope:** idle targets are met on the Apple M5 and every hosted CPU runner, loaded-model footprint and throughput are measured for every format, GGUF microbatches default to 512 and MLX sampling evaluates once per token; see [footprint.md](footprint.md).
+CUDA on NVIDIA and Vulkan on AMD remain open follow-up gates because no such hardware was used; they are labeled compiled-only rather than inferred from CI.
 
 Qualify the unified Phase 9 implementation before using its results in the Phase 11 setup dashboard.
 Apply the experiments in [research/2026-10-19-inference-and-engineering.md](research/2026-10-19-inference-and-engineering.md).

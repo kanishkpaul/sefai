@@ -1,0 +1,3123 @@
+{
+ "date": "2026-10-31",
+ "host": {
+  "model": "MacBook Air",
+  "chip": "Apple M5",
+  "cores": "4 performance, 6 efficiency",
+  "memory_gib": 16,
+  "macos": "27.0.1",
+  "xcode": "27.2",
+  "rust": "1.96.1"
+ },
+ "method": "scripts/measure_footprint.py; release builds; 8 s between runs; thermal state recorded before each run; filesystem caches not purged",
+ "binary_bytes": {
+  "sefai-gguf": 11811392,
+  "sefai-minimal": 1928736,
+  "sefai-all": 60586288,
+  "sefai-metal": 11811424,
+  "sefai-mcp": 18348080,
+  "libwebgpu_dawn.dylib": 9144808,
+  "sefai-onnx-only": 25485424,
+  "sefai-mlx": 31241200,
+  "sefai-onnx-webgpu-only": 28985120,
+  "sefai-mlx-eval": 22533440,
+  "sefai-mlx-only": 22280864
+ },
+ "idle": [
+  {
+   "binary": "gguf",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "idle",
+   "memory": {
+    "resident_bytes": 8896512,
+    "physical_footprint_bytes": 2555904
+   },
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811392
+  },
+  {
+   "binary": "metal",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "idle",
+   "memory": {
+    "resident_bytes": 8945664,
+    "physical_footprint_bytes": 2605056
+   },
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811424
+  },
+  {
+   "binary": "mcp",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "idle",
+   "memory": {
+    "resident_bytes": 9486336,
+    "physical_footprint_bytes": 2785280
+   },
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 18348080
+  },
+  {
+   "binary": "mlx",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "idle",
+   "memory": {
+    "resident_bytes": 10240000,
+    "physical_footprint_bytes": 3129344
+   },
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 31241200
+  },
+  {
+   "binary": "onnx-only",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "idle",
+   "memory": {
+    "resident_bytes": 9191424,
+    "physical_footprint_bytes": 3129344
+   },
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 25485424
+  },
+  {
+   "binary": "onnx-webgpu-only",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "error": "chat exited with -6"
+  },
+  {
+   "binary": "all",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "error": "chat exited with -6"
+  },
+  {
+   "binary": "gguf",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "idle",
+   "memory": {
+    "resident_bytes": 8896512,
+    "physical_footprint_bytes": 2555904
+   },
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811392
+  },
+  {
+   "binary": "metal",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "idle",
+   "memory": {
+    "resident_bytes": 8896512,
+    "physical_footprint_bytes": 2555904
+   },
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811424
+  },
+  {
+   "binary": "mcp",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "idle",
+   "memory": {
+    "resident_bytes": 9486336,
+    "physical_footprint_bytes": 2785280
+   },
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 18348080
+  },
+  {
+   "binary": "mlx",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "idle",
+   "memory": {
+    "resident_bytes": 10256384,
+    "physical_footprint_bytes": 3145728
+   },
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 31241200
+  },
+  {
+   "binary": "onnx-only",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "idle",
+   "memory": {
+    "resident_bytes": 9207808,
+    "physical_footprint_bytes": 3145728
+   },
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 25485424
+  },
+  {
+   "binary": "onnx-webgpu-only",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "idle",
+   "memory": {
+    "resident_bytes": 10846208,
+    "physical_footprint_bytes": 3408896
+   },
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 28985120
+  },
+  {
+   "binary": "all",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "idle",
+   "memory": {
+    "resident_bytes": 13123584,
+    "physical_footprint_bytes": 4162560
+   },
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 60586288
+  }
+ ],
+ "bench": [
+  {
+   "binary": "gguf",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--model",
+    "fixtures/smollm2-135m.gguf",
+    "--threads",
+    "4",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 236684248,
+    "peak_resident_bytes": 359514112
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.098849",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.547240",
+     "generation_s": "0.199362",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.098849",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.498837",
+     "generation_s": "0.175991",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.098849",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.504749",
+     "generation_s": "0.175847",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811392
+  },
+  {
+   "binary": "gguf",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--model",
+    "fixtures/smollm2-135m.gguf",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 234406872,
+    "peak_resident_bytes": 357122048
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.090401",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.382876",
+     "generation_s": "0.242478",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.090401",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.500415",
+     "generation_s": "0.268779",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.090401",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.746462",
+     "generation_s": "0.243848",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811392
+  },
+  {
+   "binary": "metal",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--model",
+    "fixtures/smollm2-135m.gguf",
+    "--backend",
+    "metal",
+    "--device",
+    "0",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 193905696,
+    "peak_resident_bytes": 312377344
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.076094",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.050072",
+     "generation_s": "0.180983",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.076094",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.040793",
+     "generation_s": "0.183342",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.076094",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.040470",
+     "generation_s": "0.183827",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811424
+  },
+  {
+   "binary": "mlx-only",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--backend",
+    "mlx",
+    "--model",
+    "fixtures/mlx-llama",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 372999200,
+    "peak_resident_bytes": 236519424
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.092662",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.081373",
+     "generation_s": "0.261823",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.092662",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.060372",
+     "generation_s": "0.255158",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.092662",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.058949",
+     "generation_s": "0.255868",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 22280864
+  },
+  {
+   "binary": "mlx-only",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--format",
+    "gptq",
+    "--model",
+    "fixtures/gptq",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 1319175800,
+    "peak_resident_bytes": 960380928
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.733923",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.225476",
+     "generation_s": "0.748138",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.733923",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.201392",
+     "generation_s": "0.749576",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.733923",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.201611",
+     "generation_s": "0.751435",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 22280864
+  },
+  {
+   "binary": "mlx-only",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--format",
+    "awq",
+    "--model",
+    "fixtures/awq",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 1100776912,
+    "peak_resident_bytes": 737394688
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.670631",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.216274",
+     "generation_s": "0.614098",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.670631",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.199307",
+     "generation_s": "0.604743",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.670631",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.197110",
+     "generation_s": "0.622290",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 22280864
+  },
+  {
+   "binary": "onnx-only",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--backend",
+    "onnx",
+    "--threads",
+    "4",
+    "--model",
+    "fixtures/onnx/onnx/model_int8.onnx",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 627934168,
+    "peak_resident_bytes": 645578752
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.185071",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.233864",
+     "generation_s": "0.763259",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.185071",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.240053",
+     "generation_s": "0.689173",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.185071",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.222772",
+     "generation_s": "0.689666",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "onnx memory reporting unavailable",
+    "onnx memory reporting unavailable",
+    "onnx memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 25485424
+  },
+  {
+   "binary": "gguf",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--model",
+    "fixtures/smollm2-135m.gguf",
+    "--threads",
+    "4",
+    "--microbatch",
+    "64",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 232539096,
+    "peak_resident_bytes": 355270656
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.125641",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.547824",
+     "generation_s": "0.172660",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.125641",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.544984",
+     "generation_s": "0.172990",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.125641",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.560813",
+     "generation_s": "0.195740",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811392
+  },
+  {
+   "binary": "metal",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--model",
+    "fixtures/smollm2-135m.gguf",
+    "--backend",
+    "metal",
+    "--device",
+    "0",
+    "--microbatch",
+    "64",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 193250336,
+    "peak_resident_bytes": 311721984
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.078602",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.072540",
+     "generation_s": "0.171287",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.078602",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.062788",
+     "generation_s": "0.184978",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.078602",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.065310",
+     "generation_s": "0.227154",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811424
+  },
+  {
+   "binary": "mlx-only",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--backend",
+    "mlx",
+    "--model",
+    "fixtures/mlx-llama",
+    "--microbatch",
+    "64",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 366904304,
+    "peak_resident_bytes": 235159552
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.124513",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.112934",
+     "generation_s": "0.285318",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.124513",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.096667",
+     "generation_s": "0.263556",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.124513",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.093151",
+     "generation_s": "0.262055",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 22280864
+  },
+  {
+   "binary": "gguf",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--model",
+    "fixtures/smollm2-135m.gguf",
+    "--threads",
+    "4",
+    "--microbatch",
+    "128",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 233636824,
+    "peak_resident_bytes": 357285888
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.098113",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.500791",
+     "generation_s": "0.186737",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.098113",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.542378",
+     "generation_s": "0.177959",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.098113",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.501786",
+     "generation_s": "0.199842",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811392
+  },
+  {
+   "binary": "metal",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--model",
+    "fixtures/smollm2-135m.gguf",
+    "--backend",
+    "metal",
+    "--device",
+    "0",
+    "--microbatch",
+    "128",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 191775776,
+    "peak_resident_bytes": 310247424
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.068496",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.051104",
+     "generation_s": "0.172252",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.068496",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.040139",
+     "generation_s": "0.184949",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.068496",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.039384",
+     "generation_s": "0.170590",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811424
+  },
+  {
+   "binary": "mlx-only",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--backend",
+    "mlx",
+    "--model",
+    "fixtures/mlx-llama",
+    "--microbatch",
+    "128",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 370918384,
+    "peak_resident_bytes": 234766336
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.091726",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.078642",
+     "generation_s": "0.259262",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.091726",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.060746",
+     "generation_s": "0.256115",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.091726",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.060412",
+     "generation_s": "0.256658",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 22280864
+  },
+  {
+   "binary": "gguf",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--model",
+    "fixtures/smollm2-135m.gguf",
+    "--threads",
+    "4",
+    "--microbatch",
+    "256",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 237159384,
+    "peak_resident_bytes": 364904448
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.096851",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.479998",
+     "generation_s": "0.174186",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.096851",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.488081",
+     "generation_s": "0.174088",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.096851",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.493064",
+     "generation_s": "0.177554",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811392
+  },
+  {
+   "binary": "metal",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--model",
+    "fixtures/smollm2-135m.gguf",
+    "--backend",
+    "metal",
+    "--device",
+    "0",
+    "--microbatch",
+    "256",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 193446944,
+    "peak_resident_bytes": 311918592
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.067502",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.043006",
+     "generation_s": "0.177612",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.067502",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.031539",
+     "generation_s": "0.177147",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.067502",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.030315",
+     "generation_s": "0.187904",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811424
+  },
+  {
+   "binary": "mlx-only",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--backend",
+    "mlx",
+    "--model",
+    "fixtures/mlx-llama",
+    "--microbatch",
+    "256",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 455574560,
+    "peak_resident_bytes": 237977600
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.092218",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.072907",
+     "generation_s": "0.264536",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.092218",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.051277",
+     "generation_s": "0.264769",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.092218",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.052276",
+     "generation_s": "0.263010",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 22280864
+  },
+  {
+   "binary": "gguf",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--model",
+    "fixtures/smollm2-135m.gguf",
+    "--threads",
+    "4",
+    "--microbatch",
+    "512",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 242910192,
+    "peak_resident_bytes": 365641728
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.095706",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.481577",
+     "generation_s": "0.178899",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.095706",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.493677",
+     "generation_s": "0.178121",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.095706",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.482076",
+     "generation_s": "0.200775",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811392
+  },
+  {
+   "binary": "metal",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--model",
+    "fixtures/smollm2-135m.gguf",
+    "--backend",
+    "metal",
+    "--device",
+    "0",
+    "--microbatch",
+    "512",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 198329424,
+    "peak_resident_bytes": 316735488
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.069411",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.033979",
+     "generation_s": "0.175324",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.069411",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.027135",
+     "generation_s": "0.175248",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.069411",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.027054",
+     "generation_s": "0.187204",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811424
+  },
+  {
+   "binary": "mlx-only",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--backend",
+    "mlx",
+    "--model",
+    "fixtures/mlx-llama",
+    "--microbatch",
+    "512",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 483689480,
+    "peak_resident_bytes": 240205824
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.092724",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.052823",
+     "generation_s": "0.298412",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.092724",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.038075",
+     "generation_s": "0.270041",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.092724",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.034935",
+     "generation_s": "0.266437",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 22280864
+  },
+  {
+   "binary": "gguf",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--model",
+    "fixtures/smollm2-135m.gguf",
+    "--threads",
+    "4",
+    "--context",
+    "2048",
+    "--output",
+    "64",
+    "--repetitions",
+    "1",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 187139008,
+    "peak_resident_bytes": 309805056
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.093604",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.503073",
+     "generation_s": "0.177376",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "gguf memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811392
+  },
+  {
+   "binary": "mlx-only",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--backend",
+    "mlx",
+    "--model",
+    "fixtures/mlx-llama",
+    "--context",
+    "2048",
+    "--output",
+    "64",
+    "--repetitions",
+    "1",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 368706496,
+    "peak_resident_bytes": 233963520
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.093537",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.080403",
+     "generation_s": "0.290248",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 22280864
+  },
+  {
+   "binary": "gguf",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--model",
+    "fixtures/smollm2-135m.gguf",
+    "--threads",
+    "4",
+    "--context",
+    "8192",
+    "--output",
+    "64",
+    "--repetitions",
+    "1",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 328320032,
+    "peak_resident_bytes": 450920448
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.094172",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.538367",
+     "generation_s": "0.189149",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "gguf memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811392
+  },
+  {
+   "binary": "mlx-only",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--backend",
+    "mlx",
+    "--model",
+    "fixtures/mlx-llama",
+    "--context",
+    "8192",
+    "--output",
+    "64",
+    "--repetitions",
+    "1",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 368870384,
+    "peak_resident_bytes": 234094592
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.092853",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.081710",
+     "generation_s": "0.262853",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 22280864
+  },
+  {
+   "binary": "gguf",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "error": "bench failed: local \u00b7 cpu \u00b7 context 16384 \u00b7 prompt 512 tokens\ncontext must be 1..=131072 tokens and within the model limit of 8192\n        0.11 real         0.07 user         0.01 sys\n           255295488  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n               16384  page reclaims\n                   1  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                   0  messages sent\n                   0  messages received\n                   0  signals received\n                   0  voluntary context switches\n                 243  involuntary context switches\n          1465712887  instructions retired\n           368481055  cycles elapsed\n           131433360  peak memory footprint"
+  },
+  {
+   "binary": "mlx-only",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "error": "bench failed: local \u00b7 mlx apple gpu \u00b7 context 16384 \u00b7 prompt 512 tokens\ncontext must be 1..=131072 tokens and within the model limit of 8192\n        0.10 real         0.07 user         0.04 sys\n           219348992  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n               14058  page reclaims\n                   0  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                   0  messages sent\n                   0  messages received\n                   0  signals received\n                   0  voluntary context switches\n                 368  involuntary context switches\n          1517262630  instructions retired\n           497813162  cycles elapsed\n           186975048  peak memory footprint"
+  }
+ ],
+ "threads": [
+  {
+   "binary": "gguf",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--model",
+    "fixtures/smollm2-135m.gguf",
+    "--threads",
+    "2",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 233522136,
+    "peak_resident_bytes": 356679680
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.087768",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.779577",
+     "generation_s": "0.234558",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.087768",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.822091",
+     "generation_s": "0.240015",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.087768",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.777687",
+     "generation_s": "0.223034",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811392
+  },
+  {
+   "binary": "gguf",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--model",
+    "fixtures/smollm2-135m.gguf",
+    "--threads",
+    "4",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 236307416,
+    "peak_resident_bytes": 358957056
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.091308",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.502635",
+     "generation_s": "0.173979",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.091308",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.499088",
+     "generation_s": "0.174907",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.091308",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.500666",
+     "generation_s": "0.173406",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811392
+  },
+  {
+   "binary": "gguf",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--model",
+    "fixtures/smollm2-135m.gguf",
+    "--threads",
+    "6",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 234505176,
+    "peak_resident_bytes": 357285888
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.090124",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.406122",
+     "generation_s": "0.321503",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.090124",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.406122",
+     "generation_s": "0.172968",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.090124",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.403821",
+     "generation_s": "0.171249",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811392
+  },
+  {
+   "binary": "gguf",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--model",
+    "fixtures/smollm2-135m.gguf",
+    "--threads",
+    "8",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 237749208,
+    "peak_resident_bytes": 360448000
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.091426",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.342444",
+     "generation_s": "0.172747",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.091426",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.342588",
+     "generation_s": "0.175334",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.091426",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.353986",
+     "generation_s": "0.183827",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811392
+  },
+  {
+   "binary": "gguf",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--model",
+    "fixtures/smollm2-135m.gguf",
+    "--threads",
+    "10",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 238339032,
+    "peak_resident_bytes": 360988672
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.091629",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.329689",
+     "generation_s": "0.218823",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.091629",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.336213",
+     "generation_s": "0.196649",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.091629",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.330836",
+     "generation_s": "0.175259",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable",
+    "gguf memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 11811392
+  },
+  {
+   "binary": "onnx-only",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--backend",
+    "onnx",
+    "--threads",
+    "2",
+    "--model",
+    "fixtures/onnx/onnx/model_int8.onnx",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 627786712,
+    "peak_resident_bytes": 645431296
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.155758",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.321276",
+     "generation_s": "0.678532",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.155758",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.307029",
+     "generation_s": "0.660477",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.155758",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.269701",
+     "generation_s": "0.679707",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "onnx memory reporting unavailable",
+    "onnx memory reporting unavailable",
+    "onnx memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 25485424
+  },
+  {
+   "binary": "onnx-only",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--backend",
+    "onnx",
+    "--threads",
+    "4",
+    "--model",
+    "fixtures/onnx/onnx/model_int8.onnx",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 628933592,
+    "peak_resident_bytes": 646578176
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.155569",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.225532",
+     "generation_s": "0.690306",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.155569",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.207217",
+     "generation_s": "0.697070",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.155569",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.214147",
+     "generation_s": "0.678678",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "onnx memory reporting unavailable",
+    "onnx memory reporting unavailable",
+    "onnx memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 25485424
+  },
+  {
+   "binary": "onnx-only",
+   "thermal_before": [
+    "Note: No thermal warning level has been recorded",
+    "Note: No performance warning level has been recorded",
+    "Note: No CPU power status has been recorded"
+   ],
+   "kind": "bench",
+   "arguments": [
+    "--raw",
+    "--backend",
+    "onnx",
+    "--threads",
+    "10",
+    "--model",
+    "fixtures/onnx/onnx/model_int8.onnx",
+    "--context",
+    "4096",
+    "--output",
+    "64",
+    "--repetitions",
+    "3",
+    "\" a\" repeated 512 times"
+   ],
+   "memory": {
+    "peak_physical_footprint_bytes": 630981616,
+    "peak_resident_bytes": 648609792
+   },
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.150254",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.197411",
+     "generation_s": "0.764829",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.150254",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.173762",
+     "generation_s": "0.775264",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.150254",
+     "prompt_tokens": "512",
+     "generated_tokens": "64",
+     "prefill_s": "0.173542",
+     "generation_s": "0.756329",
+     "stop": "OutputLimit"
+    }
+   ],
+   "engine_memory": [
+    "onnx memory reporting unavailable",
+    "onnx memory reporting unavailable",
+    "onnx memory reporting unavailable"
+   ],
+   "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0",
+    "python": "3.15.0",
+    "chip": "Apple M5",
+    "memory_bytes": 17179869184,
+    "cpu_count": 10
+   },
+   "binary_bytes": 25485424
+  }
+ ],
+ "mlx_single_evaluation": [
+  {
+   "round": 0,
+   "model": "smollm2-135m-mlx",
+   "binary": "mlx-only",
+   "decode_tokens_per_s": 245.0748693124502,
+   "prefill_tokens_per_s": 8631.829938838371,
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.090473",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.086905",
+     "generation_s": "0.518460",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.090473",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.059004",
+     "generation_s": "0.518130",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.090473",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.059630",
+     "generation_s": "0.518288",
+     "stop": "OutputLimit"
+    }
+   ]
+  },
+  {
+   "round": 0,
+   "model": "smollm2-135m-mlx",
+   "binary": "mlx-eval",
+   "decode_tokens_per_s": 275.4561109857958,
+   "prefill_tokens_per_s": 8605.61616047303,
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.115715",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.079276",
+     "generation_s": "0.460796",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.115715",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.059986",
+     "generation_s": "0.461136",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.115715",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.059014",
+     "generation_s": "0.460971",
+     "stop": "OutputLimit"
+    }
+   ]
+  },
+  {
+   "round": 0,
+   "model": "qwen3-0.6b-gptq-int8",
+   "binary": "mlx-only",
+   "decode_tokens_per_s": 87.35303235651907,
+   "prefill_tokens_per_s": 2527.496706833634,
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.572990",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.224828",
+     "generation_s": "1.441275",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.572990",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.202643",
+     "generation_s": "1.448778",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.572990",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.202501",
+     "generation_s": "1.458999",
+     "stop": "OutputLimit"
+    }
+   ]
+  },
+  {
+   "round": 0,
+   "model": "qwen3-0.6b-gptq-int8",
+   "binary": "mlx-eval",
+   "decode_tokens_per_s": 89.26246898024493,
+   "prefill_tokens_per_s": 2536.9426330031984,
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.568605",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.220510",
+     "generation_s": "1.429887",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.568605",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.202052",
+     "generation_s": "1.419957",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.568605",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.201584",
+     "generation_s": "1.425595",
+     "stop": "OutputLimit"
+    }
+   ]
+  },
+  {
+   "round": 0,
+   "model": "qwen3-0.6b-awq",
+   "binary": "mlx-only",
+   "decode_tokens_per_s": 104.99270544292972,
+   "prefill_tokens_per_s": 2558.043614242966,
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.686848",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.219162",
+     "generation_s": "1.206146",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.686848",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.200243",
+     "generation_s": "1.204453",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.686848",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.200063",
+     "generation_s": "1.214807",
+     "stop": "OutputLimit"
+    }
+   ]
+  },
+  {
+   "round": 0,
+   "model": "qwen3-0.6b-awq",
+   "binary": "mlx-eval",
+   "decode_tokens_per_s": 106.30140239278994,
+   "prefill_tokens_per_s": 2563.167148184911,
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.567939",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.214166",
+     "generation_s": "1.192355",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.567939",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.199031",
+     "generation_s": "1.193223",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.567939",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.200480",
+     "generation_s": "1.196213",
+     "stop": "OutputLimit"
+    }
+   ]
+  },
+  {
+   "round": 1,
+   "model": "smollm2-135m-mlx",
+   "binary": "mlx-only",
+   "decode_tokens_per_s": 245.88727908479137,
+   "prefill_tokens_per_s": 8605.036952012755,
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.145769",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.077652",
+     "generation_s": "0.518638",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.145769",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.058841",
+     "generation_s": "0.514215",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.145769",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.060174",
+     "generation_s": "0.518799",
+     "stop": "OutputLimit"
+    }
+   ]
+  },
+  {
+   "round": 1,
+   "model": "smollm2-135m-mlx",
+   "binary": "mlx-eval",
+   "decode_tokens_per_s": 274.540981180615,
+   "prefill_tokens_per_s": 8664.982252480633,
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.113587",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.078957",
+     "generation_s": "0.463840",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.113587",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.058664",
+     "generation_s": "0.461588",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.113587",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.059519",
+     "generation_s": "0.463597",
+     "stop": "OutputLimit"
+    }
+   ]
+  },
+  {
+   "round": 1,
+   "model": "qwen3-0.6b-gptq-int8",
+   "binary": "mlx-only",
+   "decode_tokens_per_s": 88.19563991121944,
+   "prefill_tokens_per_s": 2531.5903652560064,
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.618098",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.221163",
+     "generation_s": "1.446617",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.618098",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.202715",
+     "generation_s": "1.442235",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.618098",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.201776",
+     "generation_s": "1.437733",
+     "stop": "OutputLimit"
+    }
+   ]
+  },
+  {
+   "round": 1,
+   "model": "qwen3-0.6b-gptq-int8",
+   "binary": "mlx-eval",
+   "decode_tokens_per_s": 87.65962277874225,
+   "prefill_tokens_per_s": 2538.440694806838,
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.567101",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.219610",
+     "generation_s": "1.428306",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.567101",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.202393",
+     "generation_s": "1.465895",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.567101",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.201009",
+     "generation_s": "1.432071",
+     "stop": "OutputLimit"
+    }
+   ]
+  },
+  {
+   "round": 1,
+   "model": "qwen3-0.6b-awq",
+   "binary": "mlx-only",
+   "decode_tokens_per_s": 105.30496948310008,
+   "prefill_tokens_per_s": 2565.664532572018,
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.701368",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.226049",
+     "generation_s": "1.291722",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.701368",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.199672",
+     "generation_s": "1.204272",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.701368",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.199445",
+     "generation_s": "1.207775",
+     "stop": "OutputLimit"
+    }
+   ]
+  },
+  {
+   "round": 1,
+   "model": "qwen3-0.6b-awq",
+   "binary": "mlx-eval",
+   "decode_tokens_per_s": 107.00223595847208,
+   "prefill_tokens_per_s": 2562.4516348848056,
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.556501",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.220125",
+     "generation_s": "1.188950",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.556501",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.200798",
+     "generation_s": "1.189865",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.556501",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.198829",
+     "generation_s": "1.183932",
+     "stop": "OutputLimit"
+    }
+   ]
+  },
+  {
+   "round": 2,
+   "model": "smollm2-135m-mlx",
+   "binary": "mlx-only",
+   "decode_tokens_per_s": 246.251567837877,
+   "prefill_tokens_per_s": 8622.49749698572,
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.147847",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.078980",
+     "generation_s": "0.517228",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.147847",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.059041",
+     "generation_s": "0.515379",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.147847",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.059722",
+     "generation_s": "0.516087",
+     "stop": "OutputLimit"
+    }
+   ]
+  },
+  {
+   "round": 2,
+   "model": "smollm2-135m-mlx",
+   "binary": "mlx-eval",
+   "decode_tokens_per_s": 273.54779259115736,
+   "prefill_tokens_per_s": 8671.787762932083,
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.113094",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.079922",
+     "generation_s": "0.463886",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.113094",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.059930",
+     "generation_s": "0.466220",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.113094",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.058180",
+     "generation_s": "0.462336",
+     "stop": "OutputLimit"
+    }
+   ]
+  },
+  {
+   "round": 2,
+   "model": "qwen3-0.6b-gptq-int8",
+   "binary": "mlx-only",
+   "decode_tokens_per_s": 87.83860066847308,
+   "prefill_tokens_per_s": 2547.398126493695,
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.701786",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.220656",
+     "generation_s": "1.433399",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.701786",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.201137",
+     "generation_s": "1.448055",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.701786",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.200842",
+     "generation_s": "1.443619",
+     "stop": "OutputLimit"
+    }
+   ]
+  },
+  {
+   "round": 2,
+   "model": "qwen3-0.6b-gptq-int8",
+   "binary": "mlx-eval",
+   "decode_tokens_per_s": 89.07749086012535,
+   "prefill_tokens_per_s": 2551.0355763581656,
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.561666",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.218582",
+     "generation_s": "1.417698",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.561666",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.200900",
+     "generation_s": "1.421341",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.561666",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.200506",
+     "generation_s": "1.430136",
+     "stop": "OutputLimit"
+    }
+   ]
+  },
+  {
+   "round": 2,
+   "model": "qwen3-0.6b-awq",
+   "binary": "mlx-only",
+   "decode_tokens_per_s": 103.55693032307877,
+   "prefill_tokens_per_s": 2558.7677393286813,
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.660515",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.215320",
+     "generation_s": "1.202271",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.660515",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.199905",
+     "generation_s": "1.207297",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.660515",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.200288",
+     "generation_s": "1.246073",
+     "stop": "OutputLimit"
+    }
+   ]
+  },
+  {
+   "round": 2,
+   "model": "qwen3-0.6b-awq",
+   "binary": "mlx-eval",
+   "decode_tokens_per_s": 105.17708479718033,
+   "prefill_tokens_per_s": 2584.3976940828006,
+   "samples": [
+    {
+     "sample": "1",
+     "load_s": "0.570170",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.214425",
+     "generation_s": "1.194259",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "2",
+     "load_s": "0.570170",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.199303",
+     "generation_s": "1.220252",
+     "stop": "OutputLimit"
+    },
+    {
+     "sample": "3",
+     "load_s": "0.570170",
+     "prompt_tokens": "512",
+     "generated_tokens": "128",
+     "prefill_s": "0.196935",
+     "generation_s": "1.194987",
+     "stop": "OutputLimit"
+    }
+   ]
+  }
+ ]
+}
