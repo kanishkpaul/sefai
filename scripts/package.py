@@ -187,7 +187,7 @@ def main():
         archive = options.out / f"{options.name}.tar.gz"
         with tarfile.open(archive, "w:gz") as output:
             output.add(stage, arcname=options.name)
-    (options.out / f"{archive.name}.sha256").write_text(f"{sha256(archive)}  {archive.name}\n", encoding="utf-8")
+    (options.out / f"{archive.name}.sha256").write_text(f"{sha256(archive)}  {archive.name}\n", encoding="utf-8", newline="\n")
     print(archive)
 
 
