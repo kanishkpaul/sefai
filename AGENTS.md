@@ -2,7 +2,8 @@
 
 sefai is a small Rust local LLM runner and terminal harness.
 The runner embeds GGUF inference and a schema-1 Markdown workspace.
-Phases 1–13 are implemented, including native MLX, ONNX on CPU and WebGPU, GPTQ and AWQ on MLX, runtime unification, Apple-first footprint qualification, hardware-aware setup, safety hardening and release testing; Phase 14 packaging is next, and NVIDIA/AMD GPU execution are open follow-up gates.
+All fourteen phases are implemented, through packaging and the release workflow; NVIDIA/AMD GPU execution and GPTQ/AWQ on NVIDIA remain open follow-up gates.
+Release archives come from `.github/workflows/release.yml` and `scripts/package.py`; publishing a drafted release is the maintainer's decision.
 Read `docs/safety.md` before changing approvals, credentials, MCP, workspace writes, downloads or terminal output.
 See `docs/runner.md` for controls and `docs/build-plan.md` for the remaining gates.
 Read `docs/style.md` in full, `ARCHITECTURE.md`, the relevant phase and `design/README.md` before the first edit.

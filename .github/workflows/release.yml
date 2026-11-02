@@ -1,0 +1,163 @@
+name: release
+
+# Builds every platform archive and checks it on a fresh runner. A version tag also drafts a
+# GitHub release for the maintainer to review and publish; nothing is published automatically.
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+    paths:
+      - .github/workflows/release.yml
+      - scripts/package.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: build (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macos-arm64
+            os: macos-latest
+            features: metal,mlx,onnx-webgpu,mcp-oauth,download
+          - name: macos-x86_64
+            os: macos-15-intel
+            features: mcp-oauth,download
+          - name: linux-x86_64
+            os: ubuntu-latest
+            features: onnx,mcp-oauth,download
+          - name: linux-arm64
+            os: ubuntu-24.04-arm
+            features: onnx,mcp-oauth,download
+          - name: windows-x86_64
+            os: windows-latest
+            features: onnx,mcp-oauth,download
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Install native build tools
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y cmake clang libclang-dev
+      - name: Locate Windows libclang
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: '"LIBCLANG_PATH=C:\Program Files\LLVM\bin" >> $env:GITHUB_ENV'
+      - name: Install the Apple Metal compiler
+        if: matrix.name == 'macos-arm64'
+        run: |
+          if ! xcrun metal --version; then
+            xcodebuild -downloadComponent MetalToolchain
+          fi
+      - name: Build and package
+        shell: bash
+        env:
+          MLX_RS_METAL_PATH: ${{ github.workspace }}/target/mlx-metal
+        run: |
+          set -euo pipefail
+          cargo build --locked --release -p sefai --features "${{ matrix.features }}"
+          extension=""
+          if [ "$RUNNER_OS" = "Windows" ]; then extension=".exe"; fi
+          version="$(target/release/sefai$extension --version | awk '{print $2}')"
+          python3 scripts/package.py --binary "target/release/sefai$extension" --name "sefai-$version-${{ matrix.name }}" --out dist -- --features "${{ matrix.features }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: sefai-${{ matrix.name }}
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/*.sha256
+
+  install:
+    name: install (${{ matrix.name }})
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: macos-arm64, os: macos-latest }
+          - { name: macos-x86_64, os: macos-15-intel }
+          - { name: linux-x86_64, os: ubuntu-latest }
+          - { name: linux-arm64, os: ubuntu-24.04-arm }
+          - { name: windows-x86_64, os: windows-latest }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/fetch_fixture.py
+            tests/fixtures/gguf.json
+          sparse-checkout-cone-mode: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: sefai-${{ matrix.name }}
+          path: dist
+      - name: Install, run, update-check and uninstall from the archive alone
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dist
+          if command -v sha256sum >/dev/null; then sha256sum -c ./*.sha256; else shasum -a 256 -c ./*.sha256; fi
+          mkdir -p install
+          for archive in ./*.tar.gz ./*.zip; do
+            [ -e "$archive" ] || continue
+            case "$archive" in
+              *.zip) python3 -c 'import sys, zipfile; zipfile.ZipFile(sys.argv[1]).extractall("install")' "$archive" ;;
+              *) tar -xzf "$archive" -C install ;;
+            esac
+          done
+          directory="$(ls -d install/sefai-*)"
+          sefai="$directory/sefai"
+          if [ "$RUNNER_OS" = "Windows" ]; then sefai="$sefai.exe"; fi
+          test -f "$directory/LICENSE.txt" -a -f "$directory/THIRD_PARTY_NOTICES.txt" -a -f "$directory/INSTALL.txt"
+          workspace="$RUNNER_TEMP/sefai-workspace"
+          "$sefai" --version
+          "$sefai" --workspace "$workspace" workspace init
+          "$sefai" --workspace "$workspace" workspace check
+          "$sefai" --workspace "$workspace" setup hardware
+          "$sefai" --workspace "$workspace" setup recommend
+          cd "$GITHUB_WORKSPACE"
+          python3 scripts/fetch_fixture.py tests/fixtures/gguf.json "$RUNNER_TEMP/fixture.gguf"
+          "dist/$sefai" --workspace "$workspace" run --output 16 --model "$RUNNER_TEMP/fixture.gguf" "Say hello."
+          printf 'Say hello.\n/quit\n' | "dist/$sefai" --workspace "$workspace" chat --plain --model "$RUNNER_TEMP/fixture.gguf"
+          rm -rf "dist/$directory"
+          test -f "$workspace/config.md"
+          test -n "$(ls "$workspace/sessions")"
+
+  draft:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: install
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Draft the release for review
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          cd dist
+          cat ./*.sha256 > SHA256SUMS
+          notes="Platform archives with SHA256SUMS. Supported hardware, measurements and limits: docs/install.md, docs/testing.md and docs/footprint.md at $TAG. The maintainer completes these notes before publishing."
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --draft --verify-tag \
+            --title "sefai $TAG" --notes "$notes" ./*.tar.gz ./*.zip SHA256SUMS
